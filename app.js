@@ -1,8 +1,15 @@
 // ========== CONFIG ==========
-const K = { W:'alb_workers_v6', A:'alb_attend_v6', AD:'alb_admin_v6', U:'alb_user_v6' };
 const REG_HOURS = 8;
 const DEFAULT_PW = 'Worker@123';
 const CURRENT_YEAR = 2026;
+
+const COL = {
+  WORKERS: 'workers',
+  ATTENDANCE: 'attendance',
+  ADMIN: 'admin'
+};
+
+const K = { U: 'alb_user_session' };
 
 // ========== WORKERS DATA ==========
 const IND = [
@@ -37,31 +44,152 @@ const PAK = [
   {n:"Muhammad Mansoor",p:"Assistant Carpenter"}
 ];
 
-// ========== INIT ==========
-function initDB() {
-  if (!localStorage.getItem(K.W)) {
-    const workers = [];
-    IND.forEach((w, i) => {
-      workers.push({ id: 'IND' + String(i+1).padStart(4,'0'), name: w.n, prof: w.p, sec: 'Indian', pw: DEFAULT_PW, on: true });
-    });
-    PAK.forEach((w, i) => {
-      workers.push({ id: 'PAK' + String(i+1).padStart(4,'0'), name: w.n, prof: w.p, sec: 'Pakistani', pw: DEFAULT_PW, on: true });
-    });
-    localStorage.setItem(K.W, JSON.stringify(workers));
+let workersCache = [];
+let attendanceCache = [];
+let adminCache = null;
+
+// ========== FIREBASE HELPERS ==========
+async function fbGetAll(colName) {
+  try {
+    const snapshot = await window.fbGetDocs(window.fbCollection(window.fbDB, colName));
+    const data = [];
+    snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+    return data;
+  } catch (e) {
+    console.error('Fetch error:', e);
+    return [];
   }
-  if (!localStorage.getItem(K.AD)) {
-    localStorage.setItem(K.AD, JSON.stringify({ id: 'ADMIN001', pw: 'Admin@2026', name: 'Administrator' }));
+}
+
+async function fbGetOne(colName, docId) {
+  try {
+    const docRef = window.fbDoc(window.fbDB, colName, docId);
+    const docSnap = await window.fbGetDoc(docRef);
+    if (docSnap.exists()) return { id: docSnap.id, ...docSnap.data() };
+    return null;
+  } catch (e) {
+    console.error('Error:', e);
+    return null;
   }
-  if (!localStorage.getItem(K.A)) localStorage.setItem(K.A, JSON.stringify([]));
+}
+
+async function fbSave(colName, docId, data) {
+  try {
+    await window.fbSetDoc(window.fbDoc(window.fbDB, colName, docId), data);
+    return true;
+  } catch (e) {
+    console.error('Save error:', e);
+    toast('❌ Save failed. Check internet.', 'err');
+    return false;
+  }
+}
+
+async function fbDelete(colName, docId) {
+  try {
+    await window.fbDeleteDoc(window.fbDoc(window.fbDB, colName, docId));
+    return true;
+  } catch (e) {
+    console.error('Delete error:', e);
+    return false;
+  }
+}
+
+function fbListen(colName, callback) {
+  return window.fbOnSnapshot(window.fbCollection(window.fbDB, colName), (snapshot) => {
+    const data = [];
+    snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+    callback(data);
+  });
+}
+
+// ========== INIT DATABASE ==========
+async function initDB() {
+  console.log('🔥 Initializing database...');
+  
+  // Check workers
+  const existingWorkers = await fbGetAll(COL.WORKERS);
+  if (existingWorkers.length === 0) {
+    console.log('First time setup - Creating workers...');
+    toast('First time setup - Creating workers...', 'info');
+    
+    for (let i = 0; i < IND.length; i++) {
+      const w = IND[i];
+      const id = 'IND' + String(i+1).padStart(4,'0');
+      await fbSave(COL.WORKERS, id, { 
+        wid: id, name: w.n, prof: w.p, sec: 'Indian', 
+        pw: DEFAULT_PW, on: true, createdAt: new Date().toISOString() 
+      });
+    }
+    for (let i = 0; i < PAK.length; i++) {
+      const w = PAK[i];
+      const id = 'PAK' + String(i+1).padStart(4,'0');
+      await fbSave(COL.WORKERS, id, { 
+        wid: id, name: w.n, prof: w.p, sec: 'Pakistani', 
+        pw: DEFAULT_PW, on: true, createdAt: new Date().toISOString() 
+      });
+    }
+    console.log('✅ Workers created!');
+  }
+  
+  // Check admin
+  const admin = await fbGetOne(COL.ADMIN, 'main');
+  if (!admin) {
+    await fbSave(COL.ADMIN, 'main', { 
+      adminId: 'ADMIN001', pw: 'Admin@2026', name: 'Administrator' 
+    });
+    console.log('✅ Admin created!');
+  }
+  
+  // Setup real-time listeners
+  fbListen(COL.WORKERS, (data) => {
+    workersCache = data;
+    fillDropdown();
+    const u = gU();
+    if (u && u.role === 'admin') {
+      loadStats();
+      if (document.getElementById('sec-workers')?.classList.contains('active')) {
+        loadWorkerTable();
+      }
+    }
+  });
+  
+  fbListen(COL.ATTENDANCE, (data) => {
+    attendanceCache = data;
+    const u = gU();
+    if (u && u.role === 'worker') {
+      updWorkerStatus();
+      loadWHistory();
+      loadWQuickStats();
+    }
+    if (u && u.role === 'admin') {
+      loadStats();
+      const active = document.querySelector('.sec.active');
+      if (active) {
+        if (active.id === 'sec-approve') loadApprovals();
+        if (active.id === 'sec-live') loadLive();
+        if (active.id === 'sec-attend') loadAttend();
+        if (active.id === 'sec-endday') loadEndDay();
+      }
+    }
+  });
+  
+  fbListen(COL.ADMIN, (data) => {
+    if (data.length > 0) adminCache = data[0];
+  });
+  
+  // Hide loading screen
+  setTimeout(() => {
+    const ls = document.getElementById('loadingScreen');
+    if (ls) ls.style.display = 'none';
+  }, 1500);
+  
+  console.log('🔥 Firebase ready & listening!');
 }
 
 // ========== HELPERS ==========
-const gW = () => JSON.parse(localStorage.getItem(K.W)) || [];
-const sW = d => localStorage.setItem(K.W, JSON.stringify(d));
-const gA = () => JSON.parse(localStorage.getItem(K.A)) || [];
-const sA = d => localStorage.setItem(K.A, JSON.stringify(d));
-const gAD = () => JSON.parse(localStorage.getItem(K.AD));
-const sAD = d => localStorage.setItem(K.AD, JSON.stringify(d));
+const gW = () => workersCache;
+const gA = () => attendanceCache;
+const gAD = () => adminCache || { adminId: 'ADMIN001', pw: 'Admin@2026', name: 'Administrator' };
 const gU = () => JSON.parse(localStorage.getItem(K.U));
 const sU = d => localStorage.setItem(K.U, JSON.stringify(d));
 const cU = () => localStorage.removeItem(K.U);
@@ -86,6 +214,7 @@ function greet() {
 
 function toast(msg, type='ok') {
   const t = document.getElementById('toast');
+  if (!t) return;
   t.textContent = msg;
   t.className = 'toast show ' + type;
   setTimeout(() => t.classList.remove('show'), 3500);
@@ -132,20 +261,21 @@ function showErr(msg) {
 
 function fillDropdown() {
   const w = gW().filter(x => x.on);
-  const ind = w.filter(x => x.sec === 'Indian');
-  const pak = w.filter(x => x.sec === 'Pakistani');
+  const ind = w.filter(x => x.sec === 'Indian').sort((a,b) => a.wid.localeCompare(b.wid));
+  const pak = w.filter(x => x.sec === 'Pakistani').sort((a,b) => a.wid.localeCompare(b.wid));
   let h = '<option value="">— Choose your name —</option>';
   if (ind.length) {
     h += '<optgroup label="🇮🇳 Indian Workers">';
-    ind.forEach(x => h += `<option value="${x.id}">${x.name} — ${x.prof}</option>`);
+    ind.forEach(x => h += `<option value="${x.wid}">${x.name} — ${x.prof}</option>`);
     h += '</optgroup>';
   }
   if (pak.length) {
     h += '<optgroup label="🇵🇰 Pakistani Workers">';
-    pak.forEach(x => h += `<option value="${x.id}">${x.name} — ${x.prof}</option>`);
+    pak.forEach(x => h += `<option value="${x.wid}">${x.name} — ${x.prof}</option>`);
     h += '</optgroup>';
   }
-  document.getElementById('workerSelect').innerHTML = h;
+  const sel = document.getElementById('workerSelect');
+  if (sel) sel.innerHTML = h;
 }
 
 function workerLogin(e) {
@@ -153,11 +283,11 @@ function workerLogin(e) {
   const id = document.getElementById('workerSelect').value;
   const pw = document.getElementById('workerPw').value;
   if (!id) return showErr('Please select your name');
-  const w = gW().find(x => x.id === id);
+  const w = gW().find(x => x.wid === id);
   if (!w) return showErr('Worker not found');
   if (!w.on) return showErr('Account deactivated. Contact admin.');
   if (w.pw !== pw) return showErr('Incorrect password');
-  sU({ ...w, role: 'worker' });
+  sU({ ...w, id: w.wid, role: 'worker' });
   toast('Welcome, ' + w.name + '!');
   loadWorkerDash();
   return false;
@@ -169,8 +299,8 @@ function adminLogin(e) {
   const pw = document.getElementById('adminPw').value;
   if (!id || !pw) return showErr('Enter ID and password');
   const ad = gAD();
-  if (ad.id !== id || ad.pw !== pw) return showErr('Invalid admin credentials');
-  sU({ ...ad, role: 'admin' });
+  if (ad.adminId !== id || ad.pw !== pw) return showErr('Invalid admin credentials');
+  sU({ ...ad, id: ad.adminId, role: 'admin' });
   toast('Welcome back, Admin!');
   loadAdminDash();
   return false;
@@ -203,12 +333,10 @@ function loadWorkerDash() {
   loadWQuickStats();
 }
 
-// ⭐ Check-in Request (needs admin approval)
-function doCheckIn() {
+async function doCheckIn() {
   const u = gU();
   const today = tDate();
-  let att = gA();
-  const existing = att.find(a => a.wid === u.id && a.date === today);
+  const existing = gA().find(a => a.wid === u.id && a.date === today);
   
   if (existing) {
     if (existing.status === 'pending_checkin') return toast('Check-in request already pending!', 'err');
@@ -216,10 +344,11 @@ function doCheckIn() {
     if (existing.status === 'completed') return toast('You have already completed today\'s work', 'err');
   }
   
-  confirmDlg('Request Check-In?', 'Send check-in request to admin? Your check-in time will be recorded now, but requires admin approval to be finalized.', () => {
+  confirmDlg('Request Check-In?', 'Send check-in request to admin? Your time will be recorded now.', async () => {
     const now = new Date().toISOString();
-    att.push({
-      id: Date.now(),
+    const recId = 'att_' + Date.now() + '_' + u.id;
+    const success = await fbSave(COL.ATTENDANCE, recId, {
+      recId: recId,
       wid: u.id,
       name: u.name,
       prof: u.prof,
@@ -234,32 +363,29 @@ function doCheckIn() {
       ot: 0,
       status: 'pending_checkin'
     });
-    sA(att);
-    toast('✅ Check-in request sent! Waiting for admin approval.');
-    updWorkerStatus();
+    if (success) toast('✅ Check-in request sent to admin!');
   });
 }
 
-// ⭐ Check-out Request (needs admin approval)
-function doCheckOut() {
+async function doCheckOut() {
   const u = gU();
   const today = tDate();
-  let att = gA();
-  const rec = att.find(a => a.wid === u.id && a.date === today);
+  const rec = gA().find(a => a.wid === u.id && a.date === today);
   
   if (!rec) return toast('Please check-in first!', 'err');
-  if (rec.status === 'pending_checkin') return toast('Wait for check-in approval first', 'err');
-  if (rec.status === 'completed') return toast('You have already checked out today', 'err');
-  if (rec.status === 'pending_checkout') return toast('Check-out request already pending!', 'err');
-  if (rec.status !== 'checked_in') return toast('Cannot check-out right now', 'err');
+  if (rec.status === 'pending_checkin') return toast('Wait for check-in approval', 'err');
+  if (rec.status === 'completed') return toast('Already checked out today', 'err');
+  if (rec.status === 'pending_checkout') return toast('Check-out already pending!', 'err');
+  if (rec.status !== 'checked_in') return toast('Cannot check-out now', 'err');
   
-  confirmDlg('Request Check-Out?', 'Send check-out request to admin? Your check-out time will be recorded now, but requires admin approval to finalize your day.', () => {
+  confirmDlg('Request Check-Out?', 'Send check-out request to admin?', async () => {
     const now = new Date().toISOString();
-    rec.checkoutReqTime = now;
-    rec.status = 'pending_checkout';
-    sA(att);
-    toast('✅ Check-out request sent! Waiting for admin approval.');
-    updWorkerStatus();
+    const success = await fbSave(COL.ATTENDANCE, rec.id, {
+      ...rec,
+      checkoutReqTime: now,
+      status: 'pending_checkout'
+    });
+    if (success) toast('✅ Check-out request sent!');
   });
 }
 
@@ -276,13 +402,14 @@ function updWorkerStatus() {
   const txt = document.getElementById('wsText');
   const sub = document.getElementById('wsSub');
   const times = document.getElementById('wsTimes');
+  if (!btnIn) return;
   times.innerHTML = '';
 
   if (!rec) {
     btnIn.disabled = false;
     btnOut.disabled = true;
     status.className = 'wac-status';
-    status.innerHTML = '<span>📋</span> Ready to start your work day. Click CHECK IN to send request to admin.';
+    status.innerHTML = '<span>📋</span> Ready to start. Click CHECK IN to send request to admin.';
     icon.textContent = '📋';
     txt.textContent = 'Not Started';
     sub.textContent = 'Waiting to begin your day';
@@ -294,7 +421,7 @@ function updWorkerStatus() {
   if (rec.checkoutReqTime) times.innerHTML += `<div class="wsc-time-item"><small>Check-out Requested</small><b style="color:#f59e0b">${fmtTime(rec.checkoutReqTime)}</b></div>`;
   if (rec.checkoutTime) times.innerHTML += `<div class="wsc-time-item"><small>Approved Check-out</small><b style="color:#dc2626">${fmtTime(rec.checkoutTime)}</b></div>`;
   if (rec.total > 0) times.innerHTML += `<div class="wsc-time-item"><small>Total Hours</small><b style="color:#1e40af">${rec.total.toFixed(2)}h</b></div>`;
-  if (rec.regular > 0) times.innerHTML += `<div class="wsc-time-item"><small>Regular Hours</small><b style="color:#1e40af">${rec.regular.toFixed(2)}h</b></div>`;
+  if (rec.regular > 0) times.innerHTML += `<div class="wsc-time-item"><small>Regular</small><b style="color:#1e40af">${rec.regular.toFixed(2)}h</b></div>`;
   if (rec.ot > 0) times.innerHTML += `<div class="wsc-time-item"><small>Overtime</small><b style="color:#d97706">${rec.ot.toFixed(2)}h</b></div>`;
 
   switch (rec.status) {
@@ -302,56 +429,55 @@ function updWorkerStatus() {
       btnIn.disabled = true;
       btnOut.disabled = true;
       status.className = 'wac-status pending';
-      status.innerHTML = '<span>⏳</span> Check-in request sent at ' + fmtTime(rec.checkinReqTime) + '. Waiting for admin approval...';
-      icon.textContent = '⏳';
-      txt.textContent = 'Check-in Pending';
-      sub.textContent = 'Waiting for admin approval';
+      status.innerHTML = '<span>⏳</span> Check-in request sent. Waiting for admin approval...';
+      icon.textContent = '⏳'; txt.textContent = 'Check-in Pending'; sub.textContent = 'Waiting for admin approval';
       break;
     case 'checked_in':
       btnIn.disabled = true;
       btnOut.disabled = false;
       status.className = 'wac-status active';
-      status.innerHTML = '<span>🟢</span> You are checked in since ' + fmtTime(rec.checkinTime) + '. Click CHECK OUT when you finish.';
-      icon.textContent = '🟢';
-      txt.textContent = 'Currently Working';
-      sub.textContent = 'Have a productive day!';
+      status.innerHTML = '<span>🟢</span> Checked in at ' + fmtTime(rec.checkinTime) + '. Click CHECK OUT when done.';
+      icon.textContent = '🟢'; txt.textContent = 'Currently Working'; sub.textContent = 'Have a productive day!';
       break;
     case 'pending_checkout':
       btnIn.disabled = true;
       btnOut.disabled = true;
       status.className = 'wac-status pending';
-      status.innerHTML = '<span>⏳</span> Check-out request sent at ' + fmtTime(rec.checkoutReqTime) + '. Waiting for admin approval...';
-      icon.textContent = '⏳';
-      txt.textContent = 'Check-out Pending';
-      sub.textContent = 'Waiting for admin approval';
+      status.innerHTML = '<span>⏳</span> Check-out request sent. Waiting for admin approval...';
+      icon.textContent = '⏳'; txt.textContent = 'Check-out Pending'; sub.textContent = 'Waiting for admin approval';
       break;
     case 'completed':
       btnIn.disabled = true;
       btnOut.disabled = true;
       status.className = 'wac-status done';
-      status.innerHTML = '<span>🎉</span> Work day completed! Total: ' + rec.total.toFixed(2) + 'h ' + (rec.ot > 0 ? '(includes ' + rec.ot.toFixed(2) + 'h overtime)' : '');
-      icon.textContent = '🎉';
-      txt.textContent = 'Day Completed';
-      sub.textContent = 'Great work today!';
+      status.innerHTML = '<span>🎉</span> Day completed! Total: ' + rec.total.toFixed(2) + 'h';
+      icon.textContent = '🎉'; txt.textContent = 'Day Completed'; sub.textContent = 'Great work today!';
       break;
   }
 }
 
 function loadWQuickStats() {
   const u = gU();
+  if (!u) return;
   const my = gA().filter(a => a.wid === u.id && a.status === 'completed');
-  document.getElementById('wTotalDays').textContent = my.length;
-  document.getElementById('wTotalHrs').textContent = my.reduce((s, a) => s + (a.total || 0), 0).toFixed(1) + 'h';
-  document.getElementById('wTotalOT').textContent = my.reduce((s, a) => s + (a.ot || 0), 0).toFixed(1) + 'h';
+  const el1 = document.getElementById('wTotalDays');
+  const el2 = document.getElementById('wTotalHrs');
+  const el3 = document.getElementById('wTotalOT');
+  if (el1) el1.textContent = my.length;
+  if (el2) el2.textContent = my.reduce((s, a) => s + (a.total || 0), 0).toFixed(1) + 'h';
+  if (el3) el3.textContent = my.reduce((s, a) => s + (a.ot || 0), 0).toFixed(1) + 'h';
 }
 
 function loadWHistory() {
   const u = gU();
+  if (!u) return;
   const hist = gA().filter(a => a.wid === u.id && a.status === 'completed').sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
-  document.getElementById('wHistCount').textContent = hist.length + ' records';
+  const cnt = document.getElementById('wHistCount');
+  if (cnt) cnt.textContent = hist.length + ' records';
   const el = document.getElementById('wHistory');
+  if (!el) return;
   if (!hist.length) {
-    el.innerHTML = '<div class="empty"><div class="em-icon">📭</div><h3>No History Yet</h3><p>Complete your first day to see history</p></div>';
+    el.innerHTML = '<div class="empty"><div class="em-icon">📭</div><h3>No History Yet</h3></div>';
     return;
   }
   el.innerHTML = hist.map(r => `
@@ -364,22 +490,24 @@ function loadWHistory() {
     </div>`).join('');
 }
 
-function changeWorkerPw(e) {
+async function changeWorkerPw(e) {
   e.preventDefault();
   const old = document.getElementById('cwOld').value;
   const nw = document.getElementById('cwNew').value;
   const cf = document.getElementById('cwConf').value;
-  if (nw !== cf) return toast('New passwords don\'t match', 'err');
-  if (nw.length < 4) return toast('Password must be at least 4 characters', 'err');
+  if (nw !== cf) return toast('Passwords don\'t match', 'err');
+  if (nw.length < 4) return toast('Min 4 characters', 'err');
   const u = gU();
-  const ws = gW();
-  const w = ws.find(x => x.id === u.id);
-  if (w.pw !== old) return toast('Current password is incorrect', 'err');
-  w.pw = nw; sW(ws); sU({ ...u, pw: nw });
-  document.getElementById('cwOld').value = '';
-  document.getElementById('cwNew').value = '';
-  document.getElementById('cwConf').value = '';
-  toast('✅ Password updated successfully!');
+  const w = gW().find(x => x.wid === u.id);
+  if (w.pw !== old) return toast('Current password wrong', 'err');
+  const success = await fbSave(COL.WORKERS, u.id, { ...w, pw: nw });
+  if (success) {
+    sU({ ...u, pw: nw });
+    document.getElementById('cwOld').value = '';
+    document.getElementById('cwNew').value = '';
+    document.getElementById('cwConf').value = '';
+    toast('✅ Password updated!');
+  }
   return false;
 }
 
@@ -421,37 +549,44 @@ function loadStats() {
   const indPend = att.filter(a => a.sec === 'Indian' && ['pending_checkin','pending_checkout'].includes(a.status)).length;
   const pakPend = att.filter(a => a.sec === 'Pakistani' && ['pending_checkin','pending_checkout'].includes(a.status)).length;
 
-  document.getElementById('sTotalW').textContent = ws.length;
-  document.getElementById('sPresent').textContent = present;
-  document.getElementById('sAbsent').textContent = ws.length - present;
-  document.getElementById('sPending').textContent = pend;
-  document.getElementById('dashDate').textContent = tDateFull();
-  document.getElementById('dIndT').textContent = ind.length;
-  document.getElementById('dIndP').textContent = indP;
-  document.getElementById('dIndA').textContent = ind.length - indP;
-  document.getElementById('dIndPend').textContent = indPend;
-  document.getElementById('dPakT').textContent = pak.length;
-  document.getElementById('dPakP').textContent = pakP;
-  document.getElementById('dPakA').textContent = pak.length - pakP;
-  document.getElementById('dPakPend').textContent = pakPend;
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  
+  setText('sTotalW', ws.length);
+  setText('sPresent', present);
+  setText('sAbsent', ws.length - present);
+  setText('sPending', pend);
+  setText('dashDate', tDateFull());
+  setText('dIndT', ind.length);
+  setText('dIndP', indP);
+  setText('dIndA', ind.length - indP);
+  setText('dIndPend', indPend);
+  setText('dPakT', pak.length);
+  setText('dPakP', pakP);
+  setText('dPakA', pak.length - pakP);
+  setText('dPakPend', pakPend);
   
   const indPct = ind.length ? Math.round(indP / ind.length * 100) : 0;
   const pakPct = pak.length ? Math.round(pakP / pak.length * 100) : 0;
-  document.getElementById('dIndBar').style.width = indPct + '%';
-  document.getElementById('dPakBar').style.width = pakPct + '%';
-  document.getElementById('dIndPct').textContent = indPct + '% Attendance';
-  document.getElementById('dPakPct').textContent = pakPct + '% Attendance';
+  const indBar = document.getElementById('dIndBar');
+  const pakBar = document.getElementById('dPakBar');
+  if (indBar) indBar.style.width = indPct + '%';
+  if (pakBar) pakBar.style.width = pakPct + '%';
+  setText('dIndPct', indPct + '% Attendance');
+  setText('dPakPct', pakPct + '% Attendance');
 
   const b = document.getElementById('sBadge');
-  if (pend > 0) { b.textContent = pend; b.classList.add('show'); } 
-  else b.classList.remove('show');
+  if (b) {
+    if (pend > 0) { b.textContent = pend; b.classList.add('show'); } 
+    else b.classList.remove('show');
+  }
 }
 
 function loadApprovals() {
   const pend = gA().filter(a => ['pending_checkin','pending_checkout'].includes(a.status));
   const el = document.getElementById('approveList');
+  if (!el) return;
   if (!pend.length) {
-    el.innerHTML = '<div class="empty"><div class="em-icon">✅</div><h3>All Clear!</h3><p>No pending approvals right now</p></div>';
+    el.innerHTML = '<div class="empty"><div class="em-icon">✅</div><h3>All Clear!</h3><p>No pending approvals</p></div>';
     return;
   }
   el.innerHTML = pend.map(p => {
@@ -462,100 +597,83 @@ function loadApprovals() {
           <span class="tag tag-${p.sec === 'Indian' ? 'ind' : 'pak'}">${p.sec === 'Indian' ? '🇮🇳' : '🇵🇰'} ${p.sec}</span>
           <span class="tag ${isCheckin ? 'tag-g' : 'tag-r'}">${isCheckin ? '🔓 CHECK-IN' : '🔒 CHECK-OUT'}</span>
         </h4>
-        <p><b>Profession:</b> ${p.prof} • <b>ID:</b> <code>${p.wid}</code></p>
-        <p><b>${isCheckin ? 'Check-in' : 'Check-out'} requested at:</b> ${fmtTime(isCheckin ? p.checkinReqTime : p.checkoutReqTime)}</p>
+        <p><b>${p.prof}</b> • ID: <code>${p.wid}</code></p>
+        <p><b>Time:</b> ${fmtTime(isCheckin ? p.checkinReqTime : p.checkoutReqTime)}</p>
         ${!isCheckin && p.checkinTime ? `<p><b>Checked in at:</b> ${fmtTime(p.checkinTime)}</p>` : ''}
       </div>
       <div class="appr-btns">
-        <button class="btn btn-success btn-sm" onclick="doApprove(${p.id})">✅ Approve</button>
-        <button class="btn btn-danger btn-sm" onclick="doReject(${p.id})">❌ Reject</button>
+        <button class="btn btn-success btn-sm" onclick="doApprove('${p.id}')">✅ Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="doReject('${p.id}')">❌ Reject</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function doApprove(id) {
-  let att = gA();
-  const r = att.find(a => a.id === id);
+async function doApprove(id) {
+  const r = gA().find(a => a.id === id);
   if (!r) return;
+  const updated = { ...r };
   if (r.status === 'pending_checkin') {
-    r.checkinTime = r.checkinReqTime;
-    r.status = 'checked_in';
-    toast('✅ Check-in approved: ' + r.name);
+    updated.checkinTime = r.checkinReqTime;
+    updated.status = 'checked_in';
   } else if (r.status === 'pending_checkout') {
-    r.checkoutTime = r.checkoutReqTime;
-    const hrs = (new Date(r.checkoutTime) - new Date(r.checkinTime)) / 36e5;
-    r.total = Math.round(hrs * 100) / 100;
-    r.regular = Math.round(Math.min(hrs, REG_HOURS) * 100) / 100;
-    r.ot = Math.max(0, Math.round((hrs - REG_HOURS) * 100) / 100);
-    r.status = 'completed';
-    toast('✅ Check-out approved! Total: ' + r.total.toFixed(2) + 'h');
+    updated.checkoutTime = r.checkoutReqTime;
+    const hrs = (new Date(updated.checkoutTime) - new Date(updated.checkinTime)) / 36e5;
+    updated.total = Math.round(hrs * 100) / 100;
+    updated.regular = Math.round(Math.min(hrs, REG_HOURS) * 100) / 100;
+    updated.ot = Math.max(0, Math.round((hrs - REG_HOURS) * 100) / 100);
+    updated.status = 'completed';
   }
-  sA(att);
-  loadApprovals();
-  loadStats();
+  const success = await fbSave(COL.ATTENDANCE, id, updated);
+  if (success) toast('✅ Approved: ' + r.name);
 }
 
 function doReject(id) {
-  confirmDlg('Reject Request?', 'This request will be rejected. Continue?', () => {
-    let att = gA();
-    const r = att.find(a => a.id === id);
+  confirmDlg('Reject Request?', 'This will be rejected. Continue?', async () => {
+    const r = gA().find(a => a.id === id);
     if (r.status === 'pending_checkin') {
-      att = att.filter(a => a.id !== id);
+      await fbDelete(COL.ATTENDANCE, id);
     } else {
-      r.checkoutReqTime = null;
-      r.status = 'checked_in';
+      await fbSave(COL.ATTENDANCE, id, { ...r, checkoutReqTime: null, status: 'checked_in' });
     }
-    sA(att);
-    toast('Request rejected', 'info');
-    loadApprovals();
-    loadStats();
+    toast('Rejected', 'info');
   });
 }
 
 function approveAll() {
   const pend = gA().filter(a => ['pending_checkin','pending_checkout'].includes(a.status));
-  if (!pend.length) return toast('No pending approvals', 'info');
-  confirmDlg('Approve All?', `Approve all ${pend.length} pending requests at once?`, () => {
-    let att = gA();
-    att.forEach(r => {
+  if (!pend.length) return toast('No pending', 'info');
+  confirmDlg('Approve All?', `Approve all ${pend.length} requests?`, async () => {
+    for (const r of pend) {
+      const updated = { ...r };
       if (r.status === 'pending_checkin') {
-        r.checkinTime = r.checkinReqTime;
-        r.status = 'checked_in';
+        updated.checkinTime = r.checkinReqTime;
+        updated.status = 'checked_in';
       } else if (r.status === 'pending_checkout') {
-        r.checkoutTime = r.checkoutReqTime;
-        const hrs = (new Date(r.checkoutTime) - new Date(r.checkinTime)) / 36e5;
-        r.total = Math.round(hrs * 100) / 100;
-        r.regular = Math.round(Math.min(hrs, REG_HOURS) * 100) / 100;
-        r.ot = Math.max(0, Math.round((hrs - REG_HOURS) * 100) / 100);
-        r.status = 'completed';
+        updated.checkoutTime = r.checkoutReqTime;
+        const hrs = (new Date(updated.checkoutTime) - new Date(updated.checkinTime)) / 36e5;
+        updated.total = Math.round(hrs * 100) / 100;
+        updated.regular = Math.round(Math.min(hrs, REG_HOURS) * 100) / 100;
+        updated.ot = Math.max(0, Math.round((hrs - REG_HOURS) * 100) / 100);
+        updated.status = 'completed';
       }
-    });
-    sA(att);
-    toast('✅ All ' + pend.length + ' requests approved!');
-    loadApprovals();
-    loadStats();
+      await fbSave(COL.ATTENDANCE, r.id, updated);
+    }
+    toast('✅ All approved!');
   });
 }
 
-// Approve all pending for today
-function approveAllPendingToday() {
-  approveAll();
-}
-
-// ⭐ END DAY Function
 function loadEndDay() {
   const today = tDate();
   const working = gA().filter(a => a.date === today && (a.status === 'checked_in' || a.status === 'pending_checkout'));
-  
-  document.getElementById('edWorkingCount').textContent = working.length;
+  const cnt = document.getElementById('edWorkingCount');
+  if (cnt) cnt.textContent = working.length;
   const el = document.getElementById('edWorkingList');
-  
+  if (!el) return;
   if (!working.length) {
-    el.innerHTML = '<div class="empty"><div class="em-icon">✅</div><h3>All Clear!</h3><p>No workers pending checkout</p></div>';
+    el.innerHTML = '<div class="empty"><div class="em-icon">✅</div><h3>All Clear!</h3></div>';
     return;
   }
-  
   el.innerHTML = working.map(w => `
     <div class="ed-worker-item">
       <div class="ed-info">
@@ -570,78 +688,64 @@ function loadEndDay() {
 function endDayForAll() {
   const today = tDate();
   const working = gA().filter(a => a.date === today && (a.status === 'checked_in' || a.status === 'pending_checkout'));
-  
-  if (!working.length) return toast('No active workers to end day for', 'info');
-  
+  if (!working.length) return toast('No active workers', 'info');
   const timeInput = document.getElementById('edLogoutTime').value;
-  if (!timeInput) return toast('Please select logout time', 'err');
-  
-  confirmDlg('End Day for All?', `This will automatically check-out ${working.length} workers at ${timeInput}. Continue?`, () => {
-    const [hours, minutes] = timeInput.split(':');
-    let att = gA();
-    let count = 0;
-    
-    att.forEach(r => {
-      if (r.date === today && (r.status === 'checked_in' || r.status === 'pending_checkout')) {
-        // Create checkout time for today
-        const checkoutDate = new Date();
-        checkoutDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        r.checkoutTime = checkoutDate.toISOString();
-        r.checkoutReqTime = r.checkoutReqTime || r.checkoutTime;
-        
-        const hrs = (new Date(r.checkoutTime) - new Date(r.checkinTime)) / 36e5;
-        r.total = Math.round(hrs * 100) / 100;
-        r.regular = Math.round(Math.min(hrs, REG_HOURS) * 100) / 100;
-        r.ot = Math.max(0, Math.round((hrs - REG_HOURS) * 100) / 100);
-        r.status = 'completed';
-        count++;
-      }
-    });
-    
-    sA(att);
-    toast('✅ Day ended for ' + count + ' workers!');
-    loadEndDay();
-    loadStats();
+  if (!timeInput) return toast('Select logout time', 'err');
+  confirmDlg('End Day?', `Auto-checkout ${working.length} workers at ${timeInput}?`, async () => {
+    const [h, m] = timeInput.split(':');
+    for (const r of working) {
+      const cd = new Date();
+      cd.setHours(parseInt(h), parseInt(m), 0, 0);
+      const updated = { ...r };
+      updated.checkoutTime = cd.toISOString();
+      updated.checkoutReqTime = updated.checkoutReqTime || updated.checkoutTime;
+      const hrs = (new Date(updated.checkoutTime) - new Date(updated.checkinTime)) / 36e5;
+      updated.total = Math.round(hrs * 100) / 100;
+      updated.regular = Math.round(Math.min(hrs, REG_HOURS) * 100) / 100;
+      updated.ot = Math.max(0, Math.round((hrs - REG_HOURS) * 100) / 100);
+      updated.status = 'completed';
+      await fbSave(COL.ATTENDANCE, r.id, updated);
+    }
+    toast('✅ Day ended for ' + working.length + ' workers!');
   });
 }
+
+function approveAllPendingToday() { approveAll(); }
 
 function loadLive() {
   const today = tDate();
   const att = gA().filter(a => a.date === today);
   const working = att.filter(a => a.status === 'checked_in');
   const done = att.filter(a => a.status === 'completed');
-  
-  document.getElementById('liveCount').textContent = working.length;
-  document.getElementById('doneCount').textContent = done.length;
+  const lc = document.getElementById('liveCount');
+  const dc = document.getElementById('doneCount');
+  if (lc) lc.textContent = working.length;
+  if (dc) dc.textContent = done.length;
   
   const liveEl = document.getElementById('liveList');
-  if (!working.length) {
-    liveEl.innerHTML = '<div class="empty"><div class="em-icon">💤</div><h3>No one working now</h3></div>';
-  } else {
-    liveEl.innerHTML = working.map(w => `
+  if (liveEl) {
+    if (!working.length) liveEl.innerHTML = '<div class="empty"><div class="em-icon">💤</div><h3>No one working</h3></div>';
+    else liveEl.innerHTML = working.map(w => `
       <div class="live-item">
         <div class="li-info">
           <h4>${w.name} <span class="tag tag-${w.sec === 'Indian' ? 'ind' : 'pak'}">${w.sec === 'Indian' ? '🇮🇳' : '🇵🇰'}</span></h4>
           <p>${w.prof} • ${w.wid}</p>
         </div>
         <div class="li-time">🟢 ${fmtTime(w.checkinTime)}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
   
   const doneEl = document.getElementById('doneList');
-  if (!done.length) {
-    doneEl.innerHTML = '<div class="empty"><div class="em-icon">📋</div><h3>No completed yet</h3></div>';
-  } else {
-    doneEl.innerHTML = done.map(w => `
+  if (doneEl) {
+    if (!done.length) doneEl.innerHTML = '<div class="empty"><div class="em-icon">📋</div><h3>None completed</h3></div>';
+    else doneEl.innerHTML = done.map(w => `
       <div class="live-item">
         <div class="li-info">
           <h4>${w.name} <span class="tag tag-${w.sec === 'Indian' ? 'ind' : 'pak'}">${w.sec === 'Indian' ? '🇮🇳' : '🇵🇰'}</span></h4>
           <p>${w.prof} • ${w.total.toFixed(2)}h ${w.ot > 0 ? '(OT ' + w.ot.toFixed(2) + 'h)' : ''}</p>
         </div>
         <div class="li-time">✅ ${fmtTime(w.checkoutTime)}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 }
 
@@ -651,8 +755,9 @@ function loadAttend() {
   let att = gA().filter(a => a.date === date);
   if (sec) att = att.filter(a => a.sec === sec);
   const el = document.getElementById('attendTable');
+  if (!el) return;
   if (!att.length) {
-    el.innerHTML = '<div class="empty"><div class="em-icon">📋</div><h3>No Records</h3><p>No attendance found for this date</p></div>';
+    el.innerHTML = '<div class="empty"><div class="em-icon">📋</div><h3>No Records</h3></div>';
     return;
   }
   const stag = s => ({
@@ -661,7 +766,6 @@ function loadAttend() {
     pending_checkin: '<span class="tag tag-o">⏳ Check-in Pending</span>',
     pending_checkout: '<span class="tag tag-o">⏳ Check-out Pending</span>'
   }[s] || s);
-
   el.innerHTML = `<div class="t-wrap"><table>
     <thead><tr><th>#</th><th>ID</th><th>Name</th><th>Prof</th><th>Section</th><th>Check-in</th><th>Check-out</th><th>Total</th><th>Regular</th><th>OT</th><th>Status</th></tr></thead>
     <tbody>${att.map((a, i) => `<tr>
@@ -676,7 +780,7 @@ function loadAttend() {
     </tr>`).join('')}</tbody></table></div>`;
 }
 
-// ========== WORKERS ==========
+// ========== WORKERS MGT ==========
 let curTab = 'Indian';
 let editId = null;
 
@@ -688,12 +792,15 @@ function swWorkerTab(sec, btn) {
 }
 
 function loadWorkerTable() {
-  const q = (document.getElementById('wSearch').value || '').toLowerCase();
-  let ws = gW().filter(w => w.sec === curTab);
-  document.getElementById('indCount').textContent = '(' + gW().filter(w => w.sec === 'Indian' && w.on).length + ')';
-  document.getElementById('pakCount').textContent = '(' + gW().filter(w => w.sec === 'Pakistani' && w.on).length + ')';
-  if (q) ws = ws.filter(w => w.name.toLowerCase().includes(q) || w.id.toLowerCase().includes(q) || w.prof.toLowerCase().includes(q));
+  const q = (document.getElementById('wSearch')?.value || '').toLowerCase();
+  let ws = gW().filter(w => w.sec === curTab).sort((a,b) => a.wid.localeCompare(b.wid));
+  const ic = document.getElementById('indCount');
+  const pc = document.getElementById('pakCount');
+  if (ic) ic.textContent = '(' + gW().filter(w => w.sec === 'Indian' && w.on).length + ')';
+  if (pc) pc.textContent = '(' + gW().filter(w => w.sec === 'Pakistani' && w.on).length + ')';
+  if (q) ws = ws.filter(w => w.name.toLowerCase().includes(q) || w.wid.toLowerCase().includes(q) || w.prof.toLowerCase().includes(q));
   const el = document.getElementById('workerTable');
+  if (!el) return;
   if (!ws.length) {
     el.innerHTML = '<div class="empty"><div class="em-icon">👷</div><h3>No Workers</h3></div>';
     return;
@@ -702,25 +809,25 @@ function loadWorkerTable() {
     <thead><tr><th>#</th><th>ID</th><th>Name</th><th>Profession</th><th>Password</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>${ws.map((w, i) => `<tr style="${w.on ? '' : 'opacity:.5'}">
       <td>${i + 1}</td>
-      <td><code>${w.id}</code></td>
+      <td><code>${w.wid}</code></td>
       <td><b>${w.name}</b></td>
       <td>${w.prof}</td>
       <td>
-        <code id="p-${w.id}" style="letter-spacing:2px">••••••••</code>
-        <button class="btn btn-outline btn-sm" onclick="showPw('${w.id}')" style="padding:3px 8px;margin-left:4px">👁</button>
+        <code id="p-${w.wid}" style="letter-spacing:2px">••••••••</code>
+        <button class="btn btn-outline btn-sm" onclick="showPw('${w.wid}')" style="padding:3px 8px;margin-left:4px">👁</button>
       </td>
       <td>${w.on ? '<span class="tag tag-g">Active</span>' : '<span class="tag tag-r">Inactive</span>'}</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-outline btn-sm" onclick="editW('${w.id}')" title="Edit">✏️</button>
-        <button class="btn btn-outline btn-sm" onclick="resetPw('${w.id}')" title="Reset">🔑</button>
-        <button class="btn btn-${w.on ? 'danger' : 'success'} btn-sm" onclick="toggleW('${w.id}')">${w.on ? '🚫' : '✅'}</button>
-        <button class="btn btn-danger btn-sm" onclick="delW('${w.id}')" title="Delete">🗑️</button>
+        <button class="btn btn-outline btn-sm" onclick="editW('${w.wid}')">✏️</button>
+        <button class="btn btn-outline btn-sm" onclick="resetPw('${w.wid}')">🔑</button>
+        <button class="btn btn-${w.on ? 'danger' : 'success'} btn-sm" onclick="toggleW('${w.wid}')">${w.on ? '🚫' : '✅'}</button>
+        <button class="btn btn-danger btn-sm" onclick="delW('${w.wid}')">🗑️</button>
       </td>
     </tr>`).join('')}</tbody></table></div>`;
 }
 
 function showPw(id) {
-  const w = gW().find(x => x.id === id);
+  const w = gW().find(x => x.wid === id);
   const el = document.getElementById('p-' + id);
   if (el.textContent === '••••••••') { 
     el.textContent = w.pw; 
@@ -729,20 +836,13 @@ function showPw(id) {
 }
 
 function resetPw(id) {
-  confirmDlg('Reset Password?', 'Reset password to default: ' + DEFAULT_PW, () => {
-    const ws = gW(); 
-    const w = ws.find(x => x.id === id);
-    w.pw = DEFAULT_PW; 
-    sW(ws);
+  confirmDlg('Reset Password?', 'Reset to default: ' + DEFAULT_PW, async () => {
+    const w = gW().find(x => x.wid === id);
+    await fbSave(COL.WORKERS, id, { ...w, pw: DEFAULT_PW });
     document.getElementById('mPwBody').innerHTML = `
-      <div class="pw-show">
-        <div class="pw-lbl">Password Reset Complete</div>
-        <div class="pw-name">${w.name} (${w.id})</div>
-        <div class="pw-val">${DEFAULT_PW}</div>
-      </div>
-      <div class="pw-warn">⚠️ Please inform the worker about their new password.</div>`;
+      <div class="pw-show"><div class="pw-lbl">Password Reset</div><div class="pw-name">${w.name} (${w.wid})</div><div class="pw-val">${DEFAULT_PW}</div></div>
+      <div class="pw-warn">⚠️ Inform the worker about their new password.</div>`;
     openModal('mPw');
-    loadWorkerTable();
   });
 }
 
@@ -757,7 +857,7 @@ function openAddWorker() {
 }
 
 function editW(id) {
-  const w = gW().find(x => x.id === id);
+  const w = gW().find(x => x.wid === id);
   editId = id;
   document.getElementById('mwTitle').textContent = '✏️ Edit Worker (' + id + ')';
   document.getElementById('mwName').value = w.name;
@@ -767,66 +867,58 @@ function editW(id) {
   openModal('mWorker');
 }
 
-function saveWorkerForm(e) {
+async function saveWorkerForm(e) {
   e.preventDefault();
   const name = document.getElementById('mwName').value.trim();
   const prof = document.getElementById('mwProf').value;
   const sec = document.getElementById('mwSec').value;
   const pw = document.getElementById('mwPw').value.trim();
   if (!name || !prof || !pw) return toast('Fill all fields', 'err');
-  const ws = gW();
   if (editId) {
-    const w = ws.find(x => x.id === editId);
-    w.name = name; w.prof = prof; w.sec = sec; w.pw = pw;
-    toast('✅ Worker updated!');
+    const w = gW().find(x => x.wid === editId);
+    await fbSave(COL.WORKERS, editId, { ...w, name, prof, sec, pw });
+    toast('✅ Updated!');
   } else {
     const pre = sec === 'Indian' ? 'IND' : 'PAK';
-    const nums = ws.filter(w => w.id.startsWith(pre)).map(w => parseInt(w.id.replace(pre, ''))).filter(n => !isNaN(n));
+    const nums = gW().filter(w => w.wid.startsWith(pre)).map(w => parseInt(w.wid.replace(pre, ''))).filter(n => !isNaN(n));
     const next = nums.length ? Math.max(...nums) + 1 : 1;
-    const id = pre + String(next).padStart(4, '0');
-    ws.push({ id, name, prof, sec, pw, on: true });
+    const wid = pre + String(next).padStart(4, '0');
+    await fbSave(COL.WORKERS, wid, { wid, name, prof, sec, pw, on: true, createdAt: new Date().toISOString() });
     document.getElementById('mPwBody').innerHTML = `
-      <div class="pw-show">
-        <div class="pw-lbl">✅ Worker Added Successfully</div>
-        <div class="pw-name">${name} (${id})</div>
-        <div class="pw-val">${pw}</div>
-      </div>
-      <div class="pw-warn">⚠️ Save & share these credentials with the worker!</div>`;
+      <div class="pw-show"><div class="pw-lbl">✅ Added</div><div class="pw-name">${name} (${wid})</div><div class="pw-val">${pw}</div></div>
+      <div class="pw-warn">⚠️ Save & share credentials!</div>`;
     openModal('mPw');
-    toast('✅ Added: ' + id);
+    toast('✅ Added: ' + wid);
   }
-  sW(ws); closeModal('mWorker'); loadWorkerTable(); fillDropdown(); loadStats();
+  closeModal('mWorker');
   return false;
 }
 
-function toggleW(id) {
-  const ws = gW(); 
-  const w = ws.find(x => x.id === id);
-  w.on = !w.on; 
-  sW(ws);
-  toast(w.on ? 'Activated' : 'Deactivated', 'info');
-  loadWorkerTable(); fillDropdown(); loadStats();
+async function toggleW(id) {
+  const w = gW().find(x => x.wid === id);
+  await fbSave(COL.WORKERS, id, { ...w, on: !w.on });
+  toast(w.on ? 'Deactivated' : 'Activated', 'info');
 }
 
 function delW(id) {
-  const w = gW().find(x => x.id === id);
-  confirmDlg('Delete Worker?', `Permanently delete ${w.name}? All their attendance data will be deleted too.`, () => {
-    sW(gW().filter(x => x.id !== id));
-    sA(gA().filter(a => a.wid !== id));
-    toast('Worker deleted', 'info');
-    loadWorkerTable(); fillDropdown(); loadStats();
+  const w = gW().find(x => x.wid === id);
+  confirmDlg('Delete?', `Delete ${w.name} and all attendance data?`, async () => {
+    await fbDelete(COL.WORKERS, id);
+    const theirAtt = gA().filter(a => a.wid === id);
+    for (const a of theirAtt) await fbDelete(COL.ATTENDANCE, a.id);
+    toast('Deleted', 'info');
   });
 }
 
 // ========== SETTINGS ==========
-function updateAdmin() {
+async function updateAdmin() {
   const nid = document.getElementById('setNewId').value.trim();
   const npw = document.getElementById('setNewPw').value;
   const cpw = document.getElementById('setConfPw').value;
   if (!nid || !npw) return toast('Fill all fields', 'err');
   if (npw !== cpw) return toast('Passwords don\'t match', 'err');
-  if (npw.length < 6) return toast('Minimum 6 characters required', 'err');
-  const ad = gAD(); ad.id = nid; ad.pw = npw; sAD(ad);
+  if (npw.length < 6) return toast('Min 6 characters', 'err');
+  await fbSave(COL.ADMIN, 'main', { adminId: nid, pw: npw, name: 'Administrator' });
   const u = gU(); u.id = nid; u.pw = npw; sU(u);
   document.getElementById('setCurId').value = nid;
   document.getElementById('setNewId').value = '';
@@ -836,7 +928,7 @@ function updateAdmin() {
 }
 
 function backupAll() {
-  const d = { workers: gW(), attendance: gA(), admin: gAD(), date: new Date().toISOString(), v: '6.0' };
+  const d = { workers: gW(), attendance: gA(), admin: gAD(), date: new Date().toISOString(), v: '7.0-firebase' };
   const b = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
   const l = document.createElement('a');
   l.href = URL.createObjectURL(b); 
@@ -845,39 +937,19 @@ function backupAll() {
   toast('✅ Backup downloaded!');
 }
 
-function restoreAll(e) {
-  const f = e.target.files[0]; 
-  if (!f) return;
-  confirmDlg('Restore Backup?', 'This will replace ALL current data. Continue?', () => {
-    const r = new FileReader();
-    r.onload = ev => {
-      try {
-        const d = JSON.parse(ev.target.result);
-        if (d.workers) sW(d.workers);
-        if (d.attendance) sA(d.attendance);
-        if (d.admin) sAD(d.admin);
-        toast('✅ Restored! Reloading...');
-        setTimeout(() => { cU(); location.reload(); }, 1500);
-      } catch { toast('Invalid backup file', 'err'); }
-    };
-    r.readAsText(f);
-  });
-}
-
 function resetAllPasswords() {
-  confirmDlg('Reset All Passwords?', 'Reset all worker passwords to: ' + DEFAULT_PW, () => {
-    const ws = gW();
-    ws.forEach(w => w.pw = DEFAULT_PW);
-    sW(ws);
-    toast('✅ All passwords reset to: ' + DEFAULT_PW);
+  confirmDlg('Reset All Passwords?', 'Reset all to: ' + DEFAULT_PW, async () => {
+    for (const w of gW()) {
+      await fbSave(COL.WORKERS, w.wid, { ...w, pw: DEFAULT_PW });
+    }
+    toast('✅ All passwords reset!');
   });
 }
 
 function clearAttendanceData() {
-  confirmDlg('Clear All Attendance?', 'This will delete ALL attendance records permanently. Are you sure?', () => {
-    sA([]); 
-    toast('Cleared', 'info'); 
-    loadStats();
+  confirmDlg('Clear All Attendance?', 'Delete ALL attendance permanently?', async () => {
+    for (const a of gA()) await fbDelete(COL.ATTENDANCE, a.id);
+    toast('Cleared', 'info');
   });
 }
 
@@ -907,9 +979,7 @@ function exportExcel() {
   let data = gA().filter(a => a.date >= s && a.date <= e);
   if (sec) data = data.filter(a => a.sec === sec);
   if (!data.length) return toast('No data', 'err');
-
-  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-  <head><meta charset="UTF-8"><style>
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"><head><meta charset="UTF-8"><style>
     table{border-collapse:collapse;font-family:Arial}
     .t{background:#1e40af;color:#fff;font-size:22px;font-weight:bold;text-align:center;padding:16px}
     .s{background:#3b82f6;color:#fff;text-align:center;padding:10px;font-size:12px}
@@ -919,8 +989,8 @@ function exportExcel() {
     .e{background:#f0f9ff}.f{background:#1e40af;color:#fff;text-align:center;padding:10px;font-size:11px}
   </style></head><body><table border="1">
     <tr><td colspan="11" class="t">ALBOWRY CARPENTRY - ATTENDANCE REPORT</td></tr>
-    <tr><td colspan="11" class="s">Antalya, Turkey | Europe/Istanbul (UTC+3) | www.albowry.com | Regular: ${REG_HOURS}h/day</td></tr>
-    <tr><td colspan="11" class="p">Period: ${s} to ${e} ${sec ? '| Section: ' + sec : '| All Sections'}</td></tr>
+    <tr><td colspan="11" class="s">Antalya, Turkey | www.albowry.com | Regular: ${REG_HOURS}h/day</td></tr>
+    <tr><td colspan="11" class="p">Period: ${s} to ${e} ${sec ? '| ' + sec : '| All'}</td></tr>
     <tr><td colspan="11"></td></tr>
     <tr><th>S.No</th><th>ID</th><th>Name</th><th>Profession</th><th>Section</th><th>Date</th><th>Check-in</th><th>Check-out</th><th>Total</th><th>Regular</th><th>OT</th></tr>
     ${data.map((a, i) => `<tr class="${i % 2 === 0 ? 'e' : ''}">
@@ -935,13 +1005,12 @@ function exportExcel() {
       <td style="background:#dbeafe"><b>${data.reduce((s, a) => s + (a.ot || 0), 0).toFixed(2)}</b></td>
     </tr>
     <tr><td colspan="11"></td></tr>
-    <tr><td colspan="11" class="f">© ${CURRENT_YEAR} Albowry Carpentry | Generated: ${new Date().toLocaleString()} | www.albowry.com</td></tr>
+    <tr><td colspan="11" class="f">© ${CURRENT_YEAR} Albowry Carpentry | www.albowry.com</td></tr>
   </table></body></html>`;
-
   const b = new Blob([html], { type: 'application/vnd.ms-excel' });
   const l = document.createElement('a');
   l.href = URL.createObjectURL(b); 
-  l.download = `Albowry_Attendance_${s}_to_${e}.xls`; 
+  l.download = `Albowry_${s}_to_${e}.xls`; 
   l.click();
   toast('✅ Excel downloaded!');
 }
@@ -954,13 +1023,11 @@ function exportCSV() {
   let data = gA().filter(a => a.date >= s && a.date <= e);
   if (sec) data = data.filter(a => a.sec === sec);
   if (!data.length) return toast('No data', 'err');
-
-  let csv = 'ALBOWRY CARPENTRY ATTENDANCE\nPeriod: ' + s + ' to ' + e + '\n\n';
+  let csv = 'ALBOWRY CARPENTRY\nPeriod: ' + s + ' to ' + e + '\n\n';
   csv += 'S.No,ID,Name,Profession,Section,Date,Check-in,Check-out,Total,Regular,OT,Status\n';
-  csv += data.map((a, i) => [i + 1, a.wid, `"${a.name}"`, a.prof, a.sec, a.date,
+  csv += data.map((a, i) => [i+1, a.wid, `"${a.name}"`, a.prof, a.sec, a.date,
     fmtTime(a.checkinTime), fmtTime(a.checkoutTime),
     (a.total || 0).toFixed(2), (a.regular || 0).toFixed(2), (a.ot || 0).toFixed(2), a.status].join(',')).join('\n');
-
   const b = new Blob([csv], { type: 'text/csv' });
   const l = document.createElement('a');
   l.href = URL.createObjectURL(b); 
@@ -986,7 +1053,7 @@ function installApp() {
       document.getElementById('installBanner').classList.remove('show');
     });
   } else {
-    toast('Use browser menu → "Add to Home Screen"', 'info');
+    toast('Use browser menu → Add to Home Screen', 'info');
   }
 }
 
@@ -1003,33 +1070,23 @@ function updateClocks() {
   });
 }
 
-// ========== SERVICE WORKER ==========
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
 // ========== BOOT ==========
-window.addEventListener('DOMContentLoaded', () => {
-  initDB();
+async function boot() {
+  console.log('🚀 Booting Albowry Attendance...');
+  await initDB();
   fillDropdown();
   updateClocks();
   setInterval(updateClocks, 1000);
-  setInterval(() => {
-    const u = gU();
-    if (u && u.role === 'worker') updWorkerStatus();
-    if (u && u.role === 'admin') {
-      loadStats();
-      const activeSec = document.querySelector('.sec.active');
-      if (activeSec) {
-        if (activeSec.id === 'sec-approve') loadApprovals();
-        if (activeSec.id === 'sec-live') loadLive();
-        if (activeSec.id === 'sec-endday') loadEndDay();
-      }
-    }
-  }, 5000);
   const u = gU();
   if (u) {
     if (u.role === 'worker') loadWorkerDash();
     else if (u.role === 'admin') loadAdminDash();
   }
-});
+}
+
+// Wait for Firebase to be ready
+if (window.fbReady) {
+  boot();
+} else {
+  window.addEventListener('firebase-ready', boot);
+}
