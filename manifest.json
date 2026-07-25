@@ -1,7 +1,7 @@
 {
   "name": "Albowry Carpentry - Attendance",
   "short_name": "Albowry",
-  "description": "Attendance Management System for Albowry Carpentry",
+  "description": "Attendance Management System",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1e40af",
