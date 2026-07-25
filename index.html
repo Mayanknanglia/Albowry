@@ -3,56 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Albowry Carpentry | Attendance System</title>
-  
+  <title>Albowry Carpentry | Attendance</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1e40af">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Albowry">
-  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
-  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Install Banner -->
-<div id="installBanner" class="install-banner">
-  <div class="ib-info">
-    <div class="ib-icon">📱</div>
-    <div>
-      <strong>Install Albowry App</strong>
-      <p>Quick access from your home screen</p>
-    </div>
-  </div>
-  <div class="ib-actions">
-    <button class="btn btn-primary btn-sm" onclick="installApp()">Install</button>
-    <button class="btn btn-ghost btn-sm" onclick="dismissInstall()">Later</button>
-  </div>
-</div>
-
 <!-- Loading Screen -->
-<div id="loadingScreen" style="position:fixed;inset:0;background:linear-gradient(135deg,#1e3a8a,#3b82f6);display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;color:white">
-  <div style="width:80px;height:80px;background:white;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;color:#1e40af;margin-bottom:20px;box-shadow:0 20px 50px rgba(0,0,0,.3)">A</div>
-  <h2 style="font-size:24px;letter-spacing:3px;margin-bottom:8px">ALBOWRY</h2>
-  <p style="opacity:.8;font-size:13px;letter-spacing:5px;margin-bottom:20px">CARPENTRY</p>
-  <div style="width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite"></div>
-  <p style="margin-top:20px;opacity:.8;font-size:13px">🔥 Connecting to Firebase...</p>
+<div id="loadingScreen" class="loading-screen">
+  <div class="ls-content">
+    <div class="ls-logo">A</div>
+    <h2>ALBOWRY CARPENTRY</h2>
+    <p>Connecting to cloud...</p>
+    <div class="ls-spinner"></div>
+  </div>
 </div>
 
-<style>
-@keyframes spin { to { transform: rotate(360deg); } }
-</style>
-
-<!-- ================= LOGIN PAGE ================= -->
+<!-- ====== LOGIN ====== -->
 <div id="loginPage" class="page active">
   <div class="login-wrap">
     <div class="login-brand">
       <div class="bg-shape shape-1"></div>
       <div class="bg-shape shape-2"></div>
-      <div class="bg-shape shape-3"></div>
-      
       <div class="brand-inner">
         <div class="brand-logo">
           <img src="logo.png" alt="Albowry" onerror="this.outerHTML='<div class=brand-logo-fb>A</div>'">
@@ -62,618 +41,284 @@
         <div class="brand-line"></div>
         <p class="brand-desc">Premium woodworking and carpentry solutions with excellence in craftsmanship.</p>
         <div class="brand-badges">
-          <div class="bb">
-            <span class="bb-icon">🏆</span>
-            <div><strong>Premium Quality</strong><small>Excellence Guaranteed</small></div>
-          </div>
-          <div class="bb">
-            <span class="bb-icon">🔧</span>
-            <div><strong>Expert Team</strong><small>Skilled Craftsmen</small></div>
-          </div>
-          <div class="bb">
-            <span class="bb-icon">⭐</span>
-            <div><strong>Trusted Service</strong><small>Client Satisfaction</small></div>
-          </div>
+          <div class="bb"><span class="bb-icon">🏆</span><div><strong>Premium Quality</strong><small>Excellence Guaranteed</small></div></div>
+          <div class="bb"><span class="bb-icon">🔧</span><div><strong>Expert Team</strong><small>Skilled Craftsmen</small></div></div>
+          <div class="bb"><span class="bb-icon">⭐</span><div><strong>Trusted Service</strong><small>Client Satisfaction</small></div></div>
         </div>
-        <div class="brand-foot">
-          <div class="bf-item">📍 Antalya, Turkey</div>
-          <div class="bf-item">🌐 www.albowry.com</div>
-        </div>
+        <div class="brand-foot"><div>📍 Antalya, Turkey</div><div>🌐 www.albowry.com</div></div>
       </div>
     </div>
-
     <div class="login-side">
       <div class="login-card">
         <div class="login-hdr">
           <h2>Welcome Back <span class="wave">👋</span></h2>
           <p>Sign in to Attendance System</p>
-          <div class="live-time">
-            <span class="lt-dot"></span>
-            <span id="loginClock">--:--:--</span>
-            <small>TURKEY TIME</small>
-          </div>
+          <div class="live-time"><span class="lt-dot"></span><span id="loginClock">--:--:--</span><small>TURKEY</small></div>
         </div>
-
         <div class="ltabs">
-          <button class="ltab active" onclick="switchLogin('worker',this)">
-            <span>👤</span> Worker
-          </button>
-          <button class="ltab" onclick="switchLogin('admin',this)">
-            <span>🛡️</span> Admin
-          </button>
+          <button class="ltab active" onclick="switchLogin('worker',this)"><span>👤</span> Worker</button>
+          <button class="ltab" onclick="switchLogin('admin',this)"><span>🛡️</span> Admin</button>
         </div>
-
         <form id="workerLoginForm" class="lform active" onsubmit="return workerLogin(event)">
-          <div class="field">
-            <label>Select Your Name</label>
-            <select id="workerSelect" required>
-              <option value="">— Choose your name —</option>
-            </select>
+          <div class="field"><label>Select Your Name</label>
+            <select id="workerSelect" required><option value="">— Choose —</option></select>
           </div>
-          <div class="field">
-            <label>Password</label>
-            <div class="pw-box">
-              <input type="password" id="workerPw" placeholder="Enter password" required>
-              <button type="button" class="pw-eye" onclick="togglePw('workerPw',this)">👁</button>
-            </div>
+          <div class="field"><label>Password</label>
+            <div class="pw-box"><input type="password" id="workerPw" placeholder="Enter password" required>
+            <button type="button" class="pw-eye" onclick="togglePw('workerPw',this)">👁</button></div>
           </div>
-          <button type="submit" class="btn btn-primary btn-block btn-lg">
-            <span>🔐</span> Sign In
-          </button>
-          <div class="login-hint">
-            <span class="hint-icon">💡</span>
-            <div><strong>Need help?</strong> Contact your admin for password</div>
-          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg">🔐 Sign In</button>
+          <div class="login-hint"><span class="hint-icon">💡</span><div><strong>Need help?</strong> Contact admin for password</div></div>
         </form>
-
         <form id="adminLoginForm" class="lform" onsubmit="return adminLogin(event)">
-          <div class="field">
-            <label>Admin ID</label>
-            <input type="text" id="adminId" placeholder="Enter your Admin ID" required autocomplete="off">
+          <div class="field"><label>Admin ID</label><input type="text" id="adminId" placeholder="Admin ID" required></div>
+          <div class="field"><label>Password</label>
+            <div class="pw-box"><input type="password" id="adminPw" placeholder="Password" required>
+            <button type="button" class="pw-eye" onclick="togglePw('adminPw',this)">👁</button></div>
           </div>
-          <div class="field">
-            <label>Password</label>
-            <div class="pw-box">
-              <input type="password" id="adminPw" placeholder="Enter admin password" required>
-              <button type="button" class="pw-eye" onclick="togglePw('adminPw',this)">👁</button>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block btn-lg">
-            <span>🔓</span> Admin Sign In
-          </button>
-          <div class="login-hint admin-hint">
-            <span class="hint-icon">🔒</span>
-            <div><strong>Restricted Access</strong> — Authorized personnel only</div>
-          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg">🔓 Admin Sign In</button>
+          <div class="login-hint admin-hint"><span class="hint-icon">🔒</span><div><strong>Restricted Access</strong></div></div>
         </form>
-
         <div id="loginErr" class="err-box"></div>
-
-        <div class="login-foot">
-          <p>© 2026 Albowry Carpentry • All rights reserved</p>
-          <p style="margin-top:6px;font-size:10px;color:#94a3b8">🔥 Powered by Firebase</p>
-        </div>
+        <div class="login-foot">© 2026 Albowry Carpentry • 🔥 Cloud Sync</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ================= WORKER DASHBOARD ================= -->
+<!-- ====== WORKER ====== -->
 <div id="workerPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
-      <div class="tb-logo">
-        <img src="logo.png" alt="" onerror="this.outerHTML='<div class=tb-logo-fb>A</div>'">
-      </div>
-      <div class="tb-brand">
-        <h2>ALBOWRY CARPENTRY</h2>
-        <p>Attendance Portal</p>
-      </div>
+      <div class="tb-logo"><img src="logo.png" alt="" onerror="this.outerHTML='<div class=tb-logo-fb>A</div>'"></div>
+      <div class="tb-brand"><h2>ALBOWRY CARPENTRY</h2><p>Attendance Portal</p></div>
     </div>
     <div class="tb-right">
-      <div class="tb-clock-box">
-        <div class="tb-clock-lbl">TURKEY TIME</div>
-        <div class="tb-clock" id="wClock">--:--:--</div>
-      </div>
-      <div class="tb-user">
-        <div class="avatar" id="wAvatar">A</div>
-        <div class="tb-user-info">
-          <div class="u-name" id="wNavName">Worker</div>
-          <div class="u-role">Employee</div>
-        </div>
-      </div>
-      <button class="btn btn-logout" onclick="logout()">
-        <span>🚪</span> Logout
-      </button>
+      <div class="tb-clock-box"><div class="tb-clock-lbl">TURKEY TIME</div><div class="tb-clock" id="wClock">--:--:--</div></div>
+      <div class="tb-user"><div class="avatar" id="wAvatar">A</div><div class="tb-user-info"><div class="u-name" id="wNavName">Worker</div><div class="u-role">Employee</div></div></div>
+      <button class="btn btn-logout" onclick="logout()">🚪 Logout</button>
     </div>
   </nav>
-
   <div class="w-container">
     <div class="w-hero">
       <div class="w-hero-bg"></div>
       <div class="w-hero-content">
-        <div class="w-hero-info">
-          <p class="w-greet" id="wGreet">Good Morning</p>
-          <h2 class="w-name" id="wName">Worker Name</h2>
-          <p class="w-info" id="wInfo">Profession | Section</p>
-        </div>
+        <div class="w-hero-info"><p class="w-greet" id="wGreet">Good Morning</p><h2 class="w-name" id="wName">Worker</h2><p class="w-info" id="wInfo">Info</p></div>
         <div class="w-date-badge" id="wDate">Date</div>
       </div>
       <div class="w-clock-display">
-        <div class="wcd-label">
-          <span class="live-dot"></span> Current Time • Antalya, Turkey
-        </div>
+        <div class="wcd-label"><span class="live-dot"></span> Current Time • Antalya, Turkey</div>
         <div class="wcd-time" id="wBigClock">--:--:--</div>
       </div>
     </div>
-
     <div class="w-action-card">
-      <div class="wac-header">
-        <h3>🕐 Mark Your Attendance</h3>
-        <p>Request check-in or check-out (requires admin approval)</p>
-      </div>
-      
+      <div class="wac-header"><h3>🕐 Mark Your Attendance</h3><p>Requires admin approval</p></div>
       <div class="wac-buttons">
         <button class="wac-btn checkin-btn" id="btnCheckin" onclick="doCheckIn()">
-          <div class="wac-btn-icon">🔓</div>
-          <div class="wac-btn-text">
-            <strong>CHECK IN</strong>
-            <small>Start Work Day</small>
-          </div>
+          <div class="wac-btn-icon">🔓</div><div class="wac-btn-text"><strong>CHECK IN</strong><small>Start Work</small></div>
         </button>
-        
         <button class="wac-btn checkout-btn" id="btnCheckout" onclick="doCheckOut()">
-          <div class="wac-btn-icon">🔒</div>
-          <div class="wac-btn-text">
-            <strong>CHECK OUT</strong>
-            <small>End Work Day</small>
-          </div>
+          <div class="wac-btn-icon">🔒</div><div class="wac-btn-text"><strong>CHECK OUT</strong><small>End Work</small></div>
         </button>
       </div>
-
       <div class="wac-status" id="wacStatus"></div>
     </div>
-
-    <div class="w-status-card" id="wStatus">
+    <div class="w-status-card">
       <div class="wsc-header">
-        <div class="wsc-icon-wrap">
-          <div class="wsc-icon" id="wsIcon">📋</div>
-        </div>
-        <div class="wsc-text">
-          <h3 id="wsText">Today's Status</h3>
-          <p id="wsSub">Your work day details</p>
-        </div>
+        <div class="wsc-icon-wrap"><div class="wsc-icon" id="wsIcon">📋</div></div>
+        <div class="wsc-text"><h3 id="wsText">Today's Status</h3><p id="wsSub">Details</p></div>
       </div>
       <div id="wsTimes" class="wsc-times"></div>
     </div>
-
     <div class="w-quick-stats">
-      <div class="wqs-card">
-        <div class="wqs-icon">📅</div>
-        <div class="wqs-info">
-          <div class="wqs-val" id="wTotalDays">0</div>
-          <div class="wqs-lbl">Total Days</div>
-        </div>
-      </div>
-      <div class="wqs-card">
-        <div class="wqs-icon">⏱️</div>
-        <div class="wqs-info">
-          <div class="wqs-val" id="wTotalHrs">0h</div>
-          <div class="wqs-lbl">Total Hours</div>
-        </div>
-      </div>
-      <div class="wqs-card">
-        <div class="wqs-icon">🎯</div>
-        <div class="wqs-info">
-          <div class="wqs-val" id="wTotalOT">0h</div>
-          <div class="wqs-lbl">Overtime</div>
-        </div>
-      </div>
+      <div class="wqs-card"><div class="wqs-icon">📅</div><div class="wqs-info"><div class="wqs-val" id="wTotalDays">0</div><div class="wqs-lbl">Days</div></div></div>
+      <div class="wqs-card"><div class="wqs-icon">⏱️</div><div class="wqs-info"><div class="wqs-val" id="wTotalHrs">0h</div><div class="wqs-lbl">Hours</div></div></div>
+      <div class="wqs-card"><div class="wqs-icon">🎯</div><div class="wqs-info"><div class="wqs-val" id="wTotalOT">0h</div><div class="wqs-lbl">Overtime</div></div></div>
     </div>
-
-    <div class="w-card">
-      <div class="wc-title">
-        <h3>📅 Attendance History</h3>
-        <span class="count-pill" id="wHistCount">0 records</span>
-      </div>
-      <div id="wHistory"></div>
-    </div>
-
+    <div class="w-card"><div class="wc-title"><h3>📅 History</h3><span class="count-pill" id="wHistCount">0</span></div><div id="wHistory"></div></div>
     <div class="w-card">
       <div class="wc-title"><h3>🔒 Change Password</h3></div>
       <form onsubmit="return changeWorkerPw(event)">
         <div class="field-row">
-          <div class="field"><label>Current Password</label><input type="password" id="cwOld" required></div>
-          <div class="field"><label>New Password</label><input type="password" id="cwNew" required minlength="4"></div>
-          <div class="field"><label>Confirm New</label><input type="password" id="cwConf" required></div>
+          <div class="field"><label>Current</label><input type="password" id="cwOld" required></div>
+          <div class="field"><label>New</label><input type="password" id="cwNew" required minlength="4"></div>
+          <div class="field"><label>Confirm</label><input type="password" id="cwConf" required></div>
         </div>
-        <button type="submit" class="btn btn-primary">🔐 Update Password</button>
+        <button type="submit" class="btn btn-primary">🔐 Update</button>
       </form>
     </div>
   </div>
 </div>
 
-<!-- ================= ADMIN DASHBOARD ================= -->
+<!-- ====== ADMIN ====== -->
 <div id="adminPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
-      <div class="tb-logo">
-        <img src="logo.png" alt="" onerror="this.outerHTML='<div class=tb-logo-fb>A</div>'">
-      </div>
-      <div class="tb-brand">
-        <h2>ALBOWRY CARPENTRY</h2>
-        <p>Admin Control Panel</p>
-      </div>
+      <div class="tb-logo"><img src="logo.png" alt="" onerror="this.outerHTML='<div class=tb-logo-fb>A</div>'"></div>
+      <div class="tb-brand"><h2>ALBOWRY CARPENTRY</h2><p>Admin Panel</p></div>
     </div>
     <div class="tb-right">
-      <div class="tb-clock-box">
-        <div class="tb-clock-lbl">TURKEY TIME</div>
-        <div class="tb-clock" id="aClock">--:--:--</div>
-      </div>
-      <div class="tb-user">
-        <div class="avatar admin-av">🛡️</div>
-        <div class="tb-user-info">
-          <div class="u-name" id="aNavName">Admin</div>
-          <div class="u-role">Administrator</div>
-        </div>
-      </div>
-      <button class="btn btn-logout" onclick="logout()">
-        <span>🚪</span> Logout
-      </button>
+      <div class="tb-clock-box"><div class="tb-clock-lbl">TURKEY TIME</div><div class="tb-clock" id="aClock">--:--:--</div></div>
+      <div class="tb-user"><div class="avatar admin-av">🛡️</div><div class="tb-user-info"><div class="u-name" id="aNavName">Admin</div><div class="u-role">Administrator</div></div></div>
+      <button class="btn btn-logout" onclick="logout()">🚪 Logout</button>
     </div>
   </nav>
-
   <div class="a-layout">
     <aside class="side">
-      <div class="side-lbl">MAIN MENU</div>
-      <button class="side-btn active" data-sec="dash" onclick="goSection('dash',this)">
-        <span>🏠</span> Dashboard
-      </button>
-      <button class="side-btn" data-sec="approve" onclick="goSection('approve',this)">
-        <span>✅</span> Approvals <b id="sBadge" class="s-badge"></b>
-      </button>
-      <button class="side-btn" data-sec="live" onclick="goSection('live',this)">
-        <span>🔴</span> Live Status
-      </button>
-      <button class="side-btn" data-sec="attend" onclick="goSection('attend',this)">
-        <span>📅</span> Attendance
-      </button>
-      
-      <div class="side-lbl">MANAGEMENT</div>
-      <button class="side-btn" data-sec="workers" onclick="goSection('workers',this)">
-        <span>👥</span> Workers
-      </button>
-      <button class="side-btn" data-sec="endday" onclick="goSection('endday',this)">
-        <span>🏁</span> End Day
-      </button>
-      <button class="side-btn" data-sec="export" onclick="goSection('export',this)">
-        <span>📥</span> Export
-      </button>
-      
+      <div class="side-lbl">MAIN</div>
+      <button class="side-btn active" data-sec="dash" onclick="goSection('dash',this)"><span>🏠</span> Dashboard</button>
+      <button class="side-btn" data-sec="approve" onclick="goSection('approve',this)"><span>✅</span> Approvals <b id="sBadge" class="s-badge"></b></button>
+      <button class="side-btn" data-sec="live" onclick="goSection('live',this)"><span>🔴</span> Live Status</button>
+      <button class="side-btn" data-sec="attend" onclick="goSection('attend',this)"><span>📅</span> Attendance</button>
+      <div class="side-lbl">MANAGE</div>
+      <button class="side-btn" data-sec="workers" onclick="goSection('workers',this)"><span>👥</span> Workers</button>
+      <button class="side-btn" data-sec="report" onclick="goSection('report',this)"><span>📊</span> Monthly Report</button>
+      <button class="side-btn" data-sec="endday" onclick="goSection('endday',this)"><span>🏁</span> End Day</button>
+      <button class="side-btn" data-sec="export" onclick="goSection('export',this)"><span>📥</span> Export</button>
       <div class="side-lbl">SYSTEM</div>
-      <button class="side-btn" data-sec="settings" onclick="goSection('settings',this)">
-        <span>⚙️</span> Settings
-      </button>
-
-      <div class="side-foot">
-        <p>Version 7.0 (Firebase)</p>
-        <p>🔥 Real-time Sync</p>
-        <p>albowry.com</p>
-      </div>
+      <button class="side-btn" data-sec="settings" onclick="goSection('settings',this)"><span>⚙️</span> Settings</button>
+      <div class="side-foot"><p>v7 Firebase</p><p>🔥 Real-time</p></div>
     </aside>
-
     <main class="a-main">
+      <!-- Dashboard -->
       <section id="sec-dash" class="sec active">
-        <div class="sec-hdr">
-          <div>
-            <h1>Dashboard 📊</h1>
-            <p id="dashDate">Loading...</p>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="loadStats()">🔄 Refresh</button>
-        </div>
-
+        <div class="sec-hdr"><div><h1>Dashboard 📊</h1><p id="dashDate"></p></div><button class="btn btn-outline btn-sm" onclick="loadStats()">🔄</button></div>
         <div class="stats-row">
-          <div class="scard sc-blue">
-            <div class="sc-icon">👥</div>
-            <div>
-              <div class="sc-val" id="sTotalW">0</div>
-              <div class="sc-lbl">Total Workers</div>
-            </div>
-          </div>
-          <div class="scard sc-green">
-            <div class="sc-icon">✅</div>
-            <div>
-              <div class="sc-val" id="sPresent">0</div>
-              <div class="sc-lbl">Present Today</div>
-            </div>
-          </div>
-          <div class="scard sc-red">
-            <div class="sc-icon">❌</div>
-            <div>
-              <div class="sc-val" id="sAbsent">0</div>
-              <div class="sc-lbl">Absent Today</div>
-            </div>
-          </div>
-          <div class="scard sc-orange">
-            <div class="sc-icon">⏰</div>
-            <div>
-              <div class="sc-val" id="sPending">0</div>
-              <div class="sc-lbl">Pending Approvals</div>
-            </div>
-          </div>
+          <div class="scard sc-blue"><div class="sc-icon">👥</div><div><div class="sc-val" id="sTotalW">0</div><div class="sc-lbl">Total Workers</div></div></div>
+          <div class="scard sc-green"><div class="sc-icon">✅</div><div><div class="sc-val" id="sPresent">0</div><div class="sc-lbl">Present</div></div></div>
+          <div class="scard sc-red"><div class="sc-icon">❌</div><div><div class="sc-val" id="sAbsent">0</div><div class="sc-lbl">Absent</div></div></div>
+          <div class="scard sc-orange"><div class="sc-icon">⏰</div><div><div class="sc-val" id="sPending">0</div><div class="sc-lbl">Pending</div></div></div>
         </div>
-
         <div class="sec-grid">
           <div class="sec-box indian-box">
-            <div class="sb-head">
-              <h3>🇮🇳 Indian Section</h3>
-              <span class="sb-total" id="dIndT">0</span>
-            </div>
-            <div class="sb-bar-wrap">
-              <div class="sb-bar"><div class="sb-fill green-fill" id="dIndBar"></div></div>
-              <div class="sb-pct" id="dIndPct">0%</div>
-            </div>
-            <div class="sb-row">
-              <div><b class="g" id="dIndP">0</b><small>✅ Present</small></div>
-              <div><b class="r" id="dIndA">0</b><small>❌ Absent</small></div>
-              <div><b class="o" id="dIndPend">0</b><small>⏰ Pending</small></div>
-            </div>
+            <div class="sb-head"><h3>🇮🇳 Indian</h3><span class="sb-total" id="dIndT">0</span></div>
+            <div class="sb-bar-wrap"><div class="sb-bar"><div class="sb-fill green-fill" id="dIndBar"></div></div><div class="sb-pct" id="dIndPct">0%</div></div>
+            <div class="sb-row"><div><b class="g" id="dIndP">0</b><small>Present</small></div><div><b class="r" id="dIndA">0</b><small>Absent</small></div><div><b class="o" id="dIndPend">0</b><small>Pending</small></div></div>
           </div>
-
           <div class="sec-box pak-box">
-            <div class="sb-head">
-              <h3>🇵🇰 Pakistani Section</h3>
-              <span class="sb-total" id="dPakT">0</span>
-            </div>
-            <div class="sb-bar-wrap">
-              <div class="sb-bar"><div class="sb-fill green-fill" id="dPakBar"></div></div>
-              <div class="sb-pct" id="dPakPct">0%</div>
-            </div>
-            <div class="sb-row">
-              <div><b class="g" id="dPakP">0</b><small>✅ Present</small></div>
-              <div><b class="r" id="dPakA">0</b><small>❌ Absent</small></div>
-              <div><b class="o" id="dPakPend">0</b><small>⏰ Pending</small></div>
-            </div>
+            <div class="sb-head"><h3>🇵🇰 Pakistani</h3><span class="sb-total" id="dPakT">0</span></div>
+            <div class="sb-bar-wrap"><div class="sb-bar"><div class="sb-fill green-fill" id="dPakBar"></div></div><div class="sb-pct" id="dPakPct">0%</div></div>
+            <div class="sb-row"><div><b class="g" id="dPakP">0</b><small>Present</small></div><div><b class="r" id="dPakA">0</b><small>Absent</small></div><div><b class="o" id="dPakPend">0</b><small>Pending</small></div></div>
           </div>
         </div>
-
         <h3 class="qa-title">⚡ Quick Actions</h3>
         <div class="qa-row">
-          <div class="qa-card" onclick="goSection('approve',document.querySelector('[data-sec=approve]'))">
-            <div class="qa-icon-box qa-orange">✅</div>
-            <p>Approvals</p>
-            <small>Review requests</small>
-          </div>
-          <div class="qa-card" onclick="goSection('live',document.querySelector('[data-sec=live]'))">
-            <div class="qa-icon-box qa-red">🔴</div>
-            <p>Live Status</p>
-            <small>Who's working</small>
-          </div>
-          <div class="qa-card" onclick="goSection('endday',document.querySelector('[data-sec=endday]'))">
-            <div class="qa-icon-box qa-purple">🏁</div>
-            <p>End Day</p>
-            <small>Close all sessions</small>
-          </div>
-          <div class="qa-card" onclick="goSection('export',document.querySelector('[data-sec=export]'))">
-            <div class="qa-icon-box qa-green">📥</div>
-            <p>Reports</p>
-            <small>Download data</small>
-          </div>
+          <div class="qa-card" onclick="goSection('approve',document.querySelector('[data-sec=approve]'))"><div class="qa-icon-box qa-orange">✅</div><p>Approvals</p></div>
+          <div class="qa-card" onclick="goSection('live',document.querySelector('[data-sec=live]'))"><div class="qa-icon-box qa-red">🔴</div><p>Live</p></div>
+          <div class="qa-card" onclick="goSection('report',document.querySelector('[data-sec=report]'))"><div class="qa-icon-box qa-blue">📊</div><p>Reports</p></div>
+          <div class="qa-card" onclick="goSection('endday',document.querySelector('[data-sec=endday]'))"><div class="qa-icon-box qa-purple">🏁</div><p>End Day</p></div>
         </div>
       </section>
 
+      <!-- Approvals -->
       <section id="sec-approve" class="sec">
-        <div class="sec-hdr">
-          <div>
-            <h1>Pending Approvals ✅</h1>
-            <p>Review and approve check-in/check-out requests</p>
-          </div>
-          <button class="btn btn-success btn-sm" onclick="approveAll()">✅ Approve All</button>
-        </div>
+        <div class="sec-hdr"><div><h1>Approvals ✅</h1><p>Approve, reject, or undo</p></div><button class="btn btn-success btn-sm" onclick="approveAll()">✅ Approve All</button></div>
         <div id="approveList"></div>
+        <div style="margin-top:30px"><h3 style="margin-bottom:16px;font-weight:800">🔄 Recently Approved (Undo Available)</h3><div id="recentApproved"></div></div>
       </section>
 
+      <!-- Live -->
       <section id="sec-live" class="sec">
-        <div class="sec-hdr">
-          <div>
-            <h1>Live Status 🔴</h1>
-            <p>Currently working & completed today</p>
-          </div>
-          <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
-        </div>
+        <div class="sec-hdr"><div><h1>Live Status 🔴</h1></div><div class="live-indicator"><span class="live-dot"></span> LIVE</div></div>
         <div class="live-grid">
-          <div class="live-panel">
-            <h3>🟢 Currently Working (<span id="liveCount">0</span>)</h3>
-            <div id="liveList"></div>
-          </div>
-          <div class="live-panel">
-            <h3>🏁 Completed Today (<span id="doneCount">0</span>)</h3>
-            <div id="doneList"></div>
-          </div>
+          <div class="live-panel"><h3>🟢 Working (<span id="liveCount">0</span>)</h3><div id="liveList"></div></div>
+          <div class="live-panel"><h3>🏁 Completed (<span id="doneCount">0</span>)</h3><div id="doneList"></div></div>
         </div>
       </section>
 
+      <!-- Attendance -->
       <section id="sec-attend" class="sec">
-        <div class="sec-hdr">
-          <div>
-            <h1>Attendance Records 📅</h1>
-            <p>View daily attendance data</p>
-          </div>
-        </div>
+        <div class="sec-hdr"><div><h1>Attendance 📅</h1></div></div>
         <div class="filters">
           <div class="field"><label>Date</label><input type="date" id="fDate" onchange="loadAttend()"></div>
-          <div class="field"><label>Section</label>
-            <select id="fSec" onchange="loadAttend()">
-              <option value="">All Sections</option>
-              <option value="Indian">🇮🇳 Indian</option>
-              <option value="Pakistani">🇵🇰 Pakistani</option>
-            </select>
-          </div>
-          <div class="field"><label>&nbsp;</label>
-            <button class="btn btn-outline" onclick="loadAttend()">🔄 Refresh</button>
-          </div>
+          <div class="field"><label>Section</label><select id="fSec" onchange="loadAttend()"><option value="">All</option><option value="Indian">🇮🇳</option><option value="Pakistani">🇵🇰</option></select></div>
+          <div class="field"><label>&nbsp;</label><button class="btn btn-outline" onclick="loadAttend()">🔄</button></div>
         </div>
         <div id="attendTable"></div>
       </section>
 
+      <!-- Workers -->
       <section id="sec-workers" class="sec">
-        <div class="sec-hdr">
-          <div>
-            <h1>Manage Workers 👥</h1>
-            <p>Add, edit, and manage worker accounts</p>
-          </div>
-          <button class="btn btn-primary" onclick="openAddWorker()">➕ Add Worker</button>
-        </div>
+        <div class="sec-hdr"><div><h1>Workers 👥</h1></div><button class="btn btn-primary" onclick="openAddWorker()">➕ Add</button></div>
         <div class="ltabs">
-          <button class="ltab active" onclick="swWorkerTab('Indian',this)">
-            🇮🇳 Indian <span id="indCount"></span>
-          </button>
-          <button class="ltab" onclick="swWorkerTab('Pakistani',this)">
-            🇵🇰 Pakistani <span id="pakCount"></span>
-          </button>
+          <button class="ltab active" onclick="swWorkerTab('Indian',this)">🇮🇳 Indian <span id="indCount"></span></button>
+          <button class="ltab" onclick="swWorkerTab('Pakistani',this)">🇵🇰 Pakistani <span id="pakCount"></span></button>
         </div>
-        <div class="field" style="margin-bottom:16px">
-          <input type="text" id="wSearch" placeholder="🔍 Search by name, ID, or profession..." oninput="loadWorkerTable()">
-        </div>
+        <div class="field" style="margin-bottom:16px"><input type="text" id="wSearch" placeholder="🔍 Search..." oninput="loadWorkerTable()"></div>
         <div id="workerTable"></div>
       </section>
 
+      <!-- Monthly Report -->
+      <section id="sec-report" class="sec">
+        <div class="sec-hdr"><div><h1>Monthly Report 📊</h1><p>Per person attendance report</p></div></div>
+        <div class="filters">
+          <div class="field"><label>Worker</label>
+            <select id="reportWorker" onchange="loadMonthlyReport()"><option value="">— Select —</option><option value="__ALL__">📋 All Workers</option></select>
+          </div>
+          <div class="field"><label>Month</label><input type="month" id="reportMonth" onchange="loadMonthlyReport()"></div>
+          <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="downloadReportPDF()">📥 PDF</button></div>
+        </div>
+        <div id="reportContent"></div>
+      </section>
+
+      <!-- End Day -->
       <section id="sec-endday" class="sec">
-        <div class="sec-hdr">
-          <div>
-            <h1>End Day 🏁</h1>
-            <p>Close all active sessions and finalize the day</p>
-          </div>
-        </div>
-        
-        <div class="endday-warning">
-          <div class="ew-icon">⚠️</div>
-          <div class="ew-content">
-            <h3>Important: End Day Function</h3>
-            <p>This will automatically check-out all workers who are still logged in but forgot to check out. Their logout time will be set to current time or a custom time you specify.</p>
-          </div>
-        </div>
-
+        <div class="sec-hdr"><div><h1>End Day 🏁</h1></div></div>
+        <div class="endday-warning"><div class="ew-icon">⚠️</div><div class="ew-content"><h3>End Day Function</h3><p>Auto-checkout workers who forgot.</p></div></div>
         <div class="endday-grid">
-          <div class="endday-card">
-            <h3>🕐 Currently Working (<span id="edWorkingCount">0</span>)</h3>
-            <p style="color:#64748b;font-size:13px;margin-bottom:16px">These workers haven't checked out yet</p>
-            <div id="edWorkingList"></div>
-          </div>
-
-          <div class="endday-card">
-            <h3>⚙️ End Day Options</h3>
-            <div class="field">
-              <label>Logout Time (for all pending workers)</label>
-              <input type="time" id="edLogoutTime" value="20:00">
-              <small style="color:#94a3b8;font-size:11px;margin-top:6px;display:block">Default: 8:00 PM (end of shift)</small>
-            </div>
-            <div class="ed-actions">
-              <button class="btn btn-danger btn-block" onclick="endDayForAll()" style="margin-bottom:10px">
-                🏁 End Day for All Active Workers
-              </button>
-              <button class="btn btn-outline btn-block" onclick="approveAllPendingToday()">
-                ✅ Approve All Pending Requests
-              </button>
-            </div>
-            <div class="ed-note">
-              <strong>💡 Tip:</strong> Use this at end of shift to auto-checkout workers who forgot. All their times will be recorded and hours calculated automatically.
-            </div>
+          <div class="endday-card"><h3>Still Working (<span id="edWorkingCount">0</span>)</h3><div id="edWorkingList"></div></div>
+          <div class="endday-card"><h3>⚙️ Options</h3>
+            <div class="field"><label>Logout Time</label><input type="time" id="edLogoutTime" value="20:00"></div>
+            <button class="btn btn-danger btn-block" onclick="endDayForAll()" style="margin:10px 0">🏁 End Day All</button>
+            <button class="btn btn-outline btn-block" onclick="approveAll()">✅ Approve All</button>
           </div>
         </div>
       </section>
 
+      <!-- Export -->
       <section id="sec-export" class="sec">
-        <div class="sec-hdr">
-          <div>
-            <h1>Export Reports 📥</h1>
-            <p>Download attendance data in Excel or CSV format</p>
-          </div>
-        </div>
+        <div class="sec-hdr"><div><h1>Export 📥</h1></div></div>
         <div class="exp-grid">
           <div class="exp-card">
-            <h3>📊 Export Configuration</h3>
+            <h3>📊 Config</h3>
             <div class="quick-btns">
               <button class="btn btn-outline btn-sm" onclick="setExpDate('today')">Today</button>
-              <button class="btn btn-outline btn-sm" onclick="setExpDate('week')">This Week</button>
-              <button class="btn btn-outline btn-sm" onclick="setExpDate('month')">This Month</button>
+              <button class="btn btn-outline btn-sm" onclick="setExpDate('week')">Week</button>
+              <button class="btn btn-outline btn-sm" onclick="setExpDate('month')">Month</button>
             </div>
-            <div class="field"><label>Start Date</label><input type="date" id="expStart"></div>
-            <div class="field"><label>End Date</label><input type="date" id="expEnd"></div>
-            <div class="field"><label>Section Filter</label>
-              <select id="expSec">
-                <option value="">All Sections</option>
-                <option value="Indian">🇮🇳 Indian Only</option>
-                <option value="Pakistani">🇵🇰 Pakistani Only</option>
-              </select>
-            </div>
-            <button class="btn btn-primary btn-block" onclick="exportExcel()">
-              📥 Download Excel
-            </button>
-            <button class="btn btn-outline btn-block" onclick="exportCSV()" style="margin-top:8px">
-              📄 Download CSV
-            </button>
+            <div class="field"><label>Start</label><input type="date" id="expStart"></div>
+            <div class="field"><label>End</label><input type="date" id="expEnd"></div>
+            <div class="field"><label>Section</label><select id="expSec"><option value="">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option></select></div>
+            <button class="btn btn-primary btn-block" onclick="exportExcel()">📥 Excel</button>
+            <button class="btn btn-outline btn-block" style="margin-top:8px" onclick="exportCSV()">📄 CSV</button>
+            <button class="btn btn-success btn-block" style="margin-top:8px" onclick="exportPDF()">📕 PDF</button>
           </div>
           <div class="exp-info">
-            <h3>📋 Report Details</h3>
-            <ul class="info-list">
-              <li>✓ Employee ID & Name</li>
-              <li>✓ Profession & Section</li>
-              <li>✓ Check-in / Check-out Times</li>
-              <li>✓ Total Hours</li>
-              <li>✓ Regular Hours (8h)</li>
-              <li>✓ Overtime Hours</li>
-              <li>✓ Company branding</li>
-              <li>✓ Auto totals</li>
-            </ul>
-            <div class="exp-note">
-              <strong>📌 Work Schedule:</strong> 8:00 AM - 8:00 PM<br>
-              <strong>Regular:</strong> 8 hours | <strong>Overtime:</strong> Beyond 8h
-            </div>
+            <h3>📋 Includes</h3>
+            <ul class="info-list"><li>✓ ID & Name</li><li>✓ Check-in/out</li><li>✓ Total, Regular & OT</li><li>✓ Company branding</li></ul>
+            <div class="exp-note"><strong>Schedule:</strong> 8AM-8PM | Regular: 8h | OT: Beyond 8h</div>
           </div>
         </div>
       </section>
 
+      <!-- Settings -->
       <section id="sec-settings" class="sec">
-        <div class="sec-hdr">
-          <div>
-            <h1>Settings ⚙️</h1>
-            <p>Manage admin credentials & data</p>
-          </div>
-        </div>
+        <div class="sec-hdr"><div><h1>Settings ⚙️</h1></div></div>
         <div class="set-grid">
           <div class="set-card">
-            <h3>🔐 Change Admin Credentials</h3>
-            <div class="field"><label>Current Admin ID</label><input type="text" id="setCurId" readonly></div>
-            <div class="field"><label>New Admin ID</label><input type="text" id="setNewId" placeholder="Enter new admin ID"></div>
-            <div class="field"><label>New Password</label>
-              <div class="pw-box">
-                <input type="password" id="setNewPw" placeholder="Min 6 characters" minlength="6">
-                <button type="button" class="pw-eye" onclick="togglePw('setNewPw',this)">👁</button>
-              </div>
-            </div>
-            <div class="field"><label>Confirm Password</label><input type="password" id="setConfPw" placeholder="Retype password"></div>
-            <button class="btn btn-primary btn-block" onclick="updateAdmin()">💾 Update Credentials</button>
+            <h3>🔐 Admin Credentials</h3>
+            <div class="field"><label>Current ID</label><input type="text" id="setCurId" readonly></div>
+            <div class="field"><label>New ID</label><input type="text" id="setNewId" placeholder="New ID"></div>
+            <div class="field"><label>New Password</label><input type="password" id="setNewPw" placeholder="Min 6"></div>
+            <div class="field"><label>Confirm</label><input type="password" id="setConfPw"></div>
+            <button class="btn btn-primary btn-block" onclick="updateAdmin()">💾 Update</button>
           </div>
-
           <div class="set-card">
-            <h3>💾 Data Management</h3>
-            <p style="color:#64748b;font-size:13px;margin-bottom:16px">
-              🔥 Data is stored in Firebase Cloud. Automatic backup & sync across devices!
-            </p>
-            <button class="btn btn-success btn-block" onclick="backupAll()" style="margin-bottom:10px">
-              💾 Download Backup (JSON)
-            </button>
-            <button class="btn btn-outline btn-block" onclick="resetAllPasswords()" style="margin-bottom:10px">
-              🔑 Reset All Worker Passwords
-            </button>
-            <button class="btn btn-danger btn-block" onclick="clearAttendanceData()">
-              🗑️ Clear All Attendance Data
-            </button>
-            <div style="margin-top:16px;padding:12px;background:#eff6ff;border-radius:8px;border-left:3px solid #1e40af;font-size:12px;color:#475569">
-              💡 <strong>Firebase Console:</strong> View live data at <br>
-              <a href="https://console.firebase.google.com/project/albowry-attendance/firestore" target="_blank" style="color:#1e40af">Open Firebase Console</a>
-            </div>
+            <h3>💾 Data</h3>
+            <p style="color:#64748b;font-size:13px;margin-bottom:16px">🔥 Cloud sync via Firebase</p>
+            <button class="btn btn-success btn-block" onclick="backupAll()" style="margin-bottom:10px">💾 Backup</button>
+            <button class="btn btn-outline btn-block" onclick="resetAllPasswords()" style="margin-bottom:10px">🔑 Reset Passwords</button>
+            <button class="btn btn-danger btn-block" onclick="clearAttendanceData()">🗑️ Clear Attendance</button>
           </div>
         </div>
       </section>
@@ -681,75 +326,59 @@
   </div>
 </div>
 
-<!-- MODALS -->
+<!-- Modals -->
 <div id="mWorker" class="modal-bg">
   <div class="modal">
-    <div class="m-head">
-      <h2 id="mwTitle">Add Worker</h2>
-      <button class="m-close" onclick="closeModal('mWorker')">✕</button>
-    </div>
+    <div class="m-head"><h2 id="mwTitle">Add Worker</h2><button class="m-close" onclick="closeModal('mWorker')">✕</button></div>
     <form onsubmit="return saveWorkerForm(event)">
-      <div class="field"><label>Full Name *</label><input type="text" id="mwName" required></div>
-      <div class="field"><label>Profession *</label>
-        <select id="mwProf" required>
-          <option value="">Select Profession</option>
-          <option>GM</option>
-          <option>Production Head</option>
-          <option>Supervisor</option>
-          <option>Carpenter</option>
-          <option>Assistant Carpenter</option>
-          <option>Helper</option>
-        </select>
-      </div>
-      <div class="field"><label>Section *</label>
-        <select id="mwSec">
-          <option value="Indian">🇮🇳 Indian</option>
-          <option value="Pakistani">🇵🇰 Pakistani</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Password *</label>
-        <div class="pw-box">
-          <input type="text" id="mwPw" required>
-          <button type="button" class="pw-eye" onclick="document.getElementById('mwPw').value='Worker@123'">🔄</button>
-        </div>
-      </div>
-      <div class="m-foot">
-        <button type="button" class="btn btn-outline" onclick="closeModal('mWorker')">Cancel</button>
-        <button type="submit" class="btn btn-primary">💾 Save Worker</button>
-      </div>
+      <div class="field"><label>Name *</label><input type="text" id="mwName" required></div>
+      <div class="field"><label>Profession *</label><select id="mwProf" required><option value="">Select</option><option>GM</option><option>Production Head</option><option>Supervisor</option><option>Carpenter</option><option>Assistant Carpenter</option><option>Helper</option></select></div>
+      <div class="field"><label>Section *</label><select id="mwSec"><option value="Indian">🇮🇳 Indian</option><option value="Pakistani">🇵🇰 Pakistani</option></select></div>
+      <div class="field"><label>Password *</label><input type="text" id="mwPw" required></div>
+      <div class="m-foot"><button type="button" class="btn btn-outline" onclick="closeModal('mWorker')">Cancel</button><button type="submit" class="btn btn-primary">💾 Save</button></div>
     </form>
   </div>
 </div>
 
 <div id="mPw" class="modal-bg">
-  <div class="modal">
-    <div class="m-head">
-      <h2>🔑 Worker Credentials</h2>
-      <button class="m-close" onclick="closeModal('mPw')">✕</button>
-    </div>
-    <div id="mPwBody"></div>
-    <div class="m-foot">
-      <button class="btn btn-primary" onclick="closeModal('mPw')">Got it 👍</button>
-    </div>
-  </div>
+  <div class="modal"><div class="m-head"><h2>🔑 Credentials</h2><button class="m-close" onclick="closeModal('mPw')">✕</button></div><div id="mPwBody"></div><div class="m-foot"><button class="btn btn-primary" onclick="closeModal('mPw')">OK 👍</button></div></div>
 </div>
 
 <div id="mConfirm" class="modal-bg">
-  <div class="modal" style="max-width:400px">
-    <div class="m-head"><h2 id="mcTitle">Confirm</h2></div>
-    <p id="mcMsg" style="color:#475569;font-size:14px;line-height:1.6;margin-bottom:20px"></p>
-    <div class="m-foot">
-      <button class="btn btn-outline" onclick="closeModal('mConfirm')">Cancel</button>
-      <button class="btn btn-danger" id="mcYes">Yes, Confirm</button>
-    </div>
-  </div>
+  <div class="modal" style="max-width:400px"><div class="m-head"><h2 id="mcTitle">Confirm</h2></div><p id="mcMsg" style="color:#475569;font-size:14px;line-height:1.6;margin-bottom:20px"></p><div class="m-foot"><button class="btn btn-outline" onclick="closeModal('mConfirm')">Cancel</button><button class="btn btn-danger" id="mcYes">Confirm</button></div></div>
 </div>
 
 <div id="toast" class="toast"></div>
 
-<!-- Firebase & App -->
-<script type="module" src="firebase-config.js"></script>
+<!-- ====== FIREBASE + APP (ALL IN ONE) ====== -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyCrFHbw0-YRuo_LddyFXOUwdgCT9C6fJX4",
+  authDomain: "albowry-attendance.firebaseapp.com",
+  projectId: "albowry-attendance",
+  storageBucket: "albowry-attendance.firebasestorage.app",
+  messagingSenderId: "498788768411",
+  appId: "1:498788768411:web:f5b0c2f1b09c7eefa2c43e"
+});
+
+const db = getFirestore(app);
+
+window.FB = {
+  async save(c,i,d){try{await setDoc(doc(db,c,i),d);return true}catch(e){console.error(e);return false}},
+  async get(c,i){try{const s=await getDoc(doc(db,c,i));return s.exists()?{id:s.id,...s.data()}:null}catch(e){return null}},
+  async getAll(c){try{const s=await getDocs(collection(db,c));const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));return a}catch(e){return[]}},
+  async del(c,i){try{await deleteDoc(doc(db,c,i));return true}catch(e){return false}},
+  listen(c,cb){return onSnapshot(collection(db,c),s=>{const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));cb(a)})}
+};
+
+window.FB_READY = true;
+console.log('🔥 Firebase Connected!');
+window.dispatchEvent(new Event('fb-ready'));
+</script>
+
 <script src="app.js"></script>
 </body>
 </html>
