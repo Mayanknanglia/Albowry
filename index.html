@@ -46,7 +46,7 @@
   </div>
 </div>
 
-<!-- LOGIN -->
+<!-- ============ LOGIN PAGE ============ -->
 <div id="loginPage" class="page active">
   <div class="login-wrap">
     <div class="login-brand">
@@ -79,17 +79,27 @@
           <button class="ltab active" onclick="switchLogin('worker',this)"><span>👤</span> Worker</button>
           <button class="ltab" onclick="switchLogin('admin',this)"><span>🛡️</span> Admin</button>
         </div>
+        
+        <!-- ⭐ WORKER LOGIN WITH SHIFT -->
         <form id="workerLoginForm" class="lform active" onsubmit="return workerLogin(event)">
           <div class="field"><label>Select Your Name</label>
             <select id="workerSelect" required><option value="">— Choose —</option></select>
+          </div>
+          <div class="field"><label>Select Your Shift *</label>
+            <select id="workerShift" required>
+              <option value="">— Choose Shift —</option>
+              <option value="Day">☀️ Day Shift (8AM - 8PM)</option>
+              <option value="Night">🌙 Night Shift (8PM - 8AM)</option>
+            </select>
           </div>
           <div class="field"><label>Password</label>
             <div class="pw-box"><input type="password" id="workerPw" placeholder="Enter password" required>
             <button type="button" class="pw-eye" onclick="togglePw('workerPw',this)">👁</button></div>
           </div>
           <button type="submit" class="btn btn-primary btn-block btn-lg">🔐 Sign In</button>
-          <div class="login-hint"><span class="hint-icon">💡</span><div><strong>Need help?</strong> Contact admin for password</div></div>
+          <div class="login-hint"><span class="hint-icon">💡</span><div><strong>Select your shift for today</strong> — Day or Night</div></div>
         </form>
+        
         <form id="adminLoginForm" class="lform" onsubmit="return adminLogin(event)">
           <div class="field"><label>Admin ID</label><input type="text" id="adminId" placeholder="Admin ID" required></div>
           <div class="field"><label>Password</label>
@@ -106,7 +116,7 @@
   </div>
 </div>
 
-<!-- WORKER -->
+<!-- ============ WORKER DASHBOARD ============ -->
 <div id="workerPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
@@ -170,7 +180,7 @@
   </div>
 </div>
 
-<!-- ADMIN -->
+<!-- ============ ADMIN DASHBOARD ============ -->
 <div id="adminPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
@@ -202,6 +212,7 @@
     </aside>
     <main class="a-main">
 
+      <!-- DASHBOARD -->
       <section id="sec-dash" class="sec active">
         <div class="sec-hdr"><div><h1>Dashboard 📊</h1><p id="dashDate"></p></div><button class="btn btn-outline btn-sm" onclick="loadStats()">🔄</button></div>
         <div class="stats-row">
@@ -212,14 +223,14 @@
         </div>
         <div class="sec-grid">
           <div class="sec-box indian-box">
-            <div class="sb-head"><h3>☀️ Day Shift</h3><span class="sb-total" id="dIndT">0</span></div>
+            <div class="sb-head"><h3>☀️ Day Shift Today</h3><span class="sb-total" id="dIndT">0</span></div>
             <div class="sb-bar-wrap"><div class="sb-bar"><div class="sb-fill green-fill" id="dIndBar"></div></div><div class="sb-pct" id="dIndPct">0%</div></div>
-            <div class="sb-row"><div><b class="g" id="dIndP">0</b><small>Present</small></div><div><b class="r" id="dIndA">0</b><small>Absent</small></div><div><b class="o" id="dIndPend">0</b><small>Pending</small></div></div>
+            <div class="sb-row"><div><b class="g" id="dIndP">0</b><small>Present</small></div><div><b class="r" id="dIndA">0</b><small>-</small></div><div><b class="o" id="dIndPend">0</b><small>Pending</small></div></div>
           </div>
           <div class="sec-box pak-box">
-            <div class="sb-head"><h3>🌙 Night Shift</h3><span class="sb-total" id="dPakT">0</span></div>
+            <div class="sb-head"><h3>🌙 Night Shift Today</h3><span class="sb-total" id="dPakT">0</span></div>
             <div class="sb-bar-wrap"><div class="sb-bar"><div class="sb-fill green-fill" id="dPakBar"></div></div><div class="sb-pct" id="dPakPct">0%</div></div>
-            <div class="sb-row"><div><b class="g" id="dPakP">0</b><small>Present</small></div><div><b class="r" id="dPakA">0</b><small>Absent</small></div><div><b class="o" id="dPakPend">0</b><small>Pending</small></div></div>
+            <div class="sb-row"><div><b class="g" id="dPakP">0</b><small>Present</small></div><div><b class="r" id="dPakA">0</b><small>-</small></div><div><b class="o" id="dPakPend">0</b><small>Pending</small></div></div>
           </div>
         </div>
         <h3 class="qa-title">⚡ Quick Actions</h3>
@@ -231,12 +242,14 @@
         </div>
       </section>
 
+      <!-- APPROVALS -->
       <section id="sec-approve" class="sec">
         <div class="sec-hdr"><div><h1>Approvals ✅</h1><p>Review requests</p></div><button class="btn btn-success btn-sm" onclick="approveAll()">✅ Approve All</button></div>
         <div id="approveList"></div>
         <div style="margin-top:30px"><h3 style="margin-bottom:16px;font-weight:800">🔄 Recently Approved</h3><div id="recentApproved"></div></div>
       </section>
 
+      <!-- LIVE STATUS -->
       <section id="sec-live" class="sec">
         <div class="sec-hdr"><div><h1>Live Status 🔴</h1></div><div class="live-indicator"><span class="live-dot"></span> LIVE</div></div>
         <div class="live-grid">
@@ -245,17 +258,18 @@
         </div>
       </section>
 
+      <!-- ATTENDANCE -->
       <section id="sec-attend" class="sec">
         <div class="sec-hdr"><div><h1>Attendance 📅</h1></div></div>
         <div class="filters">
           <div class="field"><label>Date</label><input type="date" id="fDate" onchange="loadAttend()"></div>
           <div class="field"><label>Filter</label>
             <select id="fSec" onchange="loadAttend()">
-              <option value="">All</option>
-              <option value="Day">☀️ Day Shift</option>
-              <option value="Night">🌙 Night Shift</option>
-              <option value="Indian">🇮🇳 Indian</option>
-              <option value="Pakistani">🇵🇰 Pakistani</option>
+              <option value="">All Workers</option>
+              <option value="Day">☀️ Day Shift Only</option>
+              <option value="Night">🌙 Night Shift Only</option>
+              <option value="Indian">🇮🇳 Indian Only</option>
+              <option value="Pakistani">🇵🇰 Pakistani Only</option>
             </select>
           </div>
           <div class="field"><label>&nbsp;</label><button class="btn btn-outline" onclick="loadAttend()">🔄</button></div>
@@ -263,34 +277,54 @@
         <div id="attendTable"></div>
       </section>
 
+      <!-- WORKERS -->
       <section id="sec-workers" class="sec">
-        <div class="sec-hdr"><div><h1>Workers 👥</h1><p style="color:#64748b;font-size:12px">💡 Click shift badge to toggle Day/Night</p></div><button class="btn btn-primary" onclick="openAddWorker()">➕ Add</button></div>
-        <div class="ltabs" style="flex-wrap:wrap">
-          <button class="ltab active" onclick="swWorkerTab('Day',this)">☀️ Day <span id="indCount"></span></button>
-          <button class="ltab" onclick="swWorkerTab('Night',this)">🌙 Night <span id="pakCount"></span></button>
-          <button class="ltab" onclick="swWorkerTab('Indian',this)">🇮🇳 Indian <span id="indCount2"></span></button>
-          <button class="ltab" onclick="swWorkerTab('Pakistani',this)">🇵🇰 Pakistani <span id="pakCount2"></span></button>
+        <div class="sec-hdr"><div><h1>Workers 👥</h1><p style="color:#64748b;font-size:12px">💡 Click shift badge to change default shift</p></div><button class="btn btn-primary" onclick="openAddWorker()">➕ Add</button></div>
+        <div class="ltabs">
+          <button class="ltab active" onclick="swWorkerTab('Indian',this)">🇮🇳 Indian <span id="indCount"></span></button>
+          <button class="ltab" onclick="swWorkerTab('Pakistani',this)">🇵🇰 Pakistani <span id="pakCount"></span></button>
         </div>
         <div class="field" style="margin-bottom:16px"><input type="text" id="wSearch" placeholder="🔍 Search..." oninput="loadWorkerTable()"></div>
         <div id="workerTable"></div>
       </section>
 
+      <!-- MANUAL ATTENDANCE -->
       <section id="sec-manual" class="sec">
-        <div class="sec-hdr"><div><h1>Manual Attendance ✍️</h1><p>Admin can mark attendance • No internet needed on worker side</p></div></div>
+        <div class="sec-hdr"><div><h1>Manual Attendance ✍️</h1><p>Admin marks attendance • Select shift for each entry</p></div></div>
         <div class="manual-grid">
+          
+          <!-- QUICK CHECK-IN WITH SHIFT -->
           <div class="manual-card">
             <h3>⚡ Quick Check-In/Out</h3>
-            <p style="color:#64748b;font-size:13px;margin-bottom:16px">Current time will be used</p>
-            <div class="field"><label>Select Worker</label><select id="manualWorker"><option value="">— Select —</option></select></div>
+            <p style="color:#64748b;font-size:13px;margin-bottom:16px">Select worker, shift, then check-in</p>
+            <div class="field"><label>Select Worker</label>
+              <select id="manualWorker"><option value="">— Select —</option></select>
+            </div>
+            <div class="field"><label>Select Shift *</label>
+              <select id="manualQuickShift">
+                <option value="Day">☀️ Day Shift</option>
+                <option value="Night">🌙 Night Shift</option>
+              </select>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
               <button class="btn btn-success btn-block" onclick="manualQuickCheckIn()">🔓 Check In</button>
               <button class="btn btn-danger btn-block" onclick="manualQuickCheckOut()">🔒 Check Out</button>
             </div>
           </div>
+          
+          <!-- CUSTOM DATE TIME WITH SHIFT -->
           <div class="manual-card">
             <h3>🕐 Custom Date & Time</h3>
             <p style="color:#64748b;font-size:13px;margin-bottom:16px">For backdated entries</p>
-            <div class="field"><label>Select Worker</label><select id="manualCustomWorker"><option value="">— Select —</option></select></div>
+            <div class="field"><label>Select Worker</label>
+              <select id="manualCustomWorker"><option value="">— Select —</option></select>
+            </div>
+            <div class="field"><label>Select Shift *</label>
+              <select id="manualCustomShift">
+                <option value="Day">☀️ Day Shift</option>
+                <option value="Night">🌙 Night Shift</option>
+              </select>
+            </div>
             <div class="field"><label>Date</label><input type="date" id="manualDate"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div class="field"><label>Check-In</label><input type="time" id="manualCheckInTime" value="08:00"></div>
@@ -302,23 +336,33 @@
             </div>
           </div>
         </div>
+        
+        <!-- BULK ACTIONS WITH SHIFT -->
         <div class="manual-card" style="margin-top:20px">
           <h3>👥 Bulk Actions</h3>
-          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Check-in/out ALL workers at once</p>
-          <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-            <div class="field" style="margin-bottom:0;min-width:200px"><label>Filter</label>
+          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Check-in/out ALL workers at once with shift selection</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div class="field" style="margin-bottom:0"><label>Country Filter</label>
               <select id="bulkSection">
                 <option value="">All Workers</option>
-                <option value="Day">☀️ Day Only</option>
-                <option value="Night">🌙 Night Only</option>
                 <option value="Indian">🇮🇳 Indian Only</option>
                 <option value="Pakistani">🇵🇰 Pakistani Only</option>
               </select>
             </div>
+            <div class="field" style="margin-bottom:0"><label>Shift for Check-In *</label>
+              <select id="bulkShift">
+                <option value="Day">☀️ Day Shift</option>
+                <option value="Night">🌙 Night Shift</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
             <button class="btn btn-success" onclick="bulkCheckInAll()">🔓 Bulk Check-In</button>
             <button class="btn btn-danger" onclick="bulkCheckOutAll()">🔒 Bulk Check-Out</button>
           </div>
         </div>
+        
+        <!-- TODAY OVERVIEW -->
         <div class="manual-card" style="margin-top:20px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
             <h3 style="border:none;padding:0;margin:0">📋 Today's Overview</h3>
@@ -328,6 +372,7 @@
         </div>
       </section>
 
+      <!-- MONTHLY REPORT -->
       <section id="sec-report" class="sec">
         <div class="sec-hdr"><div><h1>Monthly Report 📊</h1></div></div>
         <div class="filters">
@@ -340,6 +385,7 @@
         <div id="reportContent"></div>
       </section>
 
+      <!-- END DAY -->
       <section id="sec-endday" class="sec">
         <div class="sec-hdr"><div><h1>End Day 🏁</h1></div></div>
         <div class="endday-warning"><div class="ew-icon">⚠️</div><div class="ew-content"><h3>End Day Function</h3><p>Auto-checkout workers who forgot</p></div></div>
@@ -353,6 +399,7 @@
         </div>
       </section>
 
+      <!-- EXPORT -->
       <section id="sec-export" class="sec">
         <div class="sec-hdr"><div><h1>Export 📥</h1></div></div>
         <div class="exp-grid">
@@ -386,22 +433,24 @@
         </div>
       </section>
 
+      <!-- SETTINGS -->
       <section id="sec-settings" class="sec">
         <div class="sec-hdr"><div><h1>Settings ⚙️</h1></div></div>
         <div class="set-grid">
           <div class="set-card">
-            <h3>🔐 Admin Credentials</h3>
+            <h3>🔐 Admin Credentials & Name</h3>
             <div class="field"><label>Current ID</label><input type="text" id="setCurId" readonly></div>
-            <div class="field"><label>New ID</label><input type="text" id="setNewId" placeholder="New ID"></div>
+            <div class="field"><label>New Admin Name</label><input type="text" id="setNewName" placeholder="e.g., Pradeep Jangir"></div>
+            <div class="field"><label>New Admin ID</label><input type="text" id="setNewId" placeholder="New ID (or keep same)"></div>
             <div class="field"><label>New Password</label><input type="password" id="setNewPw" placeholder="Min 6"></div>
-            <div class="field"><label>Confirm</label><input type="password" id="setConfPw"></div>
-            <button class="btn btn-primary btn-block" onclick="updateAdmin()">💾 Update</button>
+            <div class="field"><label>Confirm Password</label><input type="password" id="setConfPw"></div>
+            <button class="btn btn-primary btn-block" onclick="updateAdmin()">💾 Update All</button>
           </div>
           <div class="set-card">
-            <h3>💾 Data</h3>
+            <h3>💾 Data Management</h3>
             <p style="color:#64748b;font-size:13px;margin-bottom:16px">🔥 Cloud sync via Firebase</p>
-            <button class="btn btn-success btn-block" onclick="backupAll()" style="margin-bottom:10px">💾 Backup</button>
-            <button class="btn btn-outline btn-block" onclick="resetAllPasswords()" style="margin-bottom:10px">🔑 Reset Passwords</button>
+            <button class="btn btn-success btn-block" onclick="backupAll()" style="margin-bottom:10px">💾 Backup Data</button>
+            <button class="btn btn-outline btn-block" onclick="resetAllPasswords()" style="margin-bottom:10px">🔑 Reset All Passwords</button>
             <button class="btn btn-danger btn-block" onclick="clearAttendanceData()">🗑️ Clear Attendance</button>
           </div>
         </div>
@@ -410,7 +459,7 @@
   </div>
 </div>
 
-<!-- Modals -->
+<!-- MODALS -->
 <div id="mWorker" class="modal-bg">
   <div class="modal">
     <div class="m-head"><h2 id="mwTitle">Add Worker</h2><button class="m-close" onclick="closeModal('mWorker')">✕</button></div>
@@ -420,7 +469,7 @@
       <div class="field"><label>Country *</label>
         <select id="mwSec"><option value="Indian">🇮🇳 Indian</option><option value="Pakistani">🇵🇰 Pakistani</option></select>
       </div>
-      <div class="field"><label>Shift *</label>
+      <div class="field"><label>Default Shift *</label>
         <select id="mwShift"><option value="Day">☀️ Day Shift</option><option value="Night">🌙 Night Shift</option></select>
       </div>
       <div class="field"><label>Password *</label><input type="text" id="mwPw" required></div>
