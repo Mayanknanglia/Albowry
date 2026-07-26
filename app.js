@@ -37,7 +37,7 @@ const PAK=[
 let WC=[],AC=[],ADC=null;
 
 async function initDB(){
-  console.log('Initializing...');
+  console.log('🔥 Initializing database...');
   const ew=await FB.getAll(COL.W);
   if(!ew.length){
     toast('Setting up workers...','info');
@@ -101,7 +101,6 @@ function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.
 function confirmDlg(t,m,cb){$('mcTitle').textContent=t;$('mcMsg').textContent=m;const y=$('mcYes'),n=y.cloneNode(true);y.parentNode.replaceChild(n,y);n.onclick=()=>{closeModal('mConfirm');cb();};openModal('mConfirm');}
 function st(id,v){const e=$(id);if(e)e.textContent=v;}
 
-// Set today's date as default for manual date input
 function setDefaultManualDate(){
   const md=$('manualDate');
   if(md&&!md.value)md.value=tD();
@@ -235,7 +234,7 @@ function loadAppr(){
   const pend=gA().filter(a=>['pending_checkin','pending_checkout'].includes(a.status));
   const el=$('approveList');if(!el)return;
   if(!pend.length){el.innerHTML='<div class="empty"><div class="em-icon">✅</div><h3>All Clear!</h3></div>';}
-  else{el.innerHTML=pend.map(p=>{const ic=p.status==='pending_checkin';return`<div class="appr-item"><div class="appr-info"><h4>${p.name} <span class="tag tag-${p.sec==='Indian'?'ind':'pak'}">${p.sec==='Indian'?'🇮🇳':'🇵🇰'}</span> <span class="tag ${ic?'tag-g':'tag-r'}">${ic?'🔓 IN':'🔒 OUT'}</span></h4><p><b>${p.prof}</b> • ${p.wid} • ${fT(ic?p.checkinReqTime:p.checkoutReqTime)}</p>${!ic&&p.checkinTime?`<p>In: ${fT(p.checkinTime)}</p>`:''}</div><div class="appr-btns"><button class="btn btn-success btn-sm" onclick="doApprove('${p.id}')">✅</button><button class="btn btn-danger btn-sm" onclick="doReject('${p.id}')">❌</button></div></div>`;}).join('');}
+  else{el.innerHTML=pend.map(p=>{const ic=p.status==='pending_checkin';return`<div class="appr-item"><div class="appr-info"><h4>${p.name} <span class="tag tag-${p.sec==='Indian'?'ind':'pak'}">${p.sec==='Indian'?'🇮🇳':'🇵🇰'}</span> <span class="tag ${ic?'tag-g':'tag-r'}">${ic?'🔓 IN':'🔒 OUT'}</span></h4><p><b>${p.prof}</b> • ${p.wid} • ${fT(ic?p.checkinReqTime:p.checkoutReqTime)}</p>${!ic&&p.checkinTime?`<p>In: ${fT(p.checkinTime)}</p>`:''}</div><div class="appr-btns"><button class="btn btn-success btn-sm" onclick="doApprove('${p.id}')">✅ Approve</button><button class="btn btn-danger btn-sm" onclick="doReject('${p.id}')">❌ Reject</button></div></div>`;}).join('');}
   loadRecentAppr();
 }
 
@@ -367,6 +366,85 @@ function exportCSV(){const s=$('expStart').value,e=$('expEnd').value,sec=$('expS
 // Clocks
 function updateClocks(){const t=tT();['loginClock','wClock','aClock','wBigClock'].forEach(id=>{const e=$(id);if(e)e.textContent=t;});}
 
+// ============ PWA INSTALL ============
+let deferredPrompt=null;
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(()=>console.log('✅ SW registered')).catch(()=>{});
+  });
+}
+
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  setTimeout(()=>{
+    const dismissed=localStorage.getItem('install_dismissed');
+    const installed=localStorage.getItem('app_installed');
+    if(!dismissed&&!installed){
+      const banner=$('installBanner');
+      if(banner)banner.classList.add('show');
+    }
+  },3000);
+});
+
+async function installApp(){
+  if(!deferredPrompt){
+    if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
+      alert('📱 To install:\n\n1. Tap Share button ⎋\n2. Select "Add to Home Screen"\n3. Tap "Add"');
+    }else{
+      alert('📱 Use browser menu to "Add to Home Screen" or "Install App"');
+    }
+    return;
+  }
+  deferredPrompt.prompt();
+  const{outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted'){
+    toast('✅ App installed!');
+    localStorage.setItem('app_installed','true');
+  }
+  deferredPrompt=null;
+  dismissInstall();
+}
+
+function dismissInstall(){
+  const banner=$('installBanner');
+  if(banner){
+    banner.classList.remove('show');
+    localStorage.setItem('install_dismissed','true');
+    setTimeout(()=>localStorage.removeItem('install_dismissed'),7*24*60*60*1000);
+  }
+}
+
+window.addEventListener('appinstalled',()=>{
+  console.log('✅ App installed');
+  localStorage.setItem('app_installed','true');
+  toast('✅ App installed successfully!');
+  dismissInstall();
+});
+
+if(/iPhone|iPad|iPod/i.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches){
+  setTimeout(()=>{
+    const dismissed=localStorage.getItem('install_dismissed');
+    if(!dismissed){
+      const banner=$('installBanner');
+      if(banner)banner.classList.add('show');
+    }
+  },3000);
+}
+
 // Boot
-async function boot(){console.log('🚀 Booting...');await initDB();fillDD();updateClocks();setInterval(updateClocks,1000);const u=gU();if(u){if(u.role==='worker')loadWD();else if(u.role==='admin')loadAD();}}
-if(window.FB_READY)boot();else window.addEventListener('fb-ready',boot);
+async function boot(){
+  console.log('🚀 Booting Albowry...');
+  await initDB();
+  fillDD();
+  updateClocks();
+  setInterval(updateClocks,1000);
+  const u=gU();
+  if(u){
+    if(u.role==='worker')loadWD();
+    else if(u.role==='admin')loadAD();
+  }
+}
+if(window.FB_READY)boot();
+else window.addEventListener('fb-ready',boot);
