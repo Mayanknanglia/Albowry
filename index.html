@@ -172,14 +172,16 @@
       <button class="side-btn" data-sec="attend" onclick="goSection('attend',this)"><span>📅</span> Attendance</button>
       <div class="side-lbl">MANAGE</div>
       <button class="side-btn" data-sec="workers" onclick="goSection('workers',this)"><span>👥</span> Workers</button>
+      <button class="side-btn" data-sec="manual" onclick="goSection('manual',this)"><span>✍️</span> Manual Entry</button>
       <button class="side-btn" data-sec="report" onclick="goSection('report',this)"><span>📊</span> Monthly Report</button>
       <button class="side-btn" data-sec="endday" onclick="goSection('endday',this)"><span>🏁</span> End Day</button>
       <button class="side-btn" data-sec="export" onclick="goSection('export',this)"><span>📥</span> Export</button>
       <div class="side-lbl">SYSTEM</div>
       <button class="side-btn" data-sec="settings" onclick="goSection('settings',this)"><span>⚙️</span> Settings</button>
-      <div class="side-foot"><p>v7 Firebase</p><p>🔥 Real-time</p></div>
+      <div class="side-foot"><p>v8 Firebase</p><p>🔥 Real-time</p></div>
     </aside>
     <main class="a-main">
+
       <!-- Dashboard -->
       <section id="sec-dash" class="sec active">
         <div class="sec-hdr"><div><h1>Dashboard 📊</h1><p id="dashDate"></p></div><button class="btn btn-outline btn-sm" onclick="loadStats()">🔄</button></div>
@@ -204,8 +206,8 @@
         <h3 class="qa-title">⚡ Quick Actions</h3>
         <div class="qa-row">
           <div class="qa-card" onclick="goSection('approve',document.querySelector('[data-sec=approve]'))"><div class="qa-icon-box qa-orange">✅</div><p>Approvals</p></div>
+          <div class="qa-card" onclick="goSection('manual',document.querySelector('[data-sec=manual]'))"><div class="qa-icon-box qa-blue">✍️</div><p>Manual Entry</p></div>
           <div class="qa-card" onclick="goSection('live',document.querySelector('[data-sec=live]'))"><div class="qa-icon-box qa-red">🔴</div><p>Live</p></div>
-          <div class="qa-card" onclick="goSection('report',document.querySelector('[data-sec=report]'))"><div class="qa-icon-box qa-blue">📊</div><p>Reports</p></div>
           <div class="qa-card" onclick="goSection('endday',document.querySelector('[data-sec=endday]'))"><div class="qa-icon-box qa-purple">🏁</div><p>End Day</p></div>
         </div>
       </section>
@@ -248,14 +250,86 @@
         <div id="workerTable"></div>
       </section>
 
+      <!-- ====== MANUAL ATTENDANCE (NEW!) ====== -->
+      <section id="sec-manual" class="sec">
+        <div class="sec-hdr">
+          <div>
+            <h1>Manual Attendance ✍️</h1>
+            <p>Manually mark check-in/check-out • No internet needed on worker's side</p>
+          </div>
+        </div>
+
+        <div class="manual-grid">
+          <!-- Quick Check-in/out -->
+          <div class="manual-card">
+            <h3>⚡ Quick Check-In / Check-Out</h3>
+            <p style="color:#64748b;font-size:13px;margin-bottom:16px">Current time will be used</p>
+            <div class="field">
+              <label>Select Worker</label>
+              <select id="manualWorker"><option value="">— Select Worker —</option></select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+              <button class="btn btn-success btn-block" onclick="manualQuickCheckIn()">🔓 Check In Now</button>
+              <button class="btn btn-danger btn-block" onclick="manualQuickCheckOut()">🔒 Check Out Now</button>
+            </div>
+          </div>
+
+          <!-- Custom Time -->
+          <div class="manual-card">
+            <h3>🕐 Custom Date & Time</h3>
+            <p style="color:#64748b;font-size:13px;margin-bottom:16px">Add for any date with custom times</p>
+            <div class="field">
+              <label>Select Worker</label>
+              <select id="manualCustomWorker"><option value="">— Select Worker —</option></select>
+            </div>
+            <div class="field"><label>Date</label><input type="date" id="manualDate"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field"><label>Check-In Time</label><input type="time" id="manualCheckInTime" value="08:00"></div>
+              <div class="field"><label>Check-Out Time</label><input type="time" id="manualCheckOutTime" value="20:00"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+              <button class="btn btn-success btn-block" onclick="manualCustomCheckIn()">🔓 Add Check-In</button>
+              <button class="btn btn-danger btn-block" onclick="manualCustomCheckOut()">🔒 Add Check-Out</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="manual-card" style="margin-top:20px">
+          <h3>👥 Bulk Actions</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Check-in or check-out ALL workers at once</p>
+          <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
+            <div class="field" style="margin-bottom:0;min-width:200px">
+              <label>Section Filter</label>
+              <select id="bulkSection">
+                <option value="">All Sections</option>
+                <option value="Indian">🇮🇳 Indian Only</option>
+                <option value="Pakistani">🇵🇰 Pakistani Only</option>
+              </select>
+            </div>
+            <button class="btn btn-success" onclick="bulkCheckInAll()">🔓 Bulk Check-In All</button>
+            <button class="btn btn-danger" onclick="bulkCheckOutAll()">🔒 Bulk Check-Out All</button>
+          </div>
+        </div>
+
+        <!-- Today's Status -->
+        <div class="manual-card" style="margin-top:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+            <h3 style="border:none;padding:0;margin:0">📋 Today's Overview</h3>
+            <div id="manualStatusCount"></div>
+          </div>
+          <div id="manualTodayList"></div>
+        </div>
+      </section>
+
       <!-- Monthly Report -->
       <section id="sec-report" class="sec">
         <div class="sec-hdr"><div><h1>Monthly Report 📊</h1><p>Per person attendance report</p></div></div>
         <div class="filters">
           <div class="field"><label>Worker</label>
-            <select id="reportWorker" onchange="loadMonthlyReport()"><option value="">— Select —</option><option value="__ALL__">📋 All Workers</option></select>
+            <select id="reportWorker" onchange="loadMR()"><option value="">— Select —</option><option value="__ALL__">📋 All Workers</option></select>
           </div>
-          <div class="field"><label>Month</label><input type="month" id="reportMonth" onchange="loadMonthlyReport()"></div>
+          <div class="field"><label>Month</label><input type="month" id="reportMonth" onchange="loadMR()"></div>
           <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="downloadReportPDF()">📥 PDF</button></div>
         </div>
         <div id="reportContent"></div>
@@ -264,7 +338,7 @@
       <!-- End Day -->
       <section id="sec-endday" class="sec">
         <div class="sec-hdr"><div><h1>End Day 🏁</h1></div></div>
-        <div class="endday-warning"><div class="ew-icon">⚠️</div><div class="ew-content"><h3>End Day Function</h3><p>Auto-checkout workers who forgot.</p></div></div>
+        <div class="endday-warning"><div class="ew-icon">⚠️</div><div class="ew-content"><h3>End Day Function</h3><p>Auto-checkout workers who forgot. Set custom time.</p></div></div>
         <div class="endday-grid">
           <div class="endday-card"><h3>Still Working (<span id="edWorkingCount">0</span>)</h3><div id="edWorkingList"></div></div>
           <div class="endday-card"><h3>⚙️ Options</h3>
@@ -322,6 +396,7 @@
           </div>
         </div>
       </section>
+
     </main>
   </div>
 </div>
@@ -350,35 +425,24 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- ====== FIREBASE + APP (ALL IN ONE) ====== -->
+<!-- Firebase (Built-in) -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const app = initializeApp({
-  apiKey: "AIzaSyCrFHbw0-YRuo_LddyFXOUwdgCT9C6fJX4",
-  authDomain: "albowry-attendance.firebaseapp.com",
-  projectId: "albowry-attendance",
-  storageBucket: "albowry-attendance.firebasestorage.app",
-  messagingSenderId: "498788768411",
-  appId: "1:498788768411:web:f5b0c2f1b09c7eefa2c43e"
-});
-
-const db = getFirestore(app);
-
-window.FB = {
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import{getFirestore,collection,doc,setDoc,getDoc,getDocs,deleteDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyCrFHbw0-YRuo_LddyFXOUwdgCT9C6fJX4",authDomain:"albowry-attendance.firebaseapp.com",projectId:"albowry-attendance",storageBucket:"albowry-attendance.firebasestorage.app",messagingSenderId:"498788768411",appId:"1:498788768411:web:f5b0c2f1b09c7eefa2c43e"});
+const db=getFirestore(app);
+window.FB={
   async save(c,i,d){try{await setDoc(doc(db,c,i),d);return true}catch(e){console.error(e);return false}},
   async get(c,i){try{const s=await getDoc(doc(db,c,i));return s.exists()?{id:s.id,...s.data()}:null}catch(e){return null}},
   async getAll(c){try{const s=await getDocs(collection(db,c));const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));return a}catch(e){return[]}},
   async del(c,i){try{await deleteDoc(doc(db,c,i));return true}catch(e){return false}},
   listen(c,cb){return onSnapshot(collection(db,c),s=>{const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));cb(a)})}
 };
-
-window.FB_READY = true;
-console.log('🔥 Firebase Connected!');
-window.dispatchEvent(new Event('fb-ready'));
+window.FB_READY=true;console.log('🔥 Firebase Connected!');window.dispatchEvent(new Event('fb-ready'));
 </script>
 
+<!-- App Scripts -->
 <script src="app.js"></script>
+<script src="manual.js"></script>
 </body>
 </html>
