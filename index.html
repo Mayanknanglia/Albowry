@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AL BOWRY">
 <meta name="format-detection" content="telephone=no">
+<meta name="msapplication-tap-highlight" content="no">
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -197,9 +198,10 @@
       <button class="side-btn" data-sec="export" onclick="goSection('export',this)"><span>📥</span> Export</button>
       <div class="side-lbl">SYSTEM</div>
       <button class="side-btn" data-sec="settings" onclick="goSection('settings',this)"><span>⚙️</span> Settings</button>
-      <div class="side-foot"><p>v10 Firebase</p><p>🔥 Real-time</p></div>
+      <div class="side-foot"><p>v11 Firebase</p><p>🔥 Real-time</p></div>
     </aside>
     <main class="a-main">
+
       <section id="sec-dash" class="sec active">
         <div class="sec-hdr"><div><h1>Dashboard 📊</h1><p id="dashDate"></p></div><button class="btn btn-outline btn-sm" onclick="loadStats()">🔄</button></div>
         <div class="stats-row">
@@ -247,17 +249,27 @@
         <div class="sec-hdr"><div><h1>Attendance 📅</h1></div></div>
         <div class="filters">
           <div class="field"><label>Date</label><input type="date" id="fDate" onchange="loadAttend()"></div>
-          <div class="field"><label>Shift</label><select id="fSec" onchange="loadAttend()"><option value="">All</option><option value="Day">☀️ Day</option><option value="Night">🌙 Night</option></select></div>
+          <div class="field"><label>Filter</label>
+            <select id="fSec" onchange="loadAttend()">
+              <option value="">All</option>
+              <option value="Day">☀️ Day Shift</option>
+              <option value="Night">🌙 Night Shift</option>
+              <option value="Indian">🇮🇳 Indian</option>
+              <option value="Pakistani">🇵🇰 Pakistani</option>
+            </select>
+          </div>
           <div class="field"><label>&nbsp;</label><button class="btn btn-outline" onclick="loadAttend()">🔄</button></div>
         </div>
         <div id="attendTable"></div>
       </section>
 
       <section id="sec-workers" class="sec">
-        <div class="sec-hdr"><div><h1>Workers 👥</h1></div><button class="btn btn-primary" onclick="openAddWorker()">➕ Add</button></div>
-        <div class="ltabs">
+        <div class="sec-hdr"><div><h1>Workers 👥</h1><p style="color:#64748b;font-size:12px">💡 Click shift badge to toggle Day/Night</p></div><button class="btn btn-primary" onclick="openAddWorker()">➕ Add</button></div>
+        <div class="ltabs" style="flex-wrap:wrap">
           <button class="ltab active" onclick="swWorkerTab('Day',this)">☀️ Day <span id="indCount"></span></button>
           <button class="ltab" onclick="swWorkerTab('Night',this)">🌙 Night <span id="pakCount"></span></button>
+          <button class="ltab" onclick="swWorkerTab('Indian',this)">🇮🇳 Indian <span id="indCount2"></span></button>
+          <button class="ltab" onclick="swWorkerTab('Pakistani',this)">🇵🇰 Pakistani <span id="pakCount2"></span></button>
         </div>
         <div class="field" style="margin-bottom:16px"><input type="text" id="wSearch" placeholder="🔍 Search..." oninput="loadWorkerTable()"></div>
         <div id="workerTable"></div>
@@ -294,11 +306,17 @@
           <h3>👥 Bulk Actions</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:16px">Check-in/out ALL workers at once</p>
           <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-            <div class="field" style="margin-bottom:0;min-width:200px"><label>Shift Filter</label>
-              <select id="bulkSection"><option value="">All Shifts</option><option value="Day">☀️ Day Only</option><option value="Night">🌙 Night Only</option></select>
+            <div class="field" style="margin-bottom:0;min-width:200px"><label>Filter</label>
+              <select id="bulkSection">
+                <option value="">All Workers</option>
+                <option value="Day">☀️ Day Only</option>
+                <option value="Night">🌙 Night Only</option>
+                <option value="Indian">🇮🇳 Indian Only</option>
+                <option value="Pakistani">🇵🇰 Pakistani Only</option>
+              </select>
             </div>
-            <button class="btn btn-success" onclick="bulkCheckInAll()">🔓 Bulk Check-In All</button>
-            <button class="btn btn-danger" onclick="bulkCheckOutAll()">🔒 Bulk Check-Out All</button>
+            <button class="btn btn-success" onclick="bulkCheckInAll()">🔓 Bulk Check-In</button>
+            <button class="btn btn-danger" onclick="bulkCheckOutAll()">🔒 Bulk Check-Out</button>
           </div>
         </div>
         <div class="manual-card" style="margin-top:20px">
@@ -347,14 +365,22 @@
             </div>
             <div class="field"><label>Start</label><input type="date" id="expStart"></div>
             <div class="field"><label>End</label><input type="date" id="expEnd"></div>
-            <div class="field"><label>Shift</label><select id="expSec"><option value="">All</option><option value="Day">☀️ Day</option><option value="Night">🌙 Night</option></select></div>
+            <div class="field"><label>Filter</label>
+              <select id="expSec">
+                <option value="">All Workers</option>
+                <option value="Day">☀️ Day Shift Only</option>
+                <option value="Night">🌙 Night Shift Only</option>
+                <option value="Indian">🇮🇳 Indian Only</option>
+                <option value="Pakistani">🇵🇰 Pakistani Only</option>
+              </select>
+            </div>
             <button class="btn btn-primary btn-block" onclick="exportExcel()">📥 Excel</button>
             <button class="btn btn-outline btn-block" style="margin-top:8px" onclick="exportCSV()">📄 CSV</button>
             <button class="btn btn-success btn-block" style="margin-top:8px" onclick="exportPDF()">📕 PDF</button>
           </div>
           <div class="exp-info">
             <h3>📋 Includes</h3>
-            <ul class="info-list"><li>✓ Logo & Branding</li><li>✓ Day/Night Shift</li><li>✓ Reg 9h + OT 3h</li><li>✓ Extra OT tracking</li><li>✓ Auto totals</li></ul>
+            <ul class="info-list"><li>✓ Logo & Branding</li><li>✓ Day/Night Shift</li><li>✓ Indian/Pakistani</li><li>✓ Reg 9h + OT 3h</li><li>✓ Extra OT tracking</li><li>✓ Auto totals</li></ul>
             <div class="exp-note"><strong>Schedule:</strong> 8AM-8PM<br><strong>Regular:</strong> 9h | <strong>Comp OT:</strong> 3h | <strong>Extra:</strong> Beyond 12h</div>
           </div>
         </div>
@@ -391,7 +417,12 @@
     <form onsubmit="return saveWorkerForm(event)">
       <div class="field"><label>Name *</label><input type="text" id="mwName" required></div>
       <div class="field"><label>Work/Profession</label><input type="text" id="mwProf" placeholder="e.g., Carpenter, Helper..."></div>
-      <div class="field"><label>Shift *</label><select id="mwShift"><option value="Day">☀️ Day Shift</option><option value="Night">🌙 Night Shift</option></select></div>
+      <div class="field"><label>Country *</label>
+        <select id="mwSec"><option value="Indian">🇮🇳 Indian</option><option value="Pakistani">🇵🇰 Pakistani</option></select>
+      </div>
+      <div class="field"><label>Shift *</label>
+        <select id="mwShift"><option value="Day">☀️ Day Shift</option><option value="Night">🌙 Night Shift</option></select>
+      </div>
       <div class="field"><label>Password *</label><input type="text" id="mwPw" required></div>
       <div class="m-foot"><button type="button" class="btn btn-outline" onclick="closeModal('mWorker')">Cancel</button><button type="submit" class="btn btn-primary">💾 Save</button></div>
     </form>
