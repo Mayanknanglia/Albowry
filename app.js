@@ -47,11 +47,37 @@ async function initDB(){
   const ad=await FB.get(COL.AD,'main');
   if(!ad)await FB.save(COL.AD,'main',{adminId:'ADMIN001',pw:'Admin@2026',name:'Administrator'});
   
-  FB.listen(COL.W,d=>{WC=d;fillDD();popReportDD();const u=gU();if(u&&u.role==='admin'){loadStats();if($('#sec-workers')?.classList.contains('active'))loadWorkerTable();}});
-  FB.listen(COL.A,d=>{AC=d;const u=gU();if(u&&u.role==='worker'){upWS();loadWH();loadWQS();}if(u&&u.role==='admin'){loadStats();const a=document.querySelector('.sec.active');if(a){if(a.id==='sec-approve')loadAppr();if(a.id==='sec-live')loadLive();if(a.id==='sec-attend')loadAttend();if(a.id==='sec-endday')loadED();if(a.id==='sec-report')loadMR();}}});
+  FB.listen(COL.W,d=>{
+    WC=d;fillDD();popReportDD();
+    if(typeof populateManualWorkerDD==='function')populateManualWorkerDD();
+    if(typeof populateManualCustomDD==='function')populateManualCustomDD();
+    const u=gU();
+    if(u&&u.role==='admin'){
+      loadStats();
+      if($('sec-workers')?.classList.contains('active'))loadWorkerTable();
+      if($('sec-manual')?.classList.contains('active')&&typeof loadManualToday==='function')loadManualToday();
+    }
+  });
+  FB.listen(COL.A,d=>{
+    AC=d;
+    const u=gU();
+    if(u&&u.role==='worker'){upWS();loadWH();loadWQS();}
+    if(u&&u.role==='admin'){
+      loadStats();
+      const a=document.querySelector('.sec.active');
+      if(a){
+        if(a.id==='sec-approve')loadAppr();
+        if(a.id==='sec-live')loadLive();
+        if(a.id==='sec-attend')loadAttend();
+        if(a.id==='sec-endday')loadED();
+        if(a.id==='sec-report')loadMR();
+        if(a.id==='sec-manual'&&typeof loadManualToday==='function')loadManualToday();
+      }
+    }
+  });
   FB.listen(COL.AD,d=>{if(d.length)ADC=d[0];});
   
-  setTimeout(()=>{const l=$('#loadingScreen');if(l)l.style.display='none';},2000);
+  setTimeout(()=>{const l=$('loadingScreen');if(l)l.style.display='none';},2000);
   console.log('🔥 Ready!');
 }
 
@@ -74,6 +100,12 @@ function closeModal(id){$(id).classList.remove('open');}
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(id).classList.add('active');}
 function confirmDlg(t,m,cb){$('mcTitle').textContent=t;$('mcMsg').textContent=m;const y=$('mcYes'),n=y.cloneNode(true);y.parentNode.replaceChild(n,y);n.onclick=()=>{closeModal('mConfirm');cb();};openModal('mConfirm');}
 function st(id,v){const e=$(id);if(e)e.textContent=v;}
+
+// Set today's date as default for manual date input
+function setDefaultManualDate(){
+  const md=$('manualDate');
+  if(md&&!md.value)md.value=tD();
+}
 
 // Login
 function switchLogin(t,b){document.querySelectorAll('.ltabs .ltab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.lform').forEach(f=>f.classList.remove('active'));$(t+'LoginForm').classList.add('active');$('loginErr').classList.remove('show');}
@@ -162,7 +194,24 @@ async function changeWorkerPw(e){
 // Admin
 function loadAD(){const u=gU();$('aNavName').textContent=u.name;showPage('adminPage');$('fDate').value=tD();$('expStart').value=tD();$('expEnd').value=tD();$('setCurId').value=u.id;$('reportMonth').value=tD().substring(0,7);popReportDD();loadStats();}
 
-function goSection(s,b){document.querySelectorAll('.side-btn').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');document.querySelectorAll('.sec').forEach(x=>x.classList.remove('active'));$('sec-'+s).classList.add('active');if(s==='dash')loadStats();if(s==='approve')loadAppr();if(s==='live')loadLive();if(s==='attend')loadAttend();if(s==='workers')loadWorkerTable();if(s==='endday')loadED();if(s==='report'){popReportDD();loadMR();}}
+function goSection(s,b){
+  document.querySelectorAll('.side-btn').forEach(x=>x.classList.remove('active'));
+  if(b)b.classList.add('active');
+  document.querySelectorAll('.sec').forEach(x=>x.classList.remove('active'));
+  $('sec-'+s).classList.add('active');
+  if(s==='dash')loadStats();
+  if(s==='approve')loadAppr();
+  if(s==='live')loadLive();
+  if(s==='attend')loadAttend();
+  if(s==='workers')loadWorkerTable();
+  if(s==='endday')loadED();
+  if(s==='report'){popReportDD();loadMR();}
+  if(s==='manual'){
+    if(typeof loadManualSection==='function')loadManualSection();
+    if(typeof populateManualCustomDD==='function')populateManualCustomDD();
+    setDefaultManualDate();
+  }
+}
 
 function loadStats(){
   const ws=gW().filter(w=>w.on),today=tD(),att=gA().filter(a=>a.date===today);
