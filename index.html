@@ -2,17 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Albowry">
+  <meta name="theme-color" content="#1e40af">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
   <title>Albowry Carpentry | Attendance</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1e40af">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Albowry">
   <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
 
@@ -23,6 +30,21 @@
     <h2>ALBOWRY CARPENTRY</h2>
     <p>Connecting to cloud...</p>
     <div class="ls-spinner"></div>
+  </div>
+</div>
+
+<!-- Install App Banner -->
+<div id="installBanner" class="install-banner">
+  <div class="ib-info">
+    <div class="ib-icon">📱</div>
+    <div>
+      <strong>Install Albowry App</strong>
+      <p>Quick access from home screen • Works offline</p>
+    </div>
+  </div>
+  <div class="ib-actions">
+    <button class="btn btn-primary btn-sm" onclick="installApp()">📲 Install</button>
+    <button class="btn btn-ghost btn-sm" onclick="dismissInstall()">Later</button>
   </div>
 </div>
 
@@ -205,10 +227,10 @@
         </div>
         <h3 class="qa-title">⚡ Quick Actions</h3>
         <div class="qa-row">
-          <div class="qa-card" onclick="goSection('approve',document.querySelector('[data-sec=approve]'))"><div class="qa-icon-box qa-orange">✅</div><p>Approvals</p></div>
-          <div class="qa-card" onclick="goSection('manual',document.querySelector('[data-sec=manual]'))"><div class="qa-icon-box qa-blue">✍️</div><p>Manual Entry</p></div>
-          <div class="qa-card" onclick="goSection('live',document.querySelector('[data-sec=live]'))"><div class="qa-icon-box qa-red">🔴</div><p>Live</p></div>
-          <div class="qa-card" onclick="goSection('endday',document.querySelector('[data-sec=endday]'))"><div class="qa-icon-box qa-purple">🏁</div><p>End Day</p></div>
+          <div class="qa-card" onclick="goSection('approve',document.querySelector('[data-sec=approve]'))"><div class="qa-icon-box qa-orange">✅</div><p>Approvals</p><small>Review requests</small></div>
+          <div class="qa-card" onclick="goSection('manual',document.querySelector('[data-sec=manual]'))"><div class="qa-icon-box qa-blue">✍️</div><p>Manual Entry</p><small>Add attendance</small></div>
+          <div class="qa-card" onclick="goSection('live',document.querySelector('[data-sec=live]'))"><div class="qa-icon-box qa-red">🔴</div><p>Live Status</p><small>Who's working</small></div>
+          <div class="qa-card" onclick="goSection('endday',document.querySelector('[data-sec=endday]'))"><div class="qa-icon-box qa-purple">🏁</div><p>End Day</p><small>Close sessions</small></div>
         </div>
       </section>
 
@@ -250,7 +272,7 @@
         <div id="workerTable"></div>
       </section>
 
-      <!-- ====== MANUAL ATTENDANCE (NEW!) ====== -->
+      <!-- Manual Attendance -->
       <section id="sec-manual" class="sec">
         <div class="sec-hdr">
           <div>
@@ -258,9 +280,7 @@
             <p>Manually mark check-in/check-out • No internet needed on worker's side</p>
           </div>
         </div>
-
         <div class="manual-grid">
-          <!-- Quick Check-in/out -->
           <div class="manual-card">
             <h3>⚡ Quick Check-In / Check-Out</h3>
             <p style="color:#64748b;font-size:13px;margin-bottom:16px">Current time will be used</p>
@@ -273,8 +293,6 @@
               <button class="btn btn-danger btn-block" onclick="manualQuickCheckOut()">🔒 Check Out Now</button>
             </div>
           </div>
-
-          <!-- Custom Time -->
           <div class="manual-card">
             <h3>🕐 Custom Date & Time</h3>
             <p style="color:#64748b;font-size:13px;margin-bottom:16px">Add for any date with custom times</p>
@@ -293,8 +311,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Bulk Actions -->
         <div class="manual-card" style="margin-top:20px">
           <h3>👥 Bulk Actions</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:16px">Check-in or check-out ALL workers at once</p>
@@ -311,8 +327,6 @@
             <button class="btn btn-danger" onclick="bulkCheckOutAll()">🔒 Bulk Check-Out All</button>
           </div>
         </div>
-
-        <!-- Today's Status -->
         <div class="manual-card" style="margin-top:20px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
             <h3 style="border:none;padding:0;margin:0">📋 Today's Overview</h3>
