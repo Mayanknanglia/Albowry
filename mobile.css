@@ -1,1523 +1,249 @@
-/* ============================================
-   ALBOWRY - MOBILE PERFECT CSS
-   Optimized for all mobile devices
-============================================ */
+/* AL BOWRY CARPENTRY LLC - Mobile Responsive v16 */
 
-/* Prevent horizontal scroll & better rendering */
-/* ===== MOBILE SCROLL FIX ===== */
-html, body {
-  overflow-y: scroll !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior-y: auto !important;
-  height: auto !important;
-  touch-action: pan-y !important;
-}
-
-.page, .page.active, .a-main, .a-layout, .w-container {
-  overflow-y: visible !important;
-  height: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-/* Sidebar horizontal scroll on mobile */
+/* ====== TABLET (768px) ====== */
 @media (max-width: 768px) {
-  .side {
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  
-  .a-main {
-    overflow-y: visible !important;
-    padding-bottom: 100px;
-  }
-}
-* {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
 
-input, select, textarea, code {
-  -webkit-user-select: text;
-  user-select: text;
-}
+  /* Navbar */
+  .admin-nav-title .admin-nav-project { display: none; }
+  .admin-nav-user { display: none; }
+  .hamburger { display: flex; }
 
-html, body {
-  overflow-x: hidden;
-  max-width: 100vw;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
-
-body {
-  touch-action: manipulation;
-}
-
-/* ============================================
-   MOBILE PHONE (≤ 768px)
-============================================ */
-@media (max-width: 768px) {
-  
-  /* === LOADING SCREEN === */
-  .loading-screen {
-    padding: 20px;
-  }
-  .ls-logo {
-    width: 70px;
-    height: 70px;
-    font-size: 34px;
-    border-radius: 18px;
-  }
-  .ls-content h2 {
-    font-size: 20px;
-    letter-spacing: 2px;
-  }
-  .ls-content p {
-    font-size: 12px;
+  /* Sidebar */
+  .admin-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: none;
+    z-index: 300;
   }
 
-  /* === LOGIN PAGE === */
-  #loginPage {
-    min-height: 100vh;
+  .admin-sidebar.open {
+    transform: translateX(0);
+    box-shadow: var(--sh3);
   }
-  
-  .login-wrap {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+
+  .sidebar-overlay.show {
+    display: block;
   }
-  
-  .login-brand {
-    padding: 30px 20px;
-    min-height: auto;
-    order: 1;
+
+  /* Main */
+  .admin-main {
+    margin-left: 0;
+    padding: 16px;
   }
-  
-  .brand-inner {
-    text-align: center;
-    max-width: 100%;
-  }
-  
-  .brand-logo {
-    margin-bottom: 16px;
-  }
-  
-  .brand-logo img, 
-  .brand-logo-fb {
-    width: 70px;
-    height: 70px;
-    font-size: 34px;
-    border-radius: 16px;
-  }
-  
-  .brand-name {
-    font-size: 28px;
-    letter-spacing: 2px;
-    margin-bottom: 4px;
-  }
-  
-  .brand-tag {
-    font-size: 12px;
-    letter-spacing: 5px;
-    margin-bottom: 12px;
-  }
-  
-  .brand-line {
-    width: 50px;
-    height: 3px;
-    margin: 16px auto;
-  }
-  
-  .brand-desc {
-    font-size: 13px;
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
-  
-  .brand-badges {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    max-width: 100%;
-    margin-bottom: 20px;
-  }
-  
-  .bb {
-    padding: 10px 14px;
-    display: flex;
-    align-items: center;
+
+  /* Stats grid */
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
-  
-  .bb-icon {
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-  
-  .bb strong {
-    font-size: 12px;
-  }
-  
-  .bb small {
-    font-size: 10px;
-  }
-  
-  .brand-foot {
-    padding-top: 16px;
-    font-size: 11px;
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  
-  .bg-shape {
-    display: none;
-  }
-  
-  .login-side {
-    padding: 20px 16px;
-    order: 2;
-    background: #f0f4f9;
-  }
-  
-  .login-card {
-    padding: 24px 20px;
-    border-radius: 18px;
-    max-width: 100%;
-  }
-  
-  .login-hdr h2 {
-    font-size: 22px;
-  }
-  
-  .login-hdr p {
-    font-size: 13px;
-    margin-bottom: 12px;
-  }
-  
-  .live-time {
-    padding: 8px 14px;
-    font-size: 12px;
-  }
-  
-  .ltabs {
-    padding: 4px;
-    margin-bottom: 20px;
-  }
-  
-  .ltab {
-    padding: 10px;
-    font-size: 12px;
-    gap: 4px;
-  }
-  
-  .ltab span {
-    font-size: 14px;
-  }
-  
-  .field {
-    margin-bottom: 14px;
-  }
-  
-  .field label {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-  
-  .field input, 
-  .field select {
-    padding: 12px 14px;
-    font-size: 16px !important; /* iOS zoom fix */
-    border-radius: 10px;
-    min-height: 44px;
-  }
-  
-  .pw-eye {
-    right: 8px;
-    font-size: 18px;
-    padding: 6px 10px;
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  .btn {
-    padding: 12px 18px;
-    font-size: 13px;
-    min-height: 44px;
-    border-radius: 10px;
-  }
-  
-  .btn-lg {
-    padding: 14px 20px;
-    font-size: 14px;
-    min-height: 48px;
-  }
-  
-  .btn-sm {
-    padding: 8px 12px;
-    font-size: 11px;
-    min-height: 36px;
-  }
-  
-  .btn-block {
-    width: 100%;
-  }
-  
-  .login-hint {
-    padding: 10px 12px;
-    font-size: 11px;
-    margin-top: 12px;
-  }
-  
-  .login-foot {
-    margin-top: 20px;
-    padding-top: 14px;
-    font-size: 10px;
-  }
 
-  /* === TOPBAR === */
-  .topbar {
-    padding: 8px 10px;
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-  
-  .tb-left {
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .tb-logo img, 
-  .tb-logo-fb {
-    width: 34px;
-    height: 34px;
-    font-size: 15px;
-    border-radius: 8px;
-    padding: 3px;
-    flex-shrink: 0;
-  }
-  
-  .tb-brand {
-    min-width: 0;
-    overflow: hidden;
-  }
-  
-  .tb-brand h2 {
-    font-size: 11px;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .tb-brand p {
-    font-size: 9px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .tb-right {
-    gap: 6px;
-    flex-shrink: 0;
-  }
-  
-  .tb-clock-box {
-    padding: 4px 8px;
-    border-radius: 8px;
-  }
-  
-  .tb-clock-lbl {
-    font-size: 7px;
-    letter-spacing: 0.5px;
-  }
-  
-  .tb-clock {
-    font-size: 10px;
-  }
-  
-  .tb-user {
-    display: none;
-  }
-  
-  .btn-logout {
-    padding: 7px 10px;
-    font-size: 11px;
-    gap: 4px;
-    min-height: 34px;
-  }
-
-  /* === WORKER DASHBOARD === */
-  .w-container {
-    padding: 12px;
-    margin: 0 auto;
-    max-width: 100%;
-  }
-  
-  .w-hero {
-    padding: 18px;
-    border-radius: 14px 14px 0 0;
-  }
-  
-  .w-hero-content {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-  
-  .w-greet {
-    font-size: 12px;
-  }
-  
-  .w-name {
-    font-size: 20px;
-    line-height: 1.2;
-  }
-  
-  .w-info {
-    font-size: 12px;
-  }
-  
-  .w-date-badge {
-    padding: 8px 12px;
-    font-size: 11px;
-    align-self: flex-start;
-  }
-  
-  .w-clock-display {
-    padding: 20px;
-    border-radius: 0 0 14px 14px;
-    margin-bottom: 20px;
-  }
-  
-  .wcd-label {
-    font-size: 10px;
-    gap: 6px;
-  }
-  
-  .wcd-time {
-    font-size: 28px;
-    letter-spacing: 2px;
-    margin-top: 4px;
-  }
-  
-  /* === ACTION CARD === */
-  .w-action-card {
-    padding: 18px;
-    margin-bottom: 20px;
-    border-radius: 14px;
-  }
-  
-  .wac-header {
-    margin-bottom: 20px;
-  }
-  
-  .wac-header h3 {
-    font-size: 18px;
-  }
-  
-  .wac-header p {
-    font-size: 12px;
-  }
-  
-  .wac-buttons {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  
-  .wac-btn {
-    padding: 18px 20px;
-    gap: 14px;
-    border-radius: 14px;
-    min-height: 80px;
-  }
-  
-  .wac-btn-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 26px;
-    border-radius: 12px;
-  }
-  
-  .wac-btn-text strong {
-    font-size: 16px;
-    letter-spacing: 0.5px;
-  }
-  
-  .wac-btn-text small {
-    font-size: 11px;
-  }
-  
-  .wac-status {
-    padding: 12px 14px;
-    font-size: 12px;
-    gap: 8px;
-    border-radius: 10px;
-  }
-  
-  .pend-tag {
-    padding: 12px 16px;
-    font-size: 12px;
-    border-radius: 10px;
-  }
-  
-  /* === STATUS CARD === */
-  .w-status-card {
-    padding: 18px;
-    margin-bottom: 20px;
-    border-radius: 14px;
-  }
-  
-  .wsc-header {
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  
-  .wsc-icon-wrap {
-    padding: 3px;
-  }
-  
-  .wsc-icon {
-    width: 52px;
-    height: 52px;
-    font-size: 26px;
-    border-radius: 12px;
-  }
-  
-  .wsc-text h3 {
-    font-size: 17px;
-  }
-  
-  .wsc-text p {
-    font-size: 12px;
-  }
-  
-  .wsc-times {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  
-  .wsc-time-item {
-    padding: 12px 10px;
-    border-radius: 10px;
-  }
-  
-  .wsc-time-item small {
-    font-size: 10px;
-    margin-bottom: 4px;
-  }
-  
-  .wsc-time-item b {
-    font-size: 13px;
-  }
-  
-  /* === QUICK STATS === */
-  .w-quick-stats {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-  
-  .wqs-card {
-    padding: 12px 10px;
-    gap: 8px;
+  .stat-card {
     flex-direction: column;
     text-align: center;
-    border-radius: 12px;
-  }
-  
-  .wqs-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    border-radius: 10px;
-  }
-  
-  .wqs-val {
-    font-size: 18px;
-    letter-spacing: -0.5px;
-  }
-  
-  .wqs-lbl {
-    font-size: 10px;
-    margin-top: 2px;
-  }
-  
-  /* === CARDS === */
-  .w-card {
-    padding: 18px;
-    margin-bottom: 16px;
-    border-radius: 14px;
-  }
-  
-  .wc-title {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .wc-title h3 {
-    font-size: 15px;
-  }
-  
-  .count-pill {
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-  
-  /* === HISTORY ITEMS === */
-  .hist-item {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    padding: 12px;
-    font-size: 11px;
-    border-radius: 10px;
-  }
-  
-  .hist-item b {
-    font-size: 12px;
-  }
-  
-  .hist-item > *:nth-child(4) {
-    text-align: right;
-  }
-  
-  .hist-item > *:nth-child(5) {
-    grid-column: 1 / -1;
-    text-align: left;
-  }
-  
-  /* === FIELD ROW === */
-  .field-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  /* === ADMIN LAYOUT === */
-  .a-layout {
-    flex-direction: column;
-    min-height: calc(100vh - 60px);
-  }
-  
-  .side {
-    width: 100%;
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 8px;
-    gap: 4px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    border-right: none;
-    border-bottom: 1px solid var(--bor);
-  }
-  
-  .side::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .side-lbl,
-  .side-foot {
-    display: none;
-  }
-  
-  .side-btn {
-    min-width: 110px;
-    max-width: 110px;
-    flex-shrink: 0;
-    padding: 8px 10px;
-    font-size: 11px;
-    flex-direction: column;
-    gap: 4px;
-    text-align: center;
-    min-height: auto;
-    border-radius: 10px;
-  }
-  
-  .side-btn span {
-    font-size: 20px;
-  }
-  
-  .s-badge {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    padding: 1px 6px;
-    font-size: 9px;
-    min-width: 18px;
-  }
-  
-  .a-main {
-    padding: 12px;
-    overflow-x: hidden;
-  }
-  
-  /* === SECTION HEADERS === */
-  .sec-hdr {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-  
-  .sec-hdr > div:first-child {
-    order: 1;
-  }
-  
-  .sec-hdr h1 {
-    font-size: 20px;
-  }
-  
-  .sec-hdr p {
-    font-size: 12px;
-  }
-  
-  .sec-hdr button {
-    align-self: flex-start;
-    order: 2;
-  }
-  
-  /* === STATS CARDS === */
-  .stats-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-  
-  .scard {
-    padding: 14px;
-    gap: 10px;
-    border-radius: 12px;
-  }
-  
-  .sc-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    border-radius: 10px;
-  }
-  
-  .sc-val {
-    font-size: 22px;
-    letter-spacing: -0.5px;
-  }
-  
-  .sc-lbl {
-    font-size: 10px;
-  }
-  
-  /* === SECTION BOXES === */
-  .sec-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  
-  .sec-box {
-    padding: 16px;
-    border-radius: 12px;
-  }
-  
-  .sb-head h3 {
-    font-size: 14px;
-  }
-  
-  .sb-total {
-    font-size: 24px;
-  }
-  
-  .sb-row {
-    gap: 8px;
-  }
-  
-  .sb-row div {
-    padding: 10px 6px;
-    border-radius: 8px;
-  }
-  
-  .sb-row b {
-    font-size: 18px;
-  }
-  
-  .sb-row small {
-    font-size: 9px;
-  }
-  
-  /* === QUICK ACTIONS === */
-  .qa-title {
-    font-size: 16px;
-    margin-bottom: 12px;
-  }
-  
-  .qa-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  
-  .qa-card {
-    padding: 16px 12px;
-    border-radius: 12px;
-  }
-  
-  .qa-icon-box {
-    width: 44px;
-    height: 44px;
-    font-size: 22px;
-    margin-bottom: 8px;
-    border-radius: 10px;
-  }
-  
-  .qa-card p {
-    font-size: 13px;
-    margin-bottom: 2px;
-  }
-  
-  .qa-card small {
-    font-size: 10px;
-  }
-  
-  /* === FILTERS === */
-  .filters {
-    padding: 12px;
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-    border-radius: 12px;
-  }
-  
-  .filters .field {
-    min-width: 100%;
-    flex: none;
-    margin-bottom: 0;
-  }
-  
-  .filters .btn {
-    width: 100%;
-  }
-
-  /* === TABLES === */
-  .t-wrap {
-    border-radius: 10px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    background: #fff;
-  }
-  
-  table {
-    min-width: 500px;
-  }
-  
-  th {
-    padding: 8px 6px;
-    font-size: 9px;
-    letter-spacing: 0.2px;
-  }
-  
-  td {
-    padding: 8px 6px;
-    font-size: 11px;
-  }
-  
-  td code {
-    padding: 1px 4px;
-    font-size: 10px;
-  }
-  
-  td button {
-    padding: 4px 8px;
-    font-size: 10px;
-    min-height: 28px;
-  }
-  
-  /* === TAGS === */
-  .tag {
-    padding: 3px 8px;
-    font-size: 10px;
-    letter-spacing: 0;
-  }
-  
-  /* === APPROVALS === */
-  .appr-item {
-    padding: 14px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    border-radius: 12px;
-    border-left-width: 4px;
-  }
-  
-  .appr-info h4 {
-    font-size: 13px;
-    gap: 6px;
-    line-height: 1.4;
-  }
-  
-  .appr-info p {
-    font-size: 11px;
-    line-height: 1.4;
-  }
-  
-  .appr-btns {
-    display: flex;
-    gap: 8px;
-    justify-content: stretch;
-  }
-  
-  .appr-btns .btn {
-    flex: 1;
-  }
-  
-  /* === LIVE STATUS === */
-  .live-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .live-panel {
-    padding: 16px;
-    border-radius: 12px;
-  }
-  
-  .live-panel h3 {
-    font-size: 14px;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-  }
-  
-  .live-item {
-    padding: 10px 12px;
-    border-radius: 10px;
-    gap: 8px;
-  }
-  
-  .li-info h4 {
-    font-size: 12px;
-    gap: 6px;
-  }
-  
-  .li-info p {
-    font-size: 10px;
-  }
-  
-  .li-time {
-    font-size: 10px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    white-space: nowrap;
-  }
-  
-  .live-indicator {
-    padding: 6px 12px;
-    font-size: 11px;
-    align-self: flex-start;
-  }
-  
-  /* === MANUAL SECTION === */
-  .manual-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .manual-card {
-    padding: 16px;
-    border-radius: 12px;
-  }
-  
-  .manual-card h3 {
-    font-size: 14px;
-    margin-bottom: 8px;
-    padding-bottom: 10px;
-  }
-  
-  .manual-card p {
-    font-size: 11px;
-    margin-bottom: 12px;
-  }
-  
-  /* === END DAY === */
-  .endday-warning {
-    padding: 14px;
-    gap: 10px;
-    border-radius: 12px;
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .ew-icon {
-    font-size: 28px;
-  }
-  
-  .ew-content h3 {
-    font-size: 14px;
-  }
-  
-  .ew-content p {
-    font-size: 11px;
-  }
-  
-  .endday-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .endday-card {
-    padding: 16px;
-    border-radius: 12px;
-  }
-  
-  .endday-card h3 {
-    font-size: 14px;
-  }
-  
-  .ed-worker-item {
-    padding: 10px 12px;
-    gap: 8px;
-    border-radius: 10px;
-  }
-  
-  .ed-info h4 {
-    font-size: 12px;
-  }
-  
-  .ed-info p {
-    font-size: 10px;
-  }
-  
-  .ed-time {
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 6px;
-    white-space: nowrap;
-  }
-  
-  /* === EXPORT === */
-  .exp-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .exp-card, .exp-info {
-    padding: 16px;
-    border-radius: 12px;
-  }
-  
-  .exp-card h3, .exp-info h3 {
-    font-size: 14px;
-  }
-  
-  .info-list li {
-    padding: 8px 12px;
-    font-size: 11px;
-  }
-  
-  .exp-note {
-    padding: 10px 12px;
-    font-size: 11px;
-  }
-  
-  .quick-btns {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-  }
-  
-  .quick-btns .btn {
-    padding: 8px 4px;
-    font-size: 10px;
-    min-height: 36px;
-  }
-  
-  /* === SETTINGS === */
-  .set-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .set-card {
-    padding: 16px;
-    border-radius: 12px;
-  }
-  
-  .set-card h3 {
-    font-size: 14px;
-  }
-  
-  .set-card p {
-    font-size: 11px;
-  }
-  
-  /* === MODAL === */
-  .modal-bg {
-    padding: 12px;
-    align-items: flex-end;
-  }
-  
-  .modal {
-    padding: 20px 16px;
-    border-radius: 16px 16px 0 0;
-    max-width: 100%;
-    width: 100%;
-    max-height: 85vh;
-    animation: slideUpModal 0.3s ease;
-  }
-  
-  @keyframes slideUpModal {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-  
-  .m-head {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-  }
-  
-  .m-head h2 {
-    font-size: 18px;
-  }
-  
-  .m-close {
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
-  }
-  
-  .m-foot {
-    margin-top: 16px;
-    padding-top: 12px;
-    gap: 8px;
-    flex-direction: column-reverse;
-  }
-  
-  .m-foot .btn {
-    width: 100%;
-  }
-  
-  /* === TOAST === */
-  .toast {
-    top: 16px;
-    right: 12px;
-    left: 12px;
-    max-width: none;
-    padding: 12px 16px;
-    font-size: 12px;
-    border-radius: 10px;
-    text-align: center;
-  }
-  
-  /* === PASSWORD DISPLAY === */
-  .pw-show {
-    padding: 18px 14px;
-    border-radius: 12px;
-  }
-  
-  .pw-lbl {
-    font-size: 10px;
-    letter-spacing: 0.5px;
-  }
-  
-  .pw-name {
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-  
-  .pw-val {
-    font-size: 20px;
-    letter-spacing: 2px;
-    padding: 10px;
-  }
-  
-  .pw-warn {
-    padding: 10px 12px;
-    font-size: 11px;
-    border-radius: 8px;
-  }
-  
-  /* === EMPTY STATE === */
-  .empty {
-    padding: 40px 16px;
-    border-radius: 12px;
-  }
-  
-  .em-icon {
-    font-size: 44px;
-    margin-bottom: 10px;
-  }
-  
-  .empty h3 {
-    font-size: 15px;
-  }
-  
-  .empty p {
-    font-size: 12px;
-  }
-  
-  /* === INSTALL BANNER === */
-  .install-banner {
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    padding: 12px 14px;
-    flex-direction: column;
-    gap: 10px;
-    border-radius: 14px;
-  }
-  
-  .ib-info {
-    gap: 10px;
-    width: 100%;
-  }
-  
-  .ib-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
-    border-radius: 10px;
-  }
-  
-  .ib-info strong {
-    font-size: 13px;
-  }
-  
-  .ib-info p {
-    font-size: 11px;
-  }
-  
-  .ib-actions {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 8px;
-  }
-  
-  .install-banner .btn {
-    padding: 10px;
-    font-size: 12px;
-  }
-}
-
-/* ============================================
-   SMALL PHONES (≤ 380px) - iPhone SE etc.
-============================================ */
-@media (max-width: 380px) {
-  .stats-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  
-  .scard {
-    padding: 12px;
-    gap: 8px;
-  }
-  
-  .sc-icon {
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-  }
-  
-  .sc-val {
-    font-size: 18px;
-  }
-  
-  .sc-lbl {
-    font-size: 9px;
-  }
-  
-  .qa-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  
-  .qa-card {
     padding: 14px 10px;
   }
-  
-  .qa-icon-box {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-  }
-  
-  .qa-card p {
-    font-size: 12px;
-  }
-  
-  .w-quick-stats {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-  }
-  
-  .wqs-card {
-    padding: 10px 6px;
-  }
-  
-  .wqs-icon {
-    width: 34px;
-    height: 34px;
-    font-size: 17px;
-  }
-  
-  .wqs-val {
-    font-size: 15px;
-  }
-  
-  .wqs-lbl {
-    font-size: 9px;
-  }
-  
-  .wcd-time {
-    font-size: 24px;
-    letter-spacing: 1.5px;
-  }
-  
-  .brand-name {
-    font-size: 24px;
-  }
-  
-  .w-name {
-    font-size: 18px;
-  }
-  
-  .wac-btn {
-    padding: 14px;
-  }
-  
-  .wac-btn-icon {
-    width: 44px;
-    height: 44px;
-    font-size: 22px;
-  }
-  
-  .wac-btn-text strong {
-    font-size: 14px;
-  }
-  
-  .wsc-times {
-    grid-template-columns: 1fr;
-  }
-  
-  .side-btn {
-    min-width: 100px;
-    max-width: 100px;
-    padding: 8px;
-    font-size: 10px;
-  }
-  
-  .side-btn span {
-    font-size: 18px;
-  }
+
+  .stat-num { font-size: 22px; }
+
+  /* Dashboard grids */
+  .dash-grid-2 { grid-template-columns: 1fr; }
+  .live-grid { grid-template-columns: 1fr; }
+
+  /* Form grid */
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr; }
+
+  /* Filter row */
+  .filter-row { flex-direction: column; }
+  .filter-row .form-group { min-width: unset; }
+
+  /* Manual overview */
+  .manual-overview-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Export grid */
+  .export-btn-grid { grid-template-columns: 1fr; }
+
+  /* Settings grid */
+  .settings-grid { grid-template-columns: 1fr; }
+
+  /* Worker action grid */
+  .worker-action-grid { grid-template-columns: 1fr; }
+
+  /* Absent grid */
+  .absent-grid { grid-template-columns: 1fr; }
+
+  /* End day stats */
+  .end-day-stats { flex-direction: column; }
+
+  /* Login */
+  .login-container { padding: 24px 20px; }
+  .login-header { flex-direction: column; text-align: center; }
+  .login-location-row { justify-content: center; }
+
+  /* Worker hero */
+  .worker-hero-left { flex-direction: column; text-align: center; }
+  .worker-stats-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Bulk list */
+  .bulk-list { grid-template-columns: 1fr; }
+
+  /* Section header */
+  .section-header { flex-direction: column; align-items: flex-start; }
+  .section-header-right { width: 100%; justify-content: flex-start; }
+
+  /* Hist stats */
+  .hist-stats-row { flex-direction: column; }
+
+  /* Monthly stats */
+  .monthly-stats-row { gap: 8px; }
+  .mstat { padding: 10px 12px; }
+
+  /* Table */
+  .data-table { font-size: 12px; }
+  .data-table thead th { padding: 8px 10px; }
+  .data-table tbody td { padding: 8px 10px; }
+
+  /* Worker tabs */
+  .worker-tabs { flex-wrap: wrap; }
+  .wtab { font-size: 12px; padding: 8px 12px; }
+
+  /* Approval items */
+  .approval-item { flex-direction: column; align-items: flex-start; }
+  .approval-actions { width: 100%; justify-content: flex-end; }
+
+  /* Login company name */
+  .login-company-name { font-size: 17px; }
+
+  /* Undo item */
+  .undo-item { flex-direction: column; align-items: flex-start; }
 }
 
-/* ============================================
-   TABLET (768px - 1024px)
-============================================ */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .stats-row {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .qa-row {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .sec-grid,
-  .live-grid,
-  .endday-grid,
-  .exp-grid,
-  .set-grid,
-  .manual-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .tb-user {
-    display: flex;
-  }
-  
-  .side {
-    width: 220px;
-  }
+/* ====== MOBILE (480px) ====== */
+@media (max-width: 480px) {
+
+  html, body { font-size: 13px; }
+
+  /* Navbar */
+  .worker-nav-brand span { display: none; }
+  .admin-nav-company { font-size: 12px; }
+
+  /* Stats */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-num { font-size: 20px; }
+  .stat-label { font-size: 10px; }
+
+  /* Login */
+  .login-container { padding: 20px 16px; border-radius: 16px; }
+  .login-company-name { font-size: 15px; }
+  .logo-box-xl { width: 52px; height: 52px; font-size: 26px; border-radius: 12px; }
+
+  /* Shift selector */
+  .shift-selector { gap: 8px; }
+  .shift-opt-content { padding: 10px 8px; font-size: 12px; }
+
+  /* Buttons */
+  .btn { padding: 9px 14px; font-size: 12px; }
+  .btn-lg { padding: 11px 18px; font-size: 14px; }
+
+  /* Worker dashboard */
+  .worker-avatar { width: 52px; height: 52px; font-size: 18px; }
+  .worker-hero-name { font-size: 18px; }
+  .worker-content { padding: 16px 12px; }
+
+  /* Cards */
+  .card-body { padding: 14px; }
+  .card-header { padding: 12px 14px; }
+
+  /* Stats */
+  .wstat-num { font-size: 20px; }
+  .worker-stats-grid { gap: 8px; }
+  .wstat-item { padding: 10px; }
+
+  /* Manual */
+  .manual-overview-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .ov-num { font-size: 22px; }
+
+  /* Section header */
+  .section-header h2 { font-size: 17px; }
+
+  /* Admin main */
+  .admin-main { padding: 12px; }
+
+  /* Bulk controls */
+  .bulk-controls { flex-wrap: wrap; }
+  .bulk-action-btns { flex-direction: column; }
+
+  /* Worker tabs */
+  .worker-tabs { }
+  .wtab { flex: 1; justify-content: center; font-size: 12px; padding: 8px; }
+
+  /* Table responsive */
+  .table-responsive { margin: 0 -14px; border-radius: 0; }
+
+  /* Login tabs */
+  .login-tab { font-size: 12px; padding: 8px 10px; }
+  .login-tab .material-symbols-outlined { font-size: 16px; }
+
+  /* Absent card */
+  .absent-card { flex-wrap: wrap; }
+
+  /* Hist stats */
+  .hist-stat-num { font-size: 20px; }
+
+  /* Export btns */
+  .export-btn { padding: 18px 12px; }
+  .export-btn .material-symbols-outlined { font-size: 28px; }
+
+  /* Settings */
+  .sys-info-grid { grid-template-columns: 1fr; }
+
+  /* Filter export row */
+  .filter-export-row { gap: 8px; }
+  .filter-export-row .btn { flex: 1; justify-content: center; }
+
+  /* Toast */
+  #toastContainer { bottom: 16px; right: 16px; left: 16px; }
+
+  /* Loading */
+  .loading-company { font-size: 18px; }
+
+  /* Live grid */
+  .live-worker-item { flex-wrap: wrap; }
 }
 
-/* ============================================
-   LANDSCAPE MODE
-============================================ */
-@media (max-width: 768px) and (orientation: landscape) {
-  .login-brand {
-    padding: 20px;
-    min-height: auto;
-  }
-  
-  .brand-badges {
-    display: none;
-  }
-  
-  .w-hero {
-    padding: 14px 18px;
-  }
-  
-  .wcd-time {
-    font-size: 24px;
-  }
-  
-  .side {
-    padding: 6px;
-  }
-  
-  .side-btn {
-    min-width: 90px;
-    max-width: 90px;
-    padding: 6px 8px;
-    font-size: 10px;
-  }
-  
-  .side-btn span {
-    font-size: 16px;
-  }
+/* ====== SMALL MOBILE (360px) ====== */
+@media (max-width: 360px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .shift-selector { flex-direction: column; }
+  .worker-action-grid { grid-template-columns: 1fr; }
+  .manual-overview-grid { grid-template-columns: 1fr 1fr; }
+  .login-location-row { flex-direction: column; align-items: center; }
 }
 
-/* ============================================
-   PWA STANDALONE MODE
-============================================ */
-@media all and (display-mode: standalone) {
-  .install-banner {
-    display: none !important;
-  }
-  
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-  
-  .topbar {
-    padding-top: calc(10px + env(safe-area-inset-top));
-  }
-  
-  .side {
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
-  }
-  
-  .toast {
-    top: calc(16px + env(safe-area-inset-top));
-  }
-  
-  .install-banner {
-    bottom: calc(10px + env(safe-area-inset-bottom));
-  }
-}
-
-/* ============================================
-   TOUCH IMPROVEMENTS
-============================================ */
-@media (hover: none) and (pointer: coarse) {
-  /* Larger touch targets */
-  .btn, .wac-btn, .side-btn, .ltab, .qa-card, .scard {
-    -webkit-tap-highlight-color: transparent;
-  }
-  
-  /* Remove hover states on touch devices */
-  .btn:hover,
-  .qa-card:hover,
-  .scard:hover,
-  .wqs-card:hover,
-  .live-item:hover,
-  .hist-item:hover {
-    transform: none;
-    box-shadow: var(--sh);
-  }
-  
-  /* Active states for touch feedback */
-  .btn:active {
-    transform: scale(0.96) !important;
-    opacity: 0.9;
-  }
-  
-  .wac-btn:active {
-    transform: scale(0.97) !important;
-  }
-  
-  .qa-card:active,
-  .scard:active,
-  .side-btn:active {
-    transform: scale(0.97) !important;
-  }
-}
-
-/* ============================================
-   iOS SPECIFIC FIXES
-============================================ */
-@supports (-webkit-touch-callout: none) {
-  input, select, textarea {
-    font-size: 16px !important; /* Prevent zoom */
-  }
-  
-  .modal {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-  
-  .field select {
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-    padding-right: 36px;
-  }
-}
-
-/* ============================================
-   BETTER SCROLLING
-============================================ */
-.a-main,
-.w-container,
-.t-wrap,
-.modal {
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-/* ============================================
-   DARK MODE SUPPORT (Optional)
-============================================ */
-@media (prefers-color-scheme: dark) {
-  /* Optional: Add dark mode later */
-}
-
-/* ============================================
-   REDUCE MOTION
-============================================ */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ============================================
-   PRINT STYLES
-============================================ */
+/* ====== PRINT ====== */
 @media print {
-  .topbar, .side, .btn, .install-banner, .toast {
+  .admin-nav,
+  .admin-sidebar,
+  .worker-nav,
+  .btn,
+  .install-banner,
+  .sync-badge,
+  #toastContainer {
     display: none !important;
   }
-  
-  .a-main {
+
+  .admin-main {
+    margin: 0;
     padding: 0;
   }
-  
-  body {
-    background: white;
+
+  .admin-section {
+    display: block !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
   }
 }
