@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-<title>AL BOWRY Carpentry | Attendance</title>
+<title>AL BOWRY CARPENTRY LLC | COP31 Attendance</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1e40af">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="AL BOWRY">
+<meta name="apple-mobile-web-app-title" content="AL BOWRY LLC">
 <meta name="format-detection" content="telephone=no">
 <meta name="msapplication-tap-highlight" content="no">
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
@@ -26,8 +26,8 @@
 <div id="loadingScreen" class="loading-screen">
   <div class="ls-content">
     <div class="ls-logo">A</div>
-    <h2>AL BOWRY CARPENTRY</h2>
-    <p>Connecting to cloud...</p>
+    <h2>AL BOWRY CARPENTRY LLC</h2>
+    <p>COP31 Project • Antalya, Turkey</p>
     <div class="ls-spinner"></div>
   </div>
 </div>
@@ -46,7 +46,7 @@
   </div>
 </div>
 
-<!-- LOGIN PAGE -->
+<!-- ============ LOGIN PAGE ============ -->
 <div id="loginPage" class="page active">
   <div class="login-wrap">
     <div class="login-brand">
@@ -57,15 +57,23 @@
           <img src="logo.png" alt="AL BOWRY" onerror="this.outerHTML='<div class=brand-logo-fb>A</div>'">
         </div>
         <h1 class="brand-name">AL BOWRY</h1>
-        <p class="brand-tag">CARPENTRY</p>
+        <p class="brand-tag">CARPENTRY LLC</p>
         <div class="brand-line"></div>
-        <p class="brand-desc">Premium woodworking and carpentry solutions with excellence in craftsmanship.</p>
+        <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;margin-bottom:20px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2)">
+          <div style="font-size:13px;font-weight:700;opacity:.95;margin-bottom:4px">🏗️ CURRENT PROJECT</div>
+          <div style="font-size:16px;font-weight:800;letter-spacing:.5px">COP31 at Antalya, Turkey</div>
+        </div>
+        <p class="brand-desc">Premium woodworking and carpentry solutions with excellence in craftsmanship for international projects.</p>
         <div class="brand-badges">
           <div class="bb"><span class="bb-icon">🏆</span><div><strong>Premium Quality</strong><small>Excellence Guaranteed</small></div></div>
           <div class="bb"><span class="bb-icon">🔧</span><div><strong>Expert Team</strong><small>Skilled Craftsmen</small></div></div>
-          <div class="bb"><span class="bb-icon">⭐</span><div><strong>Trusted Service</strong><small>Client Satisfaction</small></div></div>
+          <div class="bb"><span class="bb-icon">🌍</span><div><strong>Global Projects</strong><small>UAE to Turkey</small></div></div>
         </div>
-        <div class="brand-foot"><div>📍 Antalya, Turkey</div><div>🌐 www.albowry.com</div></div>
+        <div class="brand-foot">
+          <div>📍 Head Office: Sharjah, UAE</div>
+          <div>🏗️ Project Site: Antalya, Turkey</div>
+          <div>🌐 www.albowry.com</div>
+        </div>
       </div>
     </div>
     <div class="login-side">
@@ -109,18 +117,22 @@
           <div class="login-hint admin-hint"><span class="hint-icon">🔒</span><div><strong>Restricted Access</strong></div></div>
         </form>
         <div id="loginErr" class="err-box"></div>
-        <div class="login-foot">© 2026 AL BOWRY Carpentry • 🔥 Cloud Sync</div>
+        <div class="login-foot">
+          <div style="font-weight:700;margin-bottom:4px;font-size:12px">AL BOWRY CARPENTRY LLC</div>
+          <div style="font-size:11px;opacity:.8">PROJECT COP31 • Antalya, Turkey</div>
+          <div style="font-size:10px;opacity:.7;margin-top:2px">Registered: Sharjah, UAE • © 2026</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- WORKER DASHBOARD -->
+<!-- ============ WORKER DASHBOARD ============ -->
 <div id="workerPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
       <div class="tb-logo"><img src="logo.png" alt="" onerror="this.outerHTML='<div class=tb-logo-fb>A</div>'"></div>
-      <div class="tb-brand"><h2>AL BOWRY CARPENTRY</h2><p>Attendance Portal</p></div>
+      <div class="tb-brand"><h2>AL BOWRY CARPENTRY LLC</h2><p>COP31 Project • Antalya, Turkey</p></div>
     </div>
     <div class="tb-right">
       <div class="tb-clock-box"><div class="tb-clock-lbl">TURKEY TIME</div><div class="tb-clock" id="wClock">--:--:--</div></div>
@@ -141,7 +153,7 @@
       </div>
     </div>
     <div class="w-action-card">
-      <div class="wac-header"><h3>🕐 Mark Your Attendance</h3><p>Shift: 8AM-8PM (9h Reg + 3h OT) • Admin approval required</p></div>
+      <div class="wac-header"><h3>🕐 Mark Your Attendance</h3><p>COP31 Project • Shift: 8AM-8PM (9h Reg + 3h OT) • Admin approval required</p></div>
       <div class="wac-buttons">
         <button class="wac-btn checkin-btn" id="btnCheckin" onclick="doCheckIn()">
           <div class="wac-btn-icon">🔓</div><div class="wac-btn-text"><strong>CHECK IN</strong><small>Start Work</small></div>
@@ -179,12 +191,12 @@
   </div>
 </div>
 
-<!-- ADMIN DASHBOARD -->
+<!-- ============ ADMIN DASHBOARD ============ -->
 <div id="adminPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
       <div class="tb-logo"><img src="logo.png" alt="" onerror="this.outerHTML='<div class=tb-logo-fb>A</div>'"></div>
-      <div class="tb-brand"><h2>AL BOWRY CARPENTRY</h2><p>Admin Panel</p></div>
+      <div class="tb-brand"><h2>AL BOWRY CARPENTRY LLC</h2><p>COP31 Project • Admin Panel</p></div>
     </div>
     <div class="tb-right">
       <div class="tb-clock-box"><div class="tb-clock-lbl">TURKEY TIME</div><div class="tb-clock" id="aClock">--:--:--</div></div>
@@ -208,7 +220,11 @@
       <button class="side-btn" data-sec="export" onclick="goSection('export',this)"><span>📥</span> Export</button>
       <div class="side-lbl">SYSTEM</div>
       <button class="side-btn" data-sec="settings" onclick="goSection('settings',this)"><span>⚙️</span> Settings</button>
-      <div class="side-foot"><p>v12 Firebase</p><p>🔥 Real-time</p></div>
+      <div class="side-foot">
+        <p style="font-weight:700;color:#1e40af">AL BOWRY LLC</p>
+        <p style="font-size:10px">COP31 • Antalya</p>
+        <p style="font-size:10px">v12 Firebase</p>
+      </div>
     </aside>
     <main class="a-main">
 
@@ -234,7 +250,6 @@
           </div>
         </div>
         
-        <!-- ⭐ ABSENT WORKERS TODAY -->
         <div class="manual-card" style="margin-top:20px;border-left:4px solid var(--r)">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
             <h3 style="border:none;padding:0;margin:0">❌ Absent Workers Today</h3>
@@ -376,7 +391,7 @@
         </div>
       </section>
 
-      <!-- HISTORY - Complete section -->
+      <!-- HISTORY & BACKDATED -->
       <section id="sec-history" class="sec">
         <div class="sec-hdr">
           <div><h1>History & Backdated Entries 📅</h1><p>Add past date attendance & view day-wise data</p></div>
@@ -388,7 +403,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="field">
               <label>Select Worker *</label>
-              <select id="historyWorker"><option value="">— Select Worker —</option></select>
+              <select id="historyWorker"><option value="">— Loading workers... —</option></select>
             </div>
             <div class="field">
               <label>Date *</label>
@@ -522,7 +537,7 @@
           </div>
           <div class="exp-info">
             <h3>📋 Includes</h3>
-            <ul class="info-list"><li>✓ Logo & Branding</li><li>✓ Day/Night Shift</li><li>✓ Indian/Pakistani</li><li>✓ Reg 9h + OT 3h</li><li>✓ Extra OT tracking</li><li>✓ Auto totals</li></ul>
+            <ul class="info-list"><li>✓ AL BOWRY LLC Branding</li><li>✓ COP31 Project Info</li><li>✓ Day/Night Shift</li><li>✓ Reg 9h + OT 3h</li><li>✓ Extra OT tracking</li><li>✓ Auto totals</li></ul>
             <div class="exp-note"><strong>Schedule:</strong> 8AM-8PM<br><strong>Regular:</strong> 9h | <strong>Comp OT:</strong> 3h | <strong>Extra:</strong> Beyond 12h</div>
           </div>
         </div>
@@ -542,7 +557,16 @@
             <button class="btn btn-primary btn-block" onclick="updateAdmin()">💾 Update All</button>
           </div>
           <div class="set-card">
-            <h3>💾 Data Management</h3>
+            <h3>🏢 Company Info</h3>
+            <div style="background:#eff6ff;padding:16px;border-radius:10px;margin-bottom:16px">
+              <div style="font-weight:800;color:#1e40af;margin-bottom:8px">AL BOWRY CARPENTRY LLC</div>
+              <div style="font-size:13px;color:#475569;line-height:1.8">
+                📍 <b>Head Office:</b> Sharjah, UAE<br>
+                🏗️ <b>Project Site:</b> Antalya, Turkey<br>
+                📋 <b>Project:</b> COP31<br>
+                🌐 <b>Website:</b> www.albowry.com
+              </div>
+            </div>
             <p style="color:#64748b;font-size:13px;margin-bottom:16px">🔥 Cloud sync via Firebase</p>
             <button class="btn btn-success btn-block" onclick="backupAll()" style="margin-bottom:10px">💾 Backup Data</button>
             <button class="btn btn-outline btn-block" onclick="resetAllPasswords()" style="margin-bottom:10px">🔑 Reset All Passwords</button>
