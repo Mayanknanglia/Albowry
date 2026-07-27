@@ -1,3 +1,54 @@
+/* ===== CRITICAL SCROLL FIX ===== */
+html {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100vh;
+}
+
+body {
+  overflow-y: visible !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100vh;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page {
+  overflow-y: visible !important;
+  height: auto !important;
+  min-height: 100vh;
+}
+
+.page.active {
+  display: block !important;
+  overflow-y: visible !important;
+}
+
+.a-main {
+  overflow-y: auto !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.a-layout {
+  min-height: calc(100vh - 70px);
+  overflow: visible !important;
+}
+
+.w-container {
+  overflow: visible !important;
+}
+
+.login-wrap {
+  overflow-y: auto !important;
+  min-height: 100vh;
+}
+
+/* Fix modal scroll lock */
+body.modal-open {
+  overflow: hidden !important;
+}
 *{margin:0;padding:0;box-sizing:border-box}
 
 :root{
