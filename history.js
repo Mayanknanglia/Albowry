@@ -1,710 +1,467 @@
+// ========== HISTORY & BACKDATED ENTRY MODULE ==========
+// AL BOWRY CARPENTRY LLC - COP31 Project, Antalya, Turkey
+
 function loadHistorySection(){
   populateHistoryWorkerDD();
-  const dateInput=document.getElementById('historyDate');
-  if(dateInput&&!dateInput.value)dateInput.value=tD();
+  const d1=document.getElementById('historyDate');
+  const d2=document.getElementById('historyEntryDate');
+  if(d1&&!d1.value)d1.value=tD();
+  if(d2&&!d2.value)d2.value=tD();
   loadHistoryForDate();
 }
 
 function populateHistoryWorkerDD(){
-  const sel=document.getElementById('historyWorker');if(!sel)return;
+  const sel=document.getElementById('historyWorker');
+  if(!sel){console.log('❌ historyWorker not found');return;}
   const w=gW().filter(x=>x.on).sort((a,b)=>a.name.localeCompare(b.name));
-  let h='<option value="">— Select Worker for Backdated Entry —</option>';
+  if(!w.length){
+    sel.innerHTML='<option value="">Loading workers...</option>';
+    console.log('⏳ Workers not loaded yet, retrying...');
+    setTimeout(populateHistoryWorkerDD,2000);
+    return;
+  }
+  let h='<option value="">— Select Worker —</option>';
   const ind=w.filter(x=>x.sec==='Indian');
   const pak=w.filter(x=>x.sec==='Pakistani');
-  if(ind.length){h+='<optgroup label="🇮🇳 Indian Workers">';ind.forEach(x=>h+=`<option value="${x.wid}">${x.name} (${x.prof||'-'})</option>`);h+='</optgroup>';}
-  if(pak.length){h+='<optgroup label="🇵🇰 Pakistani Workers">';pak.forEach(x=>h+=`<option value="${x.wid}">${x.name}</option>`);h+='</optgroup>';}
+  if(ind.length){
+    h+='<optgroup label="Indian Workers ('+ind.length+')">';
+    ind.forEach(x=>h+=`<option value="${x.wid}">${x.name} - ${x.prof||'Worker'}</option>`);
+    h+='</optgroup>';
+  }
+  if(pak.length){
+    h+='<optgroup label="Pakistani Workers ('+pak.length+')">';
+    pak.forEach(x=>h+=`<option value="${x.wid}">${x.name} - ${x.prof||'Worker'}</option>`);
+    h+='</optgroup>';
+  }
   sel.innerHTML=h;
+  console.log('✅ History dropdown: '+w.length+' workers loaded');
 }
 
 async function addBackdatedEntry(){
   const wid=document.getElementById('historyWorker').value;
   const date=document.getElementById('historyEntryDate').value;
   const shift=document.getElementById('historyShift').value;
-  const checkinTime=document.getElementById('historyCheckIn').value;
-  const checkoutTime=document.getElementById('historyCheckOut').value;
+  const inTime=document.getElementById('historyCheckIn').value;
+  const outTime=document.getElementById('historyCheckOut').value;
   
   if(!wid)return toast('Select worker','err');
   if(!date)return toast('Select date','err');
   if(!shift)return toast('Select shift','err');
-  if(!checkinTime)return toast('Enter check-in','err');
-  if(!checkoutTime)return toast('Enter check-out','err');
+  if(!inTime)return toast('Enter check-in time','err');
+  if(!outTime)return toast('Enter check-out time','err');
   
   const worker=gW().find(x=>x.wid===wid);
+  if(!worker){toast('Worker not found','err');return;}
+  
   const existing=gA().find(a=>a.wid===wid&&a.date===date);
   if(existing){
-    if(!confirm(`⚠️ ${worker.name} already has entry for ${date}. Replace it?`))return;
+    if(!confirm(worker.name+' already has entry for '+date+'. Replace?'))return;
     await FB.del(COL.A,existing.id);
   }
   
-  const checkinISO=new Date(date+'T'+checkinTime+':00').toISOString();
-  const checkoutISO=new Date(date+'T'+checkoutTime+':00').toISOString();
-  
-  let finalCheckoutISO=checkoutISO;
-  if(new Date(checkoutISO)<=new Date(checkinISO)){
-    const cd=new Date(checkoutISO);cd.setDate(cd.getDate()+1);
-    finalCheckoutISO=cd.toISOString();
+  const ciISO=new Date(date+'T'+inTime+':00').toISOString();
+  let coISO=new Date(date+'T'+outTime+':00').toISOString();
+  if(new Date(coISO)<=new Date(ciISO)){
+    const d=new Date(coISO);d.setDate(d.getDate()+1);coISO=d.toISOString();
   }
   
-  const c=calcHours(checkinISO,finalCheckoutISO);
-  const recId='att_'+Date.now()+'_'+wid+'_bd';
+  const c=calcHours(ciISO,coISO);
+  const rid='att_'+Date.now()+'_'+wid+'_bd';
   
-  await FB.save(COL.A,recId,{
-    recId,wid,name:worker.name,prof:worker.prof,sec:worker.sec,shift,date,
-    checkinReqTime:checkinISO,checkinTime:checkinISO,
-    checkoutReqTime:finalCheckoutISO,checkoutTime:finalCheckoutISO,
+  await FB.save(COL.A,rid,{
+    recId:rid,wid,name:worker.name,prof:worker.prof,sec:worker.sec,shift,date,
+    checkinReqTime:ciISO,checkinTime:ciISO,
+    checkoutReqTime:coISO,checkoutTime:coISO,
     total:c.total,regular:c.regular,compOT:c.compOT,extraOT:c.extraOT,ot:c.ot,
     status:'completed',backdated:true
   });
   
-  toast('✅ Entry added: '+worker.name+' | '+c.total.toFixed(2)+'h');
+  toast('✅ '+worker.name+': '+c.total.toFixed(2)+'h added for '+date);
   document.getElementById('historyWorker').value='';
-  document.getElementById('historyCheckIn').value='08:00';
-  document.getElementById('historyCheckOut').value='20:00';
-  const viewDate=document.getElementById('historyDate').value;
-  if(viewDate===date)loadHistoryForDate();
+  const vd=document.getElementById('historyDate').value;
+  if(vd===date)loadHistoryForDate();
 }
 
-function loadHistoryForDate(){
-  const date=document.getElementById('historyDate').value;
-  const filter=document.getElementById('historyFilter').value;
-  if(!date)return;
-  
+function getFilteredData(date,filter){
   let att=gA().filter(a=>a.date===date);
-  const allWorkers=gW().filter(w=>w.on);
-  const el=document.getElementById('historyContent');
-  if(!el)return;
+  const all=gW().filter(w=>w.on);
   
-  // Absent only view
-  if(filter==='Absent'){
-    const attWids=att.map(a=>a.wid);
-    const absentWorkers=allWorkers.filter(w=>!attWids.includes(w.wid));
-    if(!absentWorkers.length){
-      el.innerHTML='<div class="empty"><div class="em-icon">✅</div><h3>All workers were present on '+date+'!</h3></div>';
-      return;
-    }
-    el.innerHTML=`
-      <div style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;padding:20px;border-radius:12px;margin-bottom:20px">
-        <h3 style="font-size:20px;margin-bottom:8px">❌ Absent Workers - ${date}</h3>
-        <p style="opacity:.9;font-size:14px">${absentWorkers.length} out of ${allWorkers.length} workers were absent</p>
-      </div>
-      <div class="t-wrap">
-        <table>
-          <thead>
-            <tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Default Shift</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            ${absentWorkers.map((w,i)=>`
-              <tr>
-                <td>${i+1}</td>
-                <td><b>${w.name}</b></td>
-                <td>${w.prof||'-'}</td>
-                <td><span class="tag tag-${w.sec==='Indian'?'ind':'pak'}">${w.sec==='Indian'?'🇮🇳':'🇵🇰'} ${w.sec}</span></td>
-                <td><span class="tag ${w.shift==='Night'?'tag-o':'tag-b'}">${w.shift==='Night'?'🌙 Night':'☀️ Day'}</span></td>
-                <td><span class="tag tag-r">❌ Absent</span></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-    return;
-  }
-  
-  // Apply filters
   if(filter==='Day')att=att.filter(a=>a.shift==='Day'||!a.shift);
   else if(filter==='Night')att=att.filter(a=>a.shift==='Night');
   else if(filter==='Indian')att=att.filter(a=>a.sec==='Indian');
   else if(filter==='Pakistani')att=att.filter(a=>a.sec==='Pakistani');
   else if(filter==='Present')att=att.filter(a=>a.status==='completed'||a.status==='checked_in');
   
-  // Get absent workers
   const attWids=att.map(a=>a.wid);
-  let absentWorkers=allWorkers.filter(w=>!attWids.includes(w.wid));
-  if(filter==='Indian')absentWorkers=absentWorkers.filter(w=>w.sec==='Indian');
-  else if(filter==='Pakistani')absentWorkers=absentWorkers.filter(w=>w.sec==='Pakistani');
-  else if(filter==='Day')absentWorkers=absentWorkers.filter(w=>w.shift==='Day'||!w.shift);
-  else if(filter==='Night')absentWorkers=absentWorkers.filter(w=>w.shift==='Night');
-  else if(filter==='Present')absentWorkers=[];
+  let absent=all.filter(w=>!gA().filter(a=>a.date===date).map(a=>a.wid).includes(w.wid));
   
-  // Calculate stats
-  const present=att.filter(a=>a.status==='completed'||a.status==='checked_in').length;
-  const totalHours=att.reduce((s,a)=>s+(a.total||0),0);
-  const totalOT=att.reduce((s,a)=>s+(a.ot||0),0);
-  const dayShift=att.filter(a=>a.shift==='Day'||!a.shift).length;
-  const nightShift=att.filter(a=>a.shift==='Night').length;
+  if(filter==='Indian')absent=absent.filter(w=>w.sec==='Indian');
+  else if(filter==='Pakistani')absent=absent.filter(w=>w.sec==='Pakistani');
+  else if(filter==='Present'||filter==='Absent'){}
   
-  // Beautiful stats header
-  const statsHTML=`
-    <div style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:24px;border-radius:14px;margin-bottom:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
-        <div>
-          <h3 style="font-size:22px;margin-bottom:4px">📅 ${date}</h3>
-          <p style="opacity:.9;font-size:13px">${new Date(date).toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-success btn-sm" onclick="downloadHistoryPDF()">📕 PDF</button>
-          <button class="btn btn-outline btn-sm" onclick="downloadHistoryExcel()" style="background:#fff;color:#1e40af">📥 Excel</button>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
-        <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center">
-          <div style="font-size:26px;font-weight:800;margin-bottom:4px">${att.length}</div>
-          <div style="font-size:11px;opacity:.9;font-weight:600">✅ PRESENT</div>
-        </div>
-        <div style="background:rgba(220,38,38,.3);padding:14px;border-radius:10px;text-align:center;border:1px solid rgba(255,255,255,.2)">
-          <div style="font-size:26px;font-weight:800;margin-bottom:4px">${absentWorkers.length}</div>
-          <div style="font-size:11px;opacity:.9;font-weight:600">❌ ABSENT</div>
-        </div>
-        <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center">
-          <div style="font-size:26px;font-weight:800;margin-bottom:4px">☀️ ${dayShift}</div>
-          <div style="font-size:11px;opacity:.9;font-weight:600">DAY SHIFT</div>
-        </div>
-        <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center">
-          <div style="font-size:26px;font-weight:800;margin-bottom:4px">🌙 ${nightShift}</div>
-          <div style="font-size:11px;opacity:.9;font-weight:600">NIGHT SHIFT</div>
-        </div>
-        <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center">
-          <div style="font-size:26px;font-weight:800;margin-bottom:4px">${totalHours.toFixed(1)}h</div>
-          <div style="font-size:11px;opacity:.9;font-weight:600">TOTAL HOURS</div>
-        </div>
-        <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center">
-          <div style="font-size:26px;font-weight:800;margin-bottom:4px">${totalOT.toFixed(1)}h</div>
-          <div style="font-size:11px;opacity:.9;font-weight:600">TOTAL OT</div>
-        </div>
-      </div>
-    </div>
-  `;
+  return{att,absent,all};
+}
+
+function loadHistoryForDate(){
+  const date=document.getElementById('historyDate')?.value;
+  const filter=document.getElementById('historyFilter')?.value||'';
+  if(!date)return;
   
-  let html=statsHTML;
+  const allAtt=gA().filter(a=>a.date===date);
+  const allWorkers=gW().filter(w=>w.on);
+  const el=document.getElementById('historyContent');
+  if(!el)return;
   
-  // Present workers table
+  // Absent only
+  if(filter==='Absent'){
+    const attWids=allAtt.map(a=>a.wid);
+    const absent=allWorkers.filter(w=>!attWids.includes(w.wid));
+    if(!absent.length){el.innerHTML='<div class="empty"><div class="em-icon">✅</div><h3>All workers present on '+date+'!</h3></div>';return;}
+    el.innerHTML=renderAbsentSection(absent,date,allWorkers.length);
+    return;
+  }
+  
+  let att=allAtt;
+  if(filter==='Day')att=att.filter(a=>a.shift==='Day'||!a.shift);
+  else if(filter==='Night')att=att.filter(a=>a.shift==='Night');
+  else if(filter==='Indian')att=att.filter(a=>a.sec==='Indian');
+  else if(filter==='Pakistani')att=att.filter(a=>a.sec==='Pakistani');
+  else if(filter==='Present')att=att.filter(a=>a.status==='completed'||a.status==='checked_in');
+  
+  const attWids=allAtt.map(a=>a.wid);
+  let absent=allWorkers.filter(w=>!attWids.includes(w.wid));
+  if(filter==='Indian')absent=absent.filter(w=>w.sec==='Indian');
+  else if(filter==='Pakistani')absent=absent.filter(w=>w.sec==='Pakistani');
+  else if(filter==='Present')absent=[];
+  
+  const tH=att.reduce((s,a)=>s+(a.total||0),0);
+  const tOT=att.reduce((s,a)=>s+(a.ot||0),0);
+  const dayS=att.filter(a=>a.shift==='Day'||!a.shift).length;
+  const nightS=att.filter(a=>a.shift==='Night').length;
+  
+  let html=renderStatsHeader(date,att.length,absent.length,dayS,nightS,tH,tOT);
+  
   if(att.length){
-    const stg=s=>({completed:'<span class="tag tag-g">✓ Done</span>',checked_in:'<span class="tag tag-b">🟢 Working</span>',pending_checkin:'<span class="tag tag-o">⏳ IN</span>',pending_checkout:'<span class="tag tag-o">⏳ OUT</span>'}[s]||s);
-    
-    html+=`
-      <div style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;padding:14px 20px;border-radius:12px 12px 0 0;margin-top:20px">
-        <h3 style="font-size:16px;margin:0">✅ Present Workers (${att.length})</h3>
-      </div>
-      <div class="t-wrap" style="border-top-left-radius:0;border-top-right-radius:0;margin-bottom:24px">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th>
-              <th>In</th><th>Out</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th>
-              <th>Status</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${att.map((a,i)=>`
-              <tr>
-                <td>${i+1}</td>
-                <td><b>${a.name}</b>${a.backdated?' <span class="tag tag-o" style="font-size:9px">📝 Manual</span>':''}</td>
-                <td>${a.prof||'-'}</td>
-                <td><span class="tag tag-${a.sec==='Indian'?'ind':'pak'}">${a.sec==='Indian'?'🇮🇳':'🇵🇰'}</span></td>
-                <td><span class="tag ${a.shift==='Night'?'tag-o':'tag-b'}">${a.shift==='Night'?'🌙':'☀️'}</span></td>
-                <td style="color:#059669">${fT(a.checkinTime)}</td>
-                <td style="color:#dc2626">${fT(a.checkoutTime)}</td>
-                <td style="color:var(--p);font-weight:700">${(a.total||0).toFixed(2)}h</td>
-                <td>${(a.regular||0).toFixed(2)}h</td>
-                <td style="color:#d97706">${(a.compOT||0).toFixed(2)}h</td>
-                <td style="color:#dc2626;font-weight:700">${(a.extraOT||0)>0?(a.extraOT).toFixed(2)+'h':'-'}</td>
-                <td>${stg(a.status)}</td>
-                <td>
-                  <button class="btn btn-outline btn-sm" onclick="editHistoryEntry('${a.id}')">✏️</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteHistoryEntry('${a.id}')">🗑️</button>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+    html+=renderPresentTable(att);
   }
   
-  // Absent workers table (with names!)
-  if(absentWorkers.length&&filter!=='Present'){
-    html+=`
-      <div style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;padding:14px 20px;border-radius:12px 12px 0 0;margin-top:20px">
-        <h3 style="font-size:16px;margin:0">❌ Absent Workers (${absentWorkers.length})</h3>
-      </div>
-      <div class="t-wrap" style="border-top-left-radius:0;border-top-right-radius:0">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Default Shift</th><th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${absentWorkers.map((w,i)=>`
-              <tr style="background:#fef2f2">
-                <td>${i+1}</td>
-                <td><b style="color:#dc2626">${w.name}</b></td>
-                <td>${w.prof||'-'}</td>
-                <td><span class="tag tag-${w.sec==='Indian'?'ind':'pak'}">${w.sec==='Indian'?'🇮🇳':'🇵🇰'} ${w.sec}</span></td>
-                <td><span class="tag ${w.shift==='Night'?'tag-o':'tag-b'}">${w.shift==='Night'?'🌙 Night':'☀️ Day'}</span></td>
-                <td><span class="tag tag-r">❌ Absent</span></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+  if(absent.length&&filter!=='Present'){
+    html+=renderAbsentTable(absent);
   }
   
-  if(!att.length&&!absentWorkers.length){
-    html=statsHTML+'<div class="empty"><div class="em-icon">📋</div><h3>No records for '+date+'</h3><p>Use "Add Backdated Entry" above</p></div>';
+  if(!att.length&&!absent.length){
+    html+='<div class="empty"><div class="em-icon">📋</div><h3>No records for '+date+'</h3><p>Use backdated entry above</p></div>';
   }
   
   el.innerHTML=html;
 }
 
+function renderStatsHeader(date,present,absent,dayS,nightS,tH,tOT){
+  const dateStr=new Date(date).toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  return `<div style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:24px;border-radius:14px;margin-bottom:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+      <div>
+        <h3 style="font-size:22px;margin-bottom:4px">${date}</h3>
+        <p style="opacity:.9;font-size:13px">${dateStr}</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-success btn-sm" onclick="downloadHistoryPDF()">PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="downloadHistoryExcel()" style="background:#fff;color:#1e40af">Excel</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+      <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center"><div style="font-size:26px;font-weight:800">${present}</div><div style="font-size:11px;font-weight:600">PRESENT</div></div>
+      <div style="background:rgba(220,38,38,.3);padding:14px;border-radius:10px;text-align:center;border:1px solid rgba(255,255,255,.2)"><div style="font-size:26px;font-weight:800">${absent}</div><div style="font-size:11px;font-weight:600">ABSENT</div></div>
+      <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center"><div style="font-size:26px;font-weight:800">${dayS}</div><div style="font-size:11px;font-weight:600">DAY SHIFT</div></div>
+      <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center"><div style="font-size:26px;font-weight:800">${nightS}</div><div style="font-size:11px;font-weight:600">NIGHT SHIFT</div></div>
+      <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center"><div style="font-size:26px;font-weight:800">${tH.toFixed(1)}h</div><div style="font-size:11px;font-weight:600">HOURS</div></div>
+      <div style="background:rgba(255,255,255,.15);padding:14px;border-radius:10px;text-align:center"><div style="font-size:26px;font-weight:800">${tOT.toFixed(1)}h</div><div style="font-size:11px;font-weight:600">OVERTIME</div></div>
+    </div>
+  </div>`;
+}
+
+function renderPresentTable(att){
+  const stg=s=>({completed:'<span class="tag tag-g">Done</span>',checked_in:'<span class="tag tag-b">Working</span>',pending_checkin:'<span class="tag tag-o">Pending IN</span>',pending_checkout:'<span class="tag tag-o">Pending OUT</span>'}[s]||s);
+  return `<div style="background:#059669;color:#fff;padding:14px 20px;border-radius:12px 12px 0 0"><h3 style="font-size:16px;margin:0">Present Workers (${att.length})</h3></div>
+  <div class="t-wrap" style="border-top-left-radius:0;border-top-right-radius:0;margin-bottom:24px"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th><th>Status</th><th>Act</th></tr></thead><tbody>${att.map((a,i)=>`<tr><td>${i+1}</td><td><b>${a.name}</b>${a.backdated?' <span class="tag tag-o" style="font-size:9px">Manual</span>':''}</td><td>${a.prof||'-'}</td><td><span class="tag tag-${a.sec==='Indian'?'ind':'pak'}">${a.sec==='Indian'?'IN':'PK'}</span></td><td><span class="tag ${a.shift==='Night'?'tag-o':'tag-b'}">${a.shift==='Night'?'Night':'Day'}</span></td><td style="color:#059669">${fT(a.checkinTime)}</td><td style="color:#dc2626">${fT(a.checkoutTime)}</td><td style="color:var(--p);font-weight:700">${(a.total||0).toFixed(2)}h</td><td>${(a.regular||0).toFixed(2)}h</td><td style="color:#d97706">${(a.compOT||0).toFixed(2)}h</td><td style="color:#dc2626;font-weight:700">${(a.extraOT||0)>0?(a.extraOT).toFixed(2)+'h':'-'}</td><td>${stg(a.status)}</td><td><button class="btn btn-outline btn-sm" onclick="editHistoryEntry('${a.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteHistoryEntry('${a.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAbsentTable(absent){
+  return `<div style="background:#dc2626;color:#fff;padding:14px 20px;border-radius:12px 12px 0 0"><h3 style="font-size:16px;margin:0">Absent Workers (${absent.length})</h3></div>
+  <div class="t-wrap" style="border-top-left-radius:0;border-top-right-radius:0"><table><thead><tr><th style="background:#dc2626">#</th><th style="background:#dc2626">Name</th><th style="background:#dc2626">Work</th><th style="background:#dc2626">Country</th><th style="background:#dc2626">Default Shift</th><th style="background:#dc2626">Status</th></tr></thead><tbody>${absent.map((w,i)=>`<tr style="background:#fef2f2"><td>${i+1}</td><td><b style="color:#dc2626">${w.name}</b></td><td>${w.prof||'-'}</td><td><span class="tag tag-${w.sec==='Indian'?'ind':'pak'}">${w.sec==='Indian'?'IN':'PK'} ${w.sec}</span></td><td><span class="tag ${w.shift==='Night'?'tag-o':'tag-b'}">${w.shift==='Night'?'Night':'Day'}</span></td><td><span class="tag tag-r">ABSENT</span></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAbsentSection(absent,date,total){
+  return `<div style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;padding:20px;border-radius:12px;margin-bottom:20px"><h3 style="font-size:20px;margin-bottom:8px">Absent Workers - ${date}</h3><p style="opacity:.9;font-size:14px">${absent.length} out of ${total} workers absent</p></div>`+renderAbsentTable(absent);
+}
+
 function editHistoryEntry(id){
-  const rec=gA().find(a=>a.id===id);if(!rec)return;
-  document.getElementById('historyWorker').value=rec.wid;
-  document.getElementById('historyEntryDate').value=rec.date;
-  document.getElementById('historyShift').value=rec.shift||'Day';
-  const inTime=new Date(rec.checkinTime).toLocaleTimeString('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'});
-  const outTime=new Date(rec.checkoutTime).toLocaleTimeString('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'});
-  document.getElementById('historyCheckIn').value=inTime;
-  document.getElementById('historyCheckOut').value=outTime;
+  const r=gA().find(a=>a.id===id);if(!r)return;
+  document.getElementById('historyWorker').value=r.wid;
+  document.getElementById('historyEntryDate').value=r.date;
+  document.getElementById('historyShift').value=r.shift||'Day';
+  try{
+    const it=new Date(r.checkinTime).toLocaleTimeString('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'});
+    const ot=new Date(r.checkoutTime).toLocaleTimeString('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('historyCheckIn').value=it;
+    document.getElementById('historyCheckOut').value=ot;
+  }catch(e){}
   window.scrollTo({top:0,behavior:'smooth'});
-  toast('✏️ Edit form filled','info');
+  toast('Form filled - update and save','info');
 }
 
 function deleteHistoryEntry(id){
-  const rec=gA().find(a=>a.id===id);if(!rec)return;
-  confirmDlg('Delete?',`Delete ${rec.name}'s entry for ${rec.date}?`,async()=>{
-    await FB.del(COL.A,id);toast('🗑️ Deleted','info');loadHistoryForDate();
+  const r=gA().find(a=>a.id===id);if(!r)return;
+  confirmDlg('Delete?',r.name+' entry for '+r.date+'?',async()=>{
+    await FB.del(COL.A,id);toast('Deleted','info');loadHistoryForDate();
   });
 }
 
-// ============ PDF DOWNLOAD (FIXED - No weird characters) ============
+// ============ PDF - COMPANY BRANDED ============
 function downloadHistoryPDF(){
   const date=document.getElementById('historyDate').value;
   const filter=document.getElementById('historyFilter').value;
   if(!date)return toast('Select date','err');
-  if(!window.jspdf)return toast('Loading...','err');
+  if(!window.jspdf)return toast('Loading PDF library...','err');
   
   let att=gA().filter(a=>a.date===date);
-  const allWorkers=gW().filter(w=>w.on);
+  const allW=gW().filter(w=>w.on);
   if(filter==='Day')att=att.filter(a=>a.shift==='Day'||!a.shift);
   else if(filter==='Night')att=att.filter(a=>a.shift==='Night');
   else if(filter==='Indian')att=att.filter(a=>a.sec==='Indian');
   else if(filter==='Pakistani')att=att.filter(a=>a.sec==='Pakistani');
   
   const attWids=att.map(a=>a.wid);
-  let absentWorkers=allWorkers.filter(w=>!attWids.includes(w.wid));
-  if(filter==='Indian')absentWorkers=absentWorkers.filter(w=>w.sec==='Indian');
-  else if(filter==='Pakistani')absentWorkers=absentWorkers.filter(w=>w.sec==='Pakistani');
-  else if(filter==='Day')absentWorkers=absentWorkers.filter(w=>w.shift==='Day'||!w.shift);
-  else if(filter==='Night')absentWorkers=absentWorkers.filter(w=>w.shift==='Night');
-  else if(filter==='Present')absentWorkers=[];
+  let absent=allW.filter(w=>!gA().filter(a=>a.date===date).map(a=>a.wid).includes(w.wid));
+  if(filter==='Indian')absent=absent.filter(w=>w.sec==='Indian');
+  else if(filter==='Pakistani')absent=absent.filter(w=>w.sec==='Pakistani');
+  else if(filter==='Present')absent=[];
   
-  if(!att.length&&!absentWorkers.length)return toast('No data','err');
+  if(!att.length&&!absent.length)return toast('No data','err');
   
   const{jsPDF}=window.jspdf;
   const doc=new jsPDF('l','mm','a4');
   
-  // ============ HEADER WITH LOGO ============
+  // ===== HEADER =====
   doc.setFillColor(30,64,175);
-  doc.rect(0,0,297,45,'F');
+  doc.rect(0,0,297,52,'F');
   
-  // Logo
-  if(LOGO_BASE64){
-    try{doc.addImage(LOGO_BASE64,'PNG',12,8,28,28);}catch(e){}
-  }
+  if(LOGO_BASE64){try{doc.addImage(LOGO_BASE64,'PNG',12,8,34,34);}catch(e){}}
   
-  // Title
   doc.setTextColor(255,255,255);
-  doc.setFontSize(24);
+  doc.setFontSize(26);
   doc.setFont('helvetica','bold');
-  doc.text('AL BOWRY CARPENTRY',148.5,18,{align:'center'});
+  doc.text('AL BOWRY CARPENTRY LLC',148.5,18,{align:'center'});
   
-  // Subtitle
-  doc.setFontSize(12);
+  doc.setFontSize(13);
   doc.setFont('helvetica','normal');
-  doc.text('Daily Attendance Report - '+date,148.5,27,{align:'center'});
+  doc.text('Attendance Report - '+date,148.5,27,{align:'center'});
   
-  // Filter info
+  doc.setFontSize(12);
+  doc.setFont('helvetica','bold');
+  doc.text('PROJECT COP31 at Antalya, Turkey',148.5,35,{align:'center'});
+  
   doc.setFontSize(10);
-  doc.text((filter||'All Workers')+' | Regular: 9h + Compulsory OT: 3h',148.5,34,{align:'center'});
+  doc.setFont('helvetica','normal');
+  doc.text('Company Registered: Sharjah, UAE  |  www.albowry.com',148.5,42,{align:'center'});
   
-  // Location
   doc.setFontSize(9);
-  doc.text('Antalya, Turkey | www.albowry.com',148.5,41,{align:'center'});
+  doc.text((filter||'All Workers')+'  |  Schedule: 9h Regular + 3h Compulsory OT',148.5,49,{align:'center'});
   
-  // ============ STATS BAR (Clean) ============
-  const totalHours=att.reduce((s,a)=>s+(a.total||0),0);
-  const totalOT=att.reduce((s,a)=>s+(a.ot||0),0);
-  const dayShift=att.filter(a=>a.shift==='Day'||!a.shift).length;
-  const nightShift=att.filter(a=>a.shift==='Night').length;
+  // ===== STATS =====
+  const tH=att.reduce((s,a)=>s+(a.total||0),0);
+  const tOT=att.reduce((s,a)=>s+(a.ot||0),0);
+  const dayS=att.filter(a=>a.shift==='Day'||!a.shift).length;
+  const nightS=att.filter(a=>a.shift==='Night').length;
   
-  // Stats box
   doc.setFillColor(240,249,255);
-  doc.rect(10,52,277,18,'F');
+  doc.rect(10,57,277,14,'F');
   doc.setDrawColor(30,64,175);
   doc.setLineWidth(0.5);
-  doc.rect(10,52,277,18,'S');
+  doc.rect(10,57,277,14,'S');
   
   doc.setTextColor(30,64,175);
   doc.setFontSize(10);
   doc.setFont('helvetica','bold');
+  doc.text('Present: '+att.length+'   |   Absent: '+absent.length+'   |   Day: '+dayS+'   |   Night: '+nightS+'   |   Hours: '+tH.toFixed(2)+'h   |   OT: '+tOT.toFixed(2)+'h',148.5,66,{align:'center'});
   
-  const statsText = `Present: ${att.length}   |   Absent: ${absentWorkers.length}   |   Day Shift: ${dayShift}   |   Night Shift: ${nightShift}   |   Total Hours: ${totalHours.toFixed(2)}h   |   Total OT: ${totalOT.toFixed(2)}h`;
-  doc.text(statsText,148.5,63,{align:'center'});
+  doc.setTextColor(0);
+  let curY=78;
   
-  doc.setTextColor(0,0,0);
-  
-  let currentY=78;
-  
-  // ============ PRESENT WORKERS TABLE ============
+  // ===== PRESENT =====
   if(att.length){
-    // Section header
     doc.setFillColor(5,150,105);
-    doc.rect(10,currentY,277,8,'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(11);
+    doc.rect(10,curY,277,9,'F');
+    doc.setTextColor(255);
+    doc.setFontSize(12);
     doc.setFont('helvetica','bold');
-    doc.text('PRESENT WORKERS ('+att.length+')',15,currentY+5.5);
+    doc.text('PRESENT WORKERS ('+att.length+')',15,curY+6);
+    curY+=11;
     
-    currentY+=10;
-    
-    const rows=att.map((a,i)=>[
-      i+1,
-      a.name,
-      a.prof||'-',
-      a.sec,
-      a.shift||'Day',
-      fT(a.checkinTime),
-      fT(a.checkoutTime),
-      (a.total||0).toFixed(2)+'h',
-      (a.regular||0).toFixed(2)+'h',
-      (a.compOT||0).toFixed(2)+'h',
-      (a.extraOT||0).toFixed(2)+'h'
-    ]);
-    
-    // Add totals row
-    rows.push([
-      '',
-      '',
-      'TOTALS',
-      '',
-      '',
-      '',
-      '',
-      totalHours.toFixed(2)+'h',
-      att.reduce((s,a)=>s+(a.regular||0),0).toFixed(2)+'h',
-      att.reduce((s,a)=>s+(a.compOT||0),0).toFixed(2)+'h',
-      att.reduce((s,a)=>s+(a.extraOT||0),0).toFixed(2)+'h'
-    ]);
+    const rows=att.map((a,i)=>[i+1,a.name+(a.backdated?' (Manual)':''),a.prof||'-',a.sec,a.shift||'Day',fT(a.checkinTime),fT(a.checkoutTime),(a.total||0).toFixed(2)+'h',(a.regular||0).toFixed(2)+'h',(a.compOT||0).toFixed(2)+'h',(a.extraOT||0).toFixed(2)+'h']);
+    rows.push(['','','TOTALS','','','','',tH.toFixed(2)+'h',att.reduce((s,a)=>s+(a.regular||0),0).toFixed(2)+'h',att.reduce((s,a)=>s+(a.compOT||0),0).toFixed(2)+'h',att.reduce((s,a)=>s+(a.extraOT||0),0).toFixed(2)+'h']);
     
     doc.autoTable({
-      startY:currentY,
+      startY:curY,
       head:[['#','Name','Work','Country','Shift','Check-In','Check-Out','Total','Reg 9h','OT 3h','Extra']],
       body:rows,
       theme:'grid',
-      headStyles:{
-        fillColor:[5,150,105],
-        textColor:[255,255,255],
-        fontSize:9,
-        fontStyle:'bold',
-        halign:'center'
-      },
-      bodyStyles:{
-        fontSize:8,
-        cellPadding:3
-      },
+      headStyles:{fillColor:[5,150,105],textColor:255,fontSize:9,fontStyle:'bold',halign:'center'},
+      bodyStyles:{fontSize:8,cellPadding:3},
       alternateRowStyles:{fillColor:[240,253,244]},
-      columnStyles:{
-        0:{halign:'center',cellWidth:10},
-        1:{halign:'left',fontStyle:'bold'},
-        2:{halign:'left'},
-        3:{halign:'center'},
-        4:{halign:'center'},
-        5:{halign:'center'},
-        6:{halign:'center'},
-        7:{halign:'right',fontStyle:'bold'},
-        8:{halign:'right'},
-        9:{halign:'right'},
-        10:{halign:'right'}
-      },
-      didParseCell:function(data){
-        // Bold totals row
-        if(data.row.index===rows.length-1){
-          data.cell.styles.fontStyle='bold';
-          data.cell.styles.fillColor=[209,250,229];
-          data.cell.styles.textColor=[5,95,70];
-        }
-      }
+      columnStyles:{0:{halign:'center',cellWidth:10},1:{halign:'left',fontStyle:'bold'},7:{halign:'right',fontStyle:'bold'}},
+      didParseCell:function(d){if(d.row.index===rows.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[209,250,229];d.cell.styles.textColor=[5,95,70];}}
     });
     
-    currentY=doc.lastAutoTable.finalY+8;
+    curY=doc.lastAutoTable.finalY+8;
   }
   
-  // ============ ABSENT WORKERS TABLE ============
-  if(absentWorkers.length){
-    // Check if we need a new page
-    if(currentY>170){
-      doc.addPage();
-      currentY=15;
-    }
+  // ===== ABSENT =====
+  if(absent.length){
+    if(curY>170){doc.addPage();curY=15;}
     
-    // Section header
     doc.setFillColor(220,38,38);
-    doc.rect(10,currentY,277,8,'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(11);
+    doc.rect(10,curY,277,9,'F');
+    doc.setTextColor(255);
+    doc.setFontSize(12);
     doc.setFont('helvetica','bold');
-    doc.text('ABSENT WORKERS ('+absentWorkers.length+')',15,currentY+5.5);
+    doc.text('ABSENT WORKERS ('+absent.length+')',15,curY+6);
+    curY+=11;
     
-    currentY+=10;
-    
-    const absentRows=absentWorkers.map((w,i)=>[
-      i+1,
-      w.name,
-      w.prof||'-',
-      w.sec,
-      w.shift||'Day',
-      'ABSENT'
-    ]);
+    const aRows=absent.map((w,i)=>[i+1,w.name,w.prof||'-',w.sec,w.shift||'Day','ABSENT']);
     
     doc.autoTable({
-      startY:currentY,
+      startY:curY,
       head:[['#','Name','Work','Country','Default Shift','Status']],
-      body:absentRows,
+      body:aRows,
       theme:'grid',
-      headStyles:{
-        fillColor:[220,38,38],
-        textColor:[255,255,255],
-        fontSize:9,
-        fontStyle:'bold',
-        halign:'center'
-      },
-      bodyStyles:{
-        fontSize:8,
-        cellPadding:3
-      },
+      headStyles:{fillColor:[220,38,38],textColor:255,fontSize:9,fontStyle:'bold',halign:'center'},
+      bodyStyles:{fontSize:8,cellPadding:3},
       alternateRowStyles:{fillColor:[254,242,242]},
-      columnStyles:{
-        0:{halign:'center',cellWidth:15},
-        1:{halign:'left',fontStyle:'bold',textColor:[220,38,38]},
-        2:{halign:'left'},
-        3:{halign:'center'},
-        4:{halign:'center'},
-        5:{halign:'center',fontStyle:'bold',textColor:[220,38,38]}
-      }
+      columnStyles:{0:{halign:'center',cellWidth:15},1:{halign:'left',fontStyle:'bold',textColor:[220,38,38]},5:{halign:'center',fontStyle:'bold',textColor:[220,38,38]}}
     });
   }
   
-  // ============ FOOTER ON ALL PAGES ============
+  // ===== FOOTER =====
   const pc=doc.internal.getNumberOfPages();
   for(let i=1;i<=pc;i++){
     doc.setPage(i);
-    doc.setDrawColor(200,200,200);
-    doc.setLineWidth(0.3);
-    doc.line(10,200,287,200);
-    doc.setFontSize(8);
-    doc.setTextColor(120,120,120);
-    doc.setFont('helvetica','normal');
-    doc.text('AL BOWRY Carpentry - Antalya, Turkey - Generated: '+new Date().toLocaleString(),148.5,205,{align:'center'});
-    doc.text('Page '+i+' of '+pc,148.5,209,{align:'center'});
+    doc.setDrawColor(200);doc.setLineWidth(0.3);doc.line(10,198,287,198);
+    doc.setFontSize(8);doc.setTextColor(120);doc.setFont('helvetica','normal');
+    doc.text('AL BOWRY CARPENTRY LLC  |  Registered: Sharjah, UAE  |  Project Site: COP31, Antalya, Turkey',148.5,203,{align:'center'});
+    doc.text('Generated: '+new Date().toLocaleString()+'  |  Page '+i+'/'+pc,148.5,208,{align:'center'});
   }
   
-  doc.save(`AlBowry_${date}_${filter||'All'}.pdf`);
-  toast('✅ PDF downloaded!');
+  doc.save('AlBowry_COP31_'+date+'_'+(filter||'All')+'.pdf');
+  toast('PDF downloaded!');
 }
 
-// ============ EXCEL DOWNLOAD (FIXED - Clean format) ============
+// ============ EXCEL - COMPANY BRANDED ============
 function downloadHistoryExcel(){
   const date=document.getElementById('historyDate').value;
   const filter=document.getElementById('historyFilter').value;
   if(!date)return toast('Select date','err');
   
   let att=gA().filter(a=>a.date===date);
-  const allWorkers=gW().filter(w=>w.on);
+  const allW=gW().filter(w=>w.on);
   if(filter==='Day')att=att.filter(a=>a.shift==='Day'||!a.shift);
   else if(filter==='Night')att=att.filter(a=>a.shift==='Night');
   else if(filter==='Indian')att=att.filter(a=>a.sec==='Indian');
   else if(filter==='Pakistani')att=att.filter(a=>a.sec==='Pakistani');
   
   const attWids=att.map(a=>a.wid);
-  let absentWorkers=allWorkers.filter(w=>!attWids.includes(w.wid));
-  if(filter==='Indian')absentWorkers=absentWorkers.filter(w=>w.sec==='Indian');
-  else if(filter==='Pakistani')absentWorkers=absentWorkers.filter(w=>w.sec==='Pakistani');
-  else if(filter==='Day')absentWorkers=absentWorkers.filter(w=>w.shift==='Day'||!w.shift);
-  else if(filter==='Night')absentWorkers=absentWorkers.filter(w=>w.shift==='Night');
-  else if(filter==='Present')absentWorkers=[];
+  let absent=allW.filter(w=>!gA().filter(a=>a.date===date).map(a=>a.wid).includes(w.wid));
+  if(filter==='Indian')absent=absent.filter(w=>w.sec==='Indian');
+  else if(filter==='Pakistani')absent=absent.filter(w=>w.sec==='Pakistani');
+  else if(filter==='Present')absent=[];
   
-  if(!att.length&&!absentWorkers.length)return toast('No data','err');
+  if(!att.length&&!absent.length)return toast('No data','err');
   
-  const logoHTML=LOGO_BASE64?`<img src="${LOGO_BASE64}" width="60" height="60" style="border-radius:8px">`:'<div style="width:60px;height:60px;background:#fff;color:#1e40af;font-size:36px;font-weight:bold;display:flex;align-items:center;justify-content:center;border-radius:8px">A</div>';
-  const totalHours=att.reduce((s,a)=>s+(a.total||0),0);
-  const totalOT=att.reduce((s,a)=>s+(a.ot||0),0);
-  const dayShift=att.filter(a=>a.shift==='Day'||!a.shift).length;
-  const nightShift=att.filter(a=>a.shift==='Night').length;
+  const logo=LOGO_BASE64?`<img src="${LOGO_BASE64}" width="70" height="70" style="border-radius:8px">`:'<div style="width:70px;height:70px;background:#fff;color:#1e40af;font-size:40px;font-weight:bold;display:flex;align-items:center;justify-content:center;border-radius:8px">A</div>';
+  const tH=att.reduce((s,a)=>s+(a.total||0),0);
+  const dayS=att.filter(a=>a.shift==='Day'||!a.shift).length;
+  const nightS=att.filter(a=>a.shift==='Night').length;
   
-  let html=`<html>
-<head>
-<meta charset="UTF-8">
-<style>
-  body{font-family:Arial,sans-serif}
-  table{border-collapse:collapse;width:100%}
-  .header-row{background:#1e40af;color:#fff;padding:20px}
-  .title{font-size:26px;font-weight:bold;margin-bottom:6px}
-  .subtitle{font-size:13px;opacity:.9}
-  .info-bar{background:#dbeafe;text-align:center;padding:12px;font-weight:bold;font-size:14px;border:1px solid #1e40af}
-  .stats-bar{background:#eff6ff;text-align:center;padding:10px;font-size:12px;border-left:1px solid #1e40af;border-right:1px solid #1e40af}
-  .section-header{padding:12px;font-weight:bold;text-align:center;font-size:14px;color:#fff}
-  .section-present{background:#059669}
-  .section-absent{background:#dc2626}
-  th{background:#1e40af;color:#fff;padding:10px 8px;border:1px solid #1e3a8a;font-size:11px;text-align:center;font-weight:bold}
-  th.absent-th{background:#dc2626;border-color:#991b1b}
-  td{padding:8px;border:1px solid #ccc;font-size:11px;text-align:center}
-  td.name-cell{text-align:left;font-weight:bold}
-  .even{background:#f0f9ff}
-  .absent-row{background:#fef2f2}
-  .absent-row td{border-color:#fca5a5}
-  .absent-name{color:#dc2626;font-weight:bold}
-  .totals-row{background:#dbeafe;font-weight:bold}
-  .footer{background:#1e40af;color:#fff;text-align:center;padding:12px;font-size:11px}
-</style>
-</head>
-<body>
-<table border="1">
-  <tr><td colspan="12" class="header-row">
-    <table style="border:none;width:100%">
-      <tr>
-        <td style="border:none;width:80px">${logoHTML}</td>
-        <td style="border:none;text-align:center">
-          <div class="title">AL BOWRY CARPENTRY</div>
-          <div class="subtitle">Antalya, Turkey | www.albowry.com</div>
-        </td>
-      </tr>
-    </table>
-  </td></tr>
-  <tr><td colspan="12" class="info-bar">Daily Attendance Report - ${date} | ${filter||'All Workers'}</td></tr>
-  <tr><td colspan="12" class="stats-bar">Present: ${att.length} | Absent: ${absentWorkers.length} | Day Shift: ${dayShift} | Night Shift: ${nightShift} | Total Hours: ${totalHours.toFixed(2)}h | Total OT: ${totalOT.toFixed(2)}h</td></tr>
-  <tr><td colspan="12" style="padding:5px"></td></tr>`;
+  let h=`<html><head><meta charset="UTF-8"><style>body{font-family:Arial}table{border-collapse:collapse;width:100%}th{background:#1e40af;color:#fff;padding:10px 8px;border:1px solid #1e3a8a;font-size:11px;text-align:center;font-weight:bold}td{padding:8px;border:1px solid #ccc;font-size:11px;text-align:center}.e{background:#f0f9ff}.ar{background:#fef2f2}.ar td{border-color:#fca5a5}th.ath{background:#dc2626;border-color:#991b1b}</style></head><body><table border="1">`;
   
+  // Header
+  h+=`<tr><td colspan="12" style="background:#1e40af;color:#fff;padding:20px"><table style="border:none;width:100%"><tr><td style="border:none;width:90px;vertical-align:middle">${logo}</td><td style="border:none;text-align:center;vertical-align:middle"><div style="font-size:28px;font-weight:bold;letter-spacing:1px">AL BOWRY CARPENTRY LLC</div><div style="font-size:14px;font-weight:bold;margin-top:6px">Attendance Report</div><div style="font-size:13px;font-weight:bold;margin-top:4px">PROJECT COP31 at Antalya, Turkey</div><div style="font-size:11px;opacity:.9;margin-top:4px">Company Registered: Sharjah, UAE | www.albowry.com</div></td></tr></table></td></tr>`;
+  
+  h+=`<tr><td colspan="12" style="background:#dbeafe;text-align:center;padding:12px;font-weight:bold;font-size:14px;color:#1e40af">Date: ${date} | ${filter||'All Workers'} | Regular: 9h + Compulsory OT: 3h</td></tr>`;
+  h+=`<tr><td colspan="12" style="background:#eff6ff;text-align:center;padding:10px;font-size:12px">Present: ${att.length} | Absent: ${absent.length} | Day: ${dayS} | Night: ${nightS} | Hours: ${tH.toFixed(2)}h</td></tr>`;
+  h+=`<tr><td colspan="12" style="padding:5px"></td></tr>`;
+  
+  // Present
   if(att.length){
-    html+=`
-  <tr><td colspan="12" class="section-header section-present">✅ PRESENT WORKERS (${att.length})</td></tr>
-  <tr>
-    <th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th>
-    <th>Check-In</th><th>Check-Out</th><th>Total</th><th>Reg 9h</th><th>OT 3h</th><th>Extra OT</th><th>Status</th>
-  </tr>`;
-    
+    h+=`<tr><td colspan="12" style="background:#059669;color:#fff;padding:12px;font-weight:bold;text-align:center;font-size:14px">PRESENT WORKERS (${att.length})</td></tr>`;
+    h+=`<tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th><th>Check-In</th><th>Check-Out</th><th>Total</th><th>Reg 9h</th><th>OT 3h</th><th>Extra OT</th><th>Status</th></tr>`;
     att.forEach((a,i)=>{
-      html+=`<tr class="${i%2===0?'even':''}">
-        <td>${i+1}</td>
-        <td class="name-cell">${a.name}${a.backdated?' (Manual)':''}</td>
-        <td>${a.prof||'-'}</td>
-        <td>${a.sec}</td>
-        <td>${a.shift||'Day'}</td>
-        <td>${fT(a.checkinTime)}</td>
-        <td>${fT(a.checkoutTime)}</td>
-        <td><b>${(a.total||0).toFixed(2)}</b></td>
-        <td>${(a.regular||0).toFixed(2)}</td>
-        <td>${(a.compOT||0).toFixed(2)}</td>
-        <td>${(a.extraOT||0).toFixed(2)}</td>
-        <td>${a.status}</td>
-      </tr>`;
+      h+=`<tr class="${i%2===0?'e':''}"><td>${i+1}</td><td style="text-align:left;font-weight:bold">${a.name}${a.backdated?' (Manual)':''}</td><td>${a.prof||'-'}</td><td>${a.sec}</td><td>${a.shift||'Day'}</td><td>${fT(a.checkinTime)}</td><td>${fT(a.checkoutTime)}</td><td><b>${(a.total||0).toFixed(2)}</b></td><td>${(a.regular||0).toFixed(2)}</td><td>${(a.compOT||0).toFixed(2)}</td><td>${(a.extraOT||0).toFixed(2)}</td><td>${a.status}</td></tr>`;
     });
-    
-    html+=`
-  <tr class="totals-row">
-    <td colspan="7" style="text-align:right">TOTALS:</td>
-    <td>${totalHours.toFixed(2)}</td>
-    <td>${att.reduce((s,a)=>s+(a.regular||0),0).toFixed(2)}</td>
-    <td>${att.reduce((s,a)=>s+(a.compOT||0),0).toFixed(2)}</td>
-    <td>${att.reduce((s,a)=>s+(a.extraOT||0),0).toFixed(2)}</td>
-    <td></td>
-  </tr>`;
+    h+=`<tr style="background:#dbeafe;font-weight:bold"><td colspan="7" style="text-align:right">TOTALS:</td><td>${tH.toFixed(2)}</td><td>${att.reduce((s,a)=>s+(a.regular||0),0).toFixed(2)}</td><td>${att.reduce((s,a)=>s+(a.compOT||0),0).toFixed(2)}</td><td>${att.reduce((s,a)=>s+(a.extraOT||0),0).toFixed(2)}</td><td></td></tr>`;
   }
   
-  if(absentWorkers.length){
-    html+=`
-  <tr><td colspan="12" style="padding:5px"></td></tr>
-  <tr><td colspan="12" class="section-header section-absent">❌ ABSENT WORKERS (${absentWorkers.length})</td></tr>
-  <tr>
-    <th class="absent-th">#</th>
-    <th class="absent-th">Name</th>
-    <th class="absent-th">Work</th>
-    <th class="absent-th">Country</th>
-    <th class="absent-th">Default Shift</th>
-    <th class="absent-th" colspan="7">Status</th>
-  </tr>`;
-    
-    absentWorkers.forEach((w,i)=>{
-      html+=`<tr class="absent-row">
-        <td>${i+1}</td>
-        <td class="name-cell absent-name">${w.name}</td>
-        <td>${w.prof||'-'}</td>
-        <td>${w.sec}</td>
-        <td>${w.shift||'Day'}</td>
-        <td colspan="7" class="absent-name">❌ ABSENT</td>
-      </tr>`;
+  // Absent
+  if(absent.length){
+    h+=`<tr><td colspan="12" style="padding:5px"></td></tr>`;
+    h+=`<tr><td colspan="12" style="background:#dc2626;color:#fff;padding:12px;font-weight:bold;text-align:center;font-size:14px">ABSENT WORKERS (${absent.length})</td></tr>`;
+    h+=`<tr><th class="ath">#</th><th class="ath">Name</th><th class="ath">Work</th><th class="ath">Country</th><th class="ath">Default Shift</th><th class="ath" colspan="7">Status</th></tr>`;
+    absent.forEach((w,i)=>{
+      h+=`<tr class="ar"><td>${i+1}</td><td style="text-align:left;font-weight:bold;color:#dc2626">${w.name}</td><td>${w.prof||'-'}</td><td>${w.sec}</td><td>${w.shift||'Day'}</td><td colspan="7" style="font-weight:bold;color:#dc2626">ABSENT</td></tr>`;
     });
   }
   
-  html+=`
-  <tr><td colspan="12" style="padding:5px"></td></tr>
-  <tr><td colspan="12" class="footer">© ${CURRENT_YEAR} AL BOWRY Carpentry | Antalya, Turkey | Generated: ${new Date().toLocaleString()}</td></tr>
-</table>
-</body>
-</html>`;
+  // Footer
+  h+=`<tr><td colspan="12" style="padding:5px"></td></tr>`;
+  h+=`<tr><td colspan="12" style="background:#1e40af;color:#fff;text-align:center;padding:14px;font-size:11px">AL BOWRY CARPENTRY LLC | Registered: Sharjah, UAE | Project: COP31, Antalya, Turkey | Generated: ${new Date().toLocaleString()}</td></tr>`;
+  h+=`</table></body></html>`;
   
-  const b=new Blob([html],{type:'application/vnd.ms-excel'});
+  const b=new Blob([h],{type:'application/vnd.ms-excel'});
   const l=document.createElement('a');
   l.href=URL.createObjectURL(b);
-  l.download=`AlBowry_${date}_${filter||'All'}.xls`;
+  l.download='AlBowry_COP31_'+date+'_'+(filter||'All')+'.xls';
   l.click();
-  toast('✅ Excel downloaded!');
+  toast('Excel downloaded!');
 }
 
 async function bulkBackdatedEntry(){
   const date=document.getElementById('bulkBackdateDate').value;
   const shift=document.getElementById('bulkBackdateShift').value;
-  const checkinTime=document.getElementById('bulkBackdateIn').value;
-  const checkoutTime=document.getElementById('bulkBackdateOut').value;
+  const inTime=document.getElementById('bulkBackdateIn').value;
+  const outTime=document.getElementById('bulkBackdateOut').value;
   const filter=document.getElementById('bulkBackdateFilter').value;
   
   if(!date)return toast('Select date','err');
   if(!shift)return toast('Select shift','err');
-  if(!checkinTime||!checkoutTime)return toast('Enter times','err');
+  if(!inTime||!outTime)return toast('Enter times','err');
   
   let workers=gW().filter(w=>w.on);
   if(filter==='Indian')workers=workers.filter(w=>w.sec==='Indian');
   else if(filter==='Pakistani')workers=workers.filter(w=>w.sec==='Pakistani');
   
-  const existingWids=gA().filter(a=>a.date===date).map(a=>a.wid);
-  const toAdd=workers.filter(w=>!existingWids.includes(w.wid));
+  const existW=gA().filter(a=>a.date===date).map(a=>a.wid);
+  const toAdd=workers.filter(w=>!existW.includes(w.wid));
   
-  if(!toAdd.length)return toast('All have entries','info');
+  if(!toAdd.length)return toast('All workers already have entries for '+date,'info');
   
-  confirmDlg('Bulk Add?',`Add ${toAdd.length} entries for ${date}?`,async()=>{
-    const checkinISO=new Date(date+'T'+checkinTime+':00').toISOString();
-    const checkoutISO=new Date(date+'T'+checkoutTime+':00').toISOString();
-    let finalCheckoutISO=checkoutISO;
-    if(new Date(checkoutISO)<=new Date(checkinISO)){
-      const cd=new Date(checkoutISO);cd.setDate(cd.getDate()+1);
-      finalCheckoutISO=cd.toISOString();
-    }
-    const c=calcHours(checkinISO,finalCheckoutISO);
+  confirmDlg('Bulk Add?',toAdd.length+' entries for '+date+'?',async()=>{
+    const ci=new Date(date+'T'+inTime+':00').toISOString();
+    let co=new Date(date+'T'+outTime+':00').toISOString();
+    if(new Date(co)<=new Date(ci)){const d=new Date(co);d.setDate(d.getDate()+1);co=d.toISOString();}
+    const c=calcHours(ci,co);
     
     for(const w of toAdd){
-      const recId='att_'+Date.now()+'_'+w.wid+'_bulk'+Math.random();
-      await FB.save(COL.A,recId,{
-        recId,wid:w.wid,name:w.name,prof:w.prof,sec:w.sec,shift,date,
-        checkinReqTime:checkinISO,checkinTime:checkinISO,
-        checkoutReqTime:finalCheckoutISO,checkoutTime:finalCheckoutISO,
+      const rid='att_'+Date.now()+'_'+w.wid+'_b'+Math.random();
+      await FB.save(COL.A,rid,{
+        recId:rid,wid:w.wid,name:w.name,prof:w.prof,sec:w.sec,shift,date,
+        checkinReqTime:ci,checkinTime:ci,checkoutReqTime:co,checkoutTime:co,
         total:c.total,regular:c.regular,compOT:c.compOT,extraOT:c.extraOT,ot:c.ot,
         status:'completed',backdated:true
       });
     }
-    
-    toast(`✅ Added ${toAdd.length} entries!`);loadHistoryForDate();
+    toast(toAdd.length+' entries added!');
+    loadHistoryForDate();
   });
 }
 
-console.log('📅 History Module Loaded!');
+console.log('History Module Ready!');
