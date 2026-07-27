@@ -46,7 +46,7 @@
   </div>
 </div>
 
-<!-- ============ LOGIN PAGE ============ -->
+<!-- LOGIN PAGE -->
 <div id="loginPage" class="page active">
   <div class="login-wrap">
     <div class="login-brand">
@@ -80,7 +80,6 @@
           <button class="ltab" onclick="switchLogin('admin',this)"><span>🛡️</span> Admin</button>
         </div>
         
-        <!-- ⭐ WORKER LOGIN WITH SHIFT -->
         <form id="workerLoginForm" class="lform active" onsubmit="return workerLogin(event)">
           <div class="field"><label>Select Your Name</label>
             <select id="workerSelect" required><option value="">— Choose —</option></select>
@@ -116,7 +115,7 @@
   </div>
 </div>
 
-<!-- ============ WORKER DASHBOARD ============ -->
+<!-- WORKER DASHBOARD -->
 <div id="workerPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
@@ -180,7 +179,7 @@
   </div>
 </div>
 
-<!-- ============ ADMIN DASHBOARD ============ -->
+<!-- ADMIN DASHBOARD -->
 <div id="adminPage" class="page">
   <nav class="topbar">
     <div class="tb-left">
@@ -203,12 +202,13 @@
       <div class="side-lbl">MANAGE</div>
       <button class="side-btn" data-sec="workers" onclick="goSection('workers',this)"><span>👥</span> Workers</button>
       <button class="side-btn" data-sec="manual" onclick="goSection('manual',this)"><span>✍️</span> Manual Entry</button>
+      <button class="side-btn" data-sec="history" onclick="goSection('history',this)"><span>📅</span> History & Backdated</button>
       <button class="side-btn" data-sec="report" onclick="goSection('report',this)"><span>📊</span> Monthly Report</button>
       <button class="side-btn" data-sec="endday" onclick="goSection('endday',this)"><span>🏁</span> End Day</button>
       <button class="side-btn" data-sec="export" onclick="goSection('export',this)"><span>📥</span> Export</button>
       <div class="side-lbl">SYSTEM</div>
       <button class="side-btn" data-sec="settings" onclick="goSection('settings',this)"><span>⚙️</span> Settings</button>
-      <div class="side-foot"><p>v11 Firebase</p><p>🔥 Real-time</p></div>
+      <div class="side-foot"><p>v12 Firebase</p><p>🔥 Real-time</p></div>
     </aside>
     <main class="a-main">
 
@@ -233,12 +233,22 @@
             <div class="sb-row"><div><b class="g" id="dPakP">0</b><small>Present</small></div><div><b class="r" id="dPakA">0</b><small>-</small></div><div><b class="o" id="dPakPend">0</b><small>Pending</small></div></div>
           </div>
         </div>
+        
+        <!-- ⭐ ABSENT WORKERS TODAY -->
+        <div class="manual-card" style="margin-top:20px;border-left:4px solid var(--r)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+            <h3 style="border:none;padding:0;margin:0">❌ Absent Workers Today</h3>
+            <span class="tag tag-r" id="absentCountToday">0 Absent</span>
+          </div>
+          <div id="absentWorkersToday"></div>
+        </div>
+        
         <h3 class="qa-title">⚡ Quick Actions</h3>
         <div class="qa-row">
           <div class="qa-card" onclick="goSection('approve',document.querySelector('[data-sec=approve]'))"><div class="qa-icon-box qa-orange">✅</div><p>Approvals</p></div>
           <div class="qa-card" onclick="goSection('manual',document.querySelector('[data-sec=manual]'))"><div class="qa-icon-box qa-blue">✍️</div><p>Manual</p></div>
+          <div class="qa-card" onclick="goSection('history',document.querySelector('[data-sec=history]'))"><div class="qa-icon-box qa-purple">📅</div><p>History</p></div>
           <div class="qa-card" onclick="goSection('report',document.querySelector('[data-sec=report]'))"><div class="qa-icon-box qa-green">📊</div><p>Reports</p></div>
-          <div class="qa-card" onclick="goSection('endday',document.querySelector('[data-sec=endday]'))"><div class="qa-icon-box qa-purple">🏁</div><p>End Day</p></div>
         </div>
       </section>
 
@@ -258,9 +268,9 @@
         </div>
       </section>
 
-      <!-- ATTENDANCE -->
+      <!-- ATTENDANCE - WITH ABSENT NAMES -->
       <section id="sec-attend" class="sec">
-        <div class="sec-hdr"><div><h1>Attendance 📅</h1></div></div>
+        <div class="sec-hdr"><div><h1>Attendance 📅</h1><p>View by date - Present + Absent workers</p></div></div>
         <div class="filters">
           <div class="field"><label>Date</label><input type="date" id="fDate" onchange="loadAttend()"></div>
           <div class="field"><label>Filter</label>
@@ -270,6 +280,8 @@
               <option value="Night">🌙 Night Shift Only</option>
               <option value="Indian">🇮🇳 Indian Only</option>
               <option value="Pakistani">🇵🇰 Pakistani Only</option>
+              <option value="Present">✅ Present Only</option>
+              <option value="Absent">❌ Absent Only</option>
             </select>
           </div>
           <div class="field"><label>&nbsp;</label><button class="btn btn-outline" onclick="loadAttend()">🔄</button></div>
@@ -292,8 +304,6 @@
       <section id="sec-manual" class="sec">
         <div class="sec-hdr"><div><h1>Manual Attendance ✍️</h1><p>Admin marks attendance • Select shift for each entry</p></div></div>
         <div class="manual-grid">
-          
-          <!-- QUICK CHECK-IN WITH SHIFT -->
           <div class="manual-card">
             <h3>⚡ Quick Check-In/Out</h3>
             <p style="color:#64748b;font-size:13px;margin-bottom:16px">Select worker, shift, then check-in</p>
@@ -311,8 +321,6 @@
               <button class="btn btn-danger btn-block" onclick="manualQuickCheckOut()">🔒 Check Out</button>
             </div>
           </div>
-          
-          <!-- CUSTOM DATE TIME WITH SHIFT -->
           <div class="manual-card">
             <h3>🕐 Custom Date & Time</h3>
             <p style="color:#64748b;font-size:13px;margin-bottom:16px">For backdated entries</p>
@@ -336,8 +344,6 @@
             </div>
           </div>
         </div>
-        
-        <!-- BULK ACTIONS WITH SHIFT -->
         <div class="manual-card" style="margin-top:20px">
           <h3>👥 Bulk Actions</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:16px">Check-in/out ALL workers at once with shift selection</p>
@@ -361,8 +367,6 @@
             <button class="btn btn-danger" onclick="bulkCheckOutAll()">🔒 Bulk Check-Out</button>
           </div>
         </div>
-        
-        <!-- TODAY OVERVIEW -->
         <div class="manual-card" style="margin-top:20px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
             <h3 style="border:none;padding:0;margin:0">📋 Today's Overview</h3>
@@ -370,6 +374,97 @@
           </div>
           <div id="manualTodayList"></div>
         </div>
+      </section>
+
+      <!-- HISTORY - Complete section -->
+      <section id="sec-history" class="sec">
+        <div class="sec-hdr">
+          <div><h1>History & Backdated Entries 📅</h1><p>Add past date attendance & view day-wise data</p></div>
+        </div>
+        
+        <div class="manual-card" style="margin-bottom:20px;border-left:4px solid var(--o)">
+          <h3>📝 Add Backdated Entry (Single Worker)</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Add attendance for any past date. Perfect for entries missed before this app was created.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field">
+              <label>Select Worker *</label>
+              <select id="historyWorker"><option value="">— Select Worker —</option></select>
+            </div>
+            <div class="field">
+              <label>Date *</label>
+              <input type="date" id="historyEntryDate">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="field">
+              <label>Shift *</label>
+              <select id="historyShift">
+                <option value="Day">☀️ Day Shift</option>
+                <option value="Night">🌙 Night Shift</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Check-In Time *</label>
+              <input type="time" id="historyCheckIn" value="08:00">
+            </div>
+            <div class="field">
+              <label>Check-Out Time *</label>
+              <input type="time" id="historyCheckOut" value="20:00">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" onclick="addBackdatedEntry()" style="margin-top:12px">💾 Add / Update Entry</button>
+          <div style="margin-top:12px;padding:12px;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:8px;font-size:12px;color:#78350f">
+            💡 <strong>Note:</strong> If entry already exists for this date, it will ask to replace. Night shift with next-day checkout is handled automatically.
+          </div>
+        </div>
+        
+        <div class="manual-card" style="margin-bottom:20px;border-left:4px solid var(--p)">
+          <h3>👥 Bulk Backdated Entry (Multiple Workers)</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Add same entry for multiple workers at once. Existing entries will be skipped.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Date *</label><input type="date" id="bulkBackdateDate"></div>
+            <div class="field"><label>Country Filter</label>
+              <select id="bulkBackdateFilter">
+                <option value="">All Workers</option>
+                <option value="Indian">🇮🇳 Indian Only</option>
+                <option value="Pakistani">🇵🇰 Pakistani Only</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="field"><label>Shift *</label>
+              <select id="bulkBackdateShift">
+                <option value="Day">☀️ Day Shift</option>
+                <option value="Night">🌙 Night Shift</option>
+              </select>
+            </div>
+            <div class="field"><label>Check-In *</label><input type="time" id="bulkBackdateIn" value="08:00"></div>
+            <div class="field"><label>Check-Out *</label><input type="time" id="bulkBackdateOut" value="20:00"></div>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="bulkBackdatedEntry()" style="margin-top:12px">👥 Add Bulk Backdated Entries</button>
+        </div>
+        
+        <div class="manual-card">
+          <h3>📊 View Day-wise Attendance History</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:16px">Select any date to see who was working that day. Download data as PDF or Excel.</p>
+          <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:12px;align-items:flex-end">
+            <div class="field"><label>Select Date *</label><input type="date" id="historyDate" onchange="loadHistoryForDate()"></div>
+            <div class="field"><label>Filter</label>
+              <select id="historyFilter" onchange="loadHistoryForDate()">
+                <option value="">All (Present + Absent)</option>
+                <option value="Day">☀️ Day Shift Only</option>
+                <option value="Night">🌙 Night Shift Only</option>
+                <option value="Indian">🇮🇳 Indian Only</option>
+                <option value="Pakistani">🇵🇰 Pakistani Only</option>
+                <option value="Present">✅ Present Only</option>
+                <option value="Absent">❌ Absent Only</option>
+              </select>
+            </div>
+            <div class="field"><label>&nbsp;</label><button class="btn btn-outline" onclick="loadHistoryForDate()">🔄</button></div>
+          </div>
+        </div>
+        
+        <div id="historyContent" style="margin-top:20px"></div>
       </section>
 
       <!-- MONTHLY REPORT -->
@@ -506,5 +601,6 @@ window.FB_READY=true;console.log('🔥 Firebase Connected!');window.dispatchEven
 
 <script src="app.js"></script>
 <script src="manual.js"></script>
+<script src="history.js"></script>
 </body>
 </html>
