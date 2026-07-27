@@ -1,181 +1,334 @@
-function loadManualSection(){
-  populateManualWorkerDD();
-  populateManualCustomDD();
-  loadManualToday();
-  setDefaultManualDate();
+// AL BOWRY CARPENTRY LLC - Manual Attendance
+// manual.js v16 - Complete sync
+
+var _manualShift = 'Day';
+var _manualSection = 'All';
+var _bulkSelected = [];
+
+// ====== RENDER MANUAL ENTRY OVERVIEW ======
+function renderManualEntry() {
+  renderManualOverview();
+  renderBulkWorkerList();
 }
 
-function populateManualWorkerDD(){
-  var sel=document.getElementById('manualWorker');if(!sel)return;
-  var cv=sel.value;var w=gW().filter(function(x){return x.on;}).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
-  var ind=[],pak=[];
-  for(var i=0;i<w.length;i++){if(w[i].sec==='Indian')ind.push(w[i]);else pak.push(w[i]);}
-  var h='<option value="">-- Select Worker --</option>';
-  if(ind.length){h+='<optgroup label="Indian ('+ind.length+')">';for(var j=0;j<ind.length;j++)h+='<option value="'+ind[j].wid+'">'+ind[j].name+' - '+(ind[j].prof||'Worker')+'</option>';h+='</optgroup>';}
-  if(pak.length){h+='<optgroup label="Pakistani ('+pak.length+')">';for(var k=0;k<pak.length;k++)h+='<option value="'+pak[k].wid+'">'+pak[k].name+'</option>';h+='</optgroup>';}
-  sel.innerHTML=h;if(cv)sel.value=cv;
-}
-
-function populateManualCustomDD(){
-  var sel=document.getElementById('manualCustomWorker');if(!sel)return;
-  var main=document.getElementById('manualWorker');if(main)sel.innerHTML=main.innerHTML;
-}
-
-async function manualQuickCheckIn(){
-  var wid=document.getElementById('manualWorker').value;
-  var shift=document.getElementById('manualQuickShift').value;
-  if(!wid)return toast('Select worker','err');
-  if(!shift)return toast('Select shift','err');
-  var worker=null;var ws=gW();for(var i=0;i<ws.length;i++){if(ws[i].wid===wid){worker=ws[i];break;}}
-  if(!worker)return toast('Not found','err');
-  var today=tD();var att=gA();var existing=null;
-  for(var j=0;j<att.length;j++){if(att[j].wid===wid&&att[j].date===today){existing=att[j];break;}}
-  if(existing){
-    if(existing.status==='checked_in')return toast(worker.name+' already in!','err');
-    if(existing.status==='completed')return toast('Already done','err');
-    if(existing.status==='pending_checkin'){
-      var u=Object.assign({},existing,{checkinTime:existing.checkinReqTime,shift:shift,status:'checked_in'});
-      await FB.save(COL.A,existing.id,u);toast(worker.name+' approved!');return;
+function renderManualOverview() {
+  var container = document.getElementById('manualOverview');
+  if (!container) return;
+  
+  var today = tD();
+  var allAtt = gA();
+  var allWorkers = gW();
+  
+  var notIn = [], working = [], pendingList = [], done = [];
+  
+  // Get today's attendance indexed by wid
+  var todayAttByWid = {};
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (attDate === today) {
+      // Keep most recent/relevant record per worker
+      if (!todayAttByWid[a.wid] || a.status === 'completed' || a.status === 'checked_in') {
+        todayAttByWid[a.wid] = a;
+      }
     }
   }
-  var now=new Date().toISOString(),recId='att_'+Date.now()+'_'+wid;
-  await FB.save(COL.A,recId,{recId:recId,wid:wid,name:worker.name,prof:worker.prof,sec:worker.sec,shift:shift,date:today,checkinReqTime:now,checkinTime:now,checkoutReqTime:null,checkoutTime:null,total:0,regular:0,compOT:0,extraOT:0,ot:0,status:'checked_in'});
-  toast(worker.name+' checked in ('+shift+')!');document.getElementById('manualWorker').value='';
-}
-
-async function manualQuickCheckOut(){
-  var wid=document.getElementById('manualWorker').value;
-  if(!wid)return toast('Select worker','err');
-  var worker=null;var ws=gW();for(var i=0;i<ws.length;i++){if(ws[i].wid===wid){worker=ws[i];break;}}
-  if(!worker)return toast('Not found','err');
-  var today=tD();var att=gA();var rec=null;
-  for(var j=0;j<att.length;j++){if(att[j].wid===wid&&att[j].date===today){rec=att[j];break;}}
-  if(!rec)return toast('Not checked in','err');
-  if(rec.status==='completed')return toast('Already out','err');
-  if(rec.status==='pending_checkin')return toast('Check-in first!','err');
-  if(rec.status==='pending_checkout'){
-    var u2=Object.assign({},rec);u2.checkoutTime=rec.checkoutReqTime;var c2=calcHours(u2.checkinTime,u2.checkoutTime);
-    u2.total=c2.total;u2.regular=c2.regular;u2.compOT=c2.compOT;u2.extraOT=c2.extraOT;u2.ot=c2.ot;u2.status='completed';
-    await FB.save(COL.A,rec.id,u2);toast(worker.name+' approved! '+u2.total.toFixed(2)+'h');return;
-  }
-  var now=new Date().toISOString();var u=Object.assign({},rec);u.checkoutReqTime=now;u.checkoutTime=now;
-  var c=calcHours(rec.checkinTime,now);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';
-  await FB.save(COL.A,rec.id,u);toast(worker.name+' out! '+u.total.toFixed(2)+'h');document.getElementById('manualWorker').value='';
-}
-
-async function manualCustomCheckIn(){
-  var wid=document.getElementById('manualCustomWorker').value;var date=document.getElementById('manualDate').value;var time=document.getElementById('manualCheckInTime').value;var shift=document.getElementById('manualCustomShift').value;
-  if(!wid)return toast('Select worker','err');if(!date)return toast('Date','err');if(!time)return toast('Time','err');if(!shift)return toast('Shift','err');
-  var worker=null;var ws=gW();for(var i=0;i<ws.length;i++){if(ws[i].wid===wid){worker=ws[i];break;}}
-  if(!worker)return toast('Not found','err');
-  var att=gA();var existing=null;for(var j=0;j<att.length;j++){if(att[j].wid===wid&&att[j].date===date){existing=att[j];break;}}
-  if(existing&&(existing.status==='checked_in'||existing.status==='completed'))return toast('Already has record','err');
-  var now=new Date(date+'T'+time+':00').toISOString(),recId='att_'+Date.now()+'_'+wid;
-  await FB.save(COL.A,recId,{recId:recId,wid:wid,name:worker.name,prof:worker.prof,sec:worker.sec,shift:shift,date:date,checkinReqTime:now,checkinTime:now,checkoutReqTime:null,checkoutTime:null,total:0,regular:0,compOT:0,extraOT:0,ot:0,status:'checked_in'});
-  toast(worker.name+' in for '+date);
-}
-
-async function manualCustomCheckOut(){
-  var wid=document.getElementById('manualCustomWorker').value;var date=document.getElementById('manualDate').value;var time=document.getElementById('manualCheckOutTime').value;
-  if(!wid)return toast('Select','err');if(!date)return toast('Date','err');if(!time)return toast('Time','err');
-  var worker=null;var ws=gW();for(var i=0;i<ws.length;i++){if(ws[i].wid===wid){worker=ws[i];break;}}
-  if(!worker)return toast('Not found','err');
-  var att=gA();var rec=null;for(var j=0;j<att.length;j++){if(att[j].wid===wid&&att[j].date===date){rec=att[j];break;}}
-  if(!rec)return toast('No check-in for '+date,'err');if(rec.status==='completed')return toast('Done','err');
-  var coISO=new Date(date+'T'+time+':00').toISOString();
-  if(new Date(coISO)<=new Date(rec.checkinTime)){var d=new Date(coISO);d.setDate(d.getDate()+1);coISO=d.toISOString();}
-  var u=Object.assign({},rec);u.checkoutReqTime=coISO;u.checkoutTime=coISO;
-  var c=calcHours(rec.checkinTime,coISO);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';
-  await FB.save(COL.A,rec.id,u);toast(worker.name+': '+u.total.toFixed(2)+'h');
-}
-
-async function bulkCheckInAll(){
-  var sec=document.getElementById('bulkSection').value;var shift=document.getElementById('bulkShift').value;
-  if(!shift)return toast('Select shift','err');
-  var workers=gW().filter(function(w){return w.on;});
-  if(sec==='Indian')workers=workers.filter(function(w){return w.sec==='Indian';});
-  else if(sec==='Pakistani')workers=workers.filter(function(w){return w.sec==='Pakistani';});
-  var today=tD();var todayAtt=gA().filter(function(a){return a.date===today;});
-  var todayWids=todayAtt.map(function(a){return a.wid;});
-  var toAdd=workers.filter(function(w){return todayWids.indexOf(w.wid)===-1;});
-  if(!toAdd.length)return toast('All checked in!','info');
-  confirmDlg('Bulk In?',toAdd.length+' workers ('+shift+')?',async function(){
-    var now=new Date().toISOString();
-    for(var i=0;i<toAdd.length;i++){
-      var w=toAdd[i];var recId='att_'+Date.now()+'_'+w.wid+Math.random().toString(36).substr(2,5);
-      await FB.save(COL.A,recId,{recId:recId,wid:w.wid,name:w.name,prof:w.prof,sec:w.sec,shift:shift,date:today,checkinReqTime:now,checkinTime:now,checkoutReqTime:null,checkoutTime:null,total:0,regular:0,compOT:0,extraOT:0,ot:0,status:'checked_in'});
+  
+  for (var j = 0; j < allWorkers.length; j++) {
+    var w = allWorkers[j];
+    if (!w.on) continue;
+    
+    var att = todayAttByWid[w.wid];
+    if (!att) {
+      notIn.push(w);
+    } else if (att.status === 'pending_checkin') {
+      pendingList.push({ worker: w, att: att });
+    } else if (att.status === 'checked_in' || att.status === 'pending_checkout') {
+      working.push({ worker: w, att: att });
+    } else if (att.status === 'completed') {
+      done.push({ worker: w, att: att });
     }
-    toast(toAdd.length+' checked in!');
+  }
+  
+  var html = '<div class="manual-overview-grid">' +
+    '<div class="ov-card ov-notin">' +
+      '<div class="ov-num">' + notIn.length + '</div>' +
+      '<div class="ov-label">Not Checked In</div>' +
+    '</div>' +
+    '<div class="ov-card ov-working">' +
+      '<div class="ov-num">' + working.length + '</div>' +
+      '<div class="ov-label">Currently Working</div>' +
+    '</div>' +
+    '<div class="ov-card ov-pending">' +
+      '<div class="ov-num">' + pendingList.length + '</div>' +
+      '<div class="ov-label">Pending Approval</div>' +
+    '</div>' +
+    '<div class="ov-card ov-done">' +
+      '<div class="ov-num">' + done.length + '</div>' +
+      '<div class="ov-label">Completed</div>' +
+    '</div>' +
+    '</div>';
+  
+  // Not In list with quick check-in buttons
+  if (notIn.length > 0) {
+    html += '<div class="ov-section"><div class="ov-section-title ov-notin-title">Not Checked In (' + notIn.length + ')</div><div class="ov-worker-list">';
+    for (var n = 0; n < notIn.length; n++) {
+      var nw = notIn[n];
+      html += '<div class="ov-worker-item">' +
+        '<div class="ov-worker-name">' + nw.name + '<small>' + nw.wid + '</small></div>' +
+        '<div class="ov-worker-meta">' + nw.sec + ' | ' + nw.shift + '</div>' +
+        '<button class="btn-ov-in" onclick="quickManualCheckin(\'' + nw.wid + '\')">Check In</button>' +
+        '</div>';
+    }
+    html += '</div></div>';
+  }
+  
+  // Working list with quick check-out buttons
+  if (working.length > 0) {
+    html += '<div class="ov-section"><div class="ov-section-title ov-working-title">Currently Working (' + working.length + ')</div><div class="ov-worker-list">';
+    for (var wk = 0; wk < working.length; wk++) {
+      var wkItem = working[wk];
+      html += '<div class="ov-worker-item">' +
+        '<div class="ov-worker-name">' + wkItem.worker.name + '<small>' + wkItem.worker.wid + '</small></div>' +
+        '<div class="ov-worker-meta">In: ' + fmtTime(wkItem.att.checkinTime) + '</div>' +
+        '<button class="btn-ov-out" onclick="quickManualCheckout(\'' + wkItem.worker.wid + '\')">Check Out</button>' +
+        '</div>';
+    }
+    html += '</div></div>';
+  }
+  
+  container.innerHTML = html;
+}
+
+// ====== QUICK MANUAL CHECK-IN ======
+function quickManualCheckin(wid) {
+  var w = findWorker(wid);
+  if (!w) return;
+  
+  var now = new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  
+  var html = '<div class="form-grid">' +
+    '<div class="form-group">' +
+      '<label>Worker</label>' +
+      '<input type="text" value="' + w.name + ' (' + w.wid + ')" readonly class="form-control">' +
+    '</div>' +
+    '<div class="form-group">' +
+      '<label>Shift</label>' +
+      '<select id="qmShift" class="form-control">' +
+        '<option value="Day"' + (w.shift === 'Day' ? ' selected' : '') + '>Day Shift (8AM-8PM)</option>' +
+        '<option value="Night"' + (w.shift === 'Night' ? ' selected' : '') + '>Night Shift (8PM-8AM)</option>' +
+      '</select>' +
+    '</div>' +
+    '<div class="form-group">' +
+      '<label>Check In Time</label>' +
+      '<input type="time" id="qmTime" value="' + now + '" class="form-control">' +
+    '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
+      '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-success" onclick="submitQuickCheckin(\'' + wid + '\')">Check In Now</button>' +
+    '</div>';
+  
+  showModal(html, 'Quick Check In - ' + w.name);
+}
+
+function submitQuickCheckin(wid) {
+  var shift = document.getElementById('qmShift').value;
+  var time = document.getElementById('qmTime').value;
+  var date = tD();
+  
+  manualCheckin(wid, shift, date, time).then(function(res) {
+    closeModal();
+    if (res.ok) showToast(res.msg, 'success');
+    else showToast(res.msg, 'error');
+    renderManualEntry();
   });
 }
 
-async function bulkCheckOutAll(){
-  var sec=document.getElementById('bulkSection').value;var today=tD();
-  var active=gA().filter(function(a){return a.date===today&&(a.status==='checked_in'||a.status==='pending_checkout');});
-  if(sec==='Indian')active=active.filter(function(a){return a.sec==='Indian';});
-  else if(sec==='Pakistani')active=active.filter(function(a){return a.sec==='Pakistani';});
-  if(!active.length)return toast('None active','info');
-  confirmDlg('Bulk Out?',active.length+'?',async function(){
-    var now=new Date().toISOString();
-    for(var i=0;i<active.length;i++){
-      var r=active[i];var u=Object.assign({},r);u.checkoutReqTime=now;u.checkoutTime=now;
-      var c=calcHours(r.checkinTime,now);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';
-      await FB.save(COL.A,r.id,u);
+// ====== QUICK MANUAL CHECK-OUT ======
+function quickManualCheckout(wid) {
+  var w = findWorker(wid);
+  if (!w) return;
+  
+  var today = tD();
+  var allAtt = gA();
+  var att = null;
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (a.wid === wid && aDate === today && (a.status === 'checked_in' || a.status === 'pending_checkout')) {
+      att = a; break;
     }
-    toast(active.length+' checked out!');
+  }
+  if (!att) { showToast('No active check-in found', 'error'); return; }
+  
+  var defaultOut = att.shift === 'Night' ? '08:00' : '20:00';
+  var now = new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  
+  var html = '<div class="form-grid">' +
+    '<div class="form-group">' +
+      '<label>Worker</label>' +
+      '<input type="text" value="' + w.name + ' (' + w.wid + ')" readonly class="form-control">' +
+    '</div>' +
+    '<div class="form-group">' +
+      '<label>Check In Was</label>' +
+      '<input type="text" value="' + fmtTime(att.checkinTime) + '" readonly class="form-control">' +
+    '</div>' +
+    '<div class="form-group">' +
+      '<label>Check Out Time</label>' +
+      '<input type="time" id="qmoTime" value="' + now + '" class="form-control">' +
+    '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
+      '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-danger" onclick="submitQuickCheckout(\'' + wid + '\')">Check Out Now</button>' +
+    '</div>';
+  
+  showModal(html, 'Quick Check Out - ' + w.name);
+}
+
+function submitQuickCheckout(wid) {
+  var time = document.getElementById('qmoTime').value;
+  var date = tD();
+  
+  manualCheckout(wid, null, date, time).then(function(res) {
+    closeModal();
+    if (res.ok) showToast(res.msg, 'success');
+    else showToast(res.msg, 'error');
+    renderManualEntry();
   });
 }
 
-function loadManualToday(){
-  var today=tD();var att=gA().filter(function(a){return a.date===today;});
-  var ws=gW().filter(function(w){return w.on;});
-  var el=document.getElementById('manualTodayList');if(!el)return;
-  var attWids=att.map(function(a){return a.wid;});
-  var notIn=ws.filter(function(w){return attWids.indexOf(w.wid)===-1;});
-  var working=att.filter(function(a){return a.status==='checked_in';});
-  var pending=att.filter(function(a){return a.status==='pending_checkin'||a.status==='pending_checkout';});
-  var done=att.filter(function(a){return a.status==='completed';});
-  var dayW=working.filter(function(a){return a.shift==='Day'||!a.shift;});
-  var nightW=working.filter(function(a){return a.shift==='Night';});
-  var cnt=document.getElementById('manualStatusCount');
-  if(cnt)cnt.innerHTML='<span class="tag tag-r" style="margin-right:6px">Not In: '+notIn.length+'</span><span class="tag tag-o" style="margin-right:6px">Pending: '+pending.length+'</span><span class="tag tag-b" style="margin-right:6px">Day: '+dayW.length+'</span><span class="tag tag-o" style="margin-right:6px">Night: '+nightW.length+'</span><span class="tag tag-g">Done: '+done.length+'</span>';
-  var html='';
-  if(notIn.length){
-    html+='<h4 style="margin:16px 0 10px;color:var(--r);font-weight:700">Not Checked In ('+notIn.length+')</h4><div class="t-wrap" style="margin-bottom:20px"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Action</th></tr></thead><tbody>';
-    for(var i=0;i<notIn.length;i++){var w=notIn[i];html+='<tr><td>'+(i+1)+'</td><td><b>'+w.name+'</b></td><td>'+(w.prof||'-')+'</td><td><span class="tag tag-'+(w.sec==='Indian'?'ind':'pak')+'">'+(w.sec==='Indian'?'IN':'PK')+'</span></td><td><button class="btn btn-success btn-sm" onclick="manualSingleCheckIn(\''+w.wid+'\',\'Day\')">Day</button> <button class="btn btn-outline btn-sm" onclick="manualSingleCheckIn(\''+w.wid+'\',\'Night\')">Night</button></td></tr>';}
-    html+='</tbody></table></div>';
+// ====== CUSTOM DATE/TIME ENTRY ======
+function submitCustomEntry() {
+  var wid = document.getElementById('customWorker') ? document.getElementById('customWorker').value : '';
+  var shift = document.getElementById('customShift') ? document.getElementById('customShift').value : 'Day';
+  var date = document.getElementById('customDate') ? document.getElementById('customDate').value : '';
+  var inTime = document.getElementById('customIn') ? document.getElementById('customIn').value : '';
+  var outTime = document.getElementById('customOut') ? document.getElementById('customOut').value : '';
+  var type = document.getElementById('customType') ? document.getElementById('customType').value : 'both';
+  
+  if (!wid || !date) {
+    showToast('Select worker and date', 'error');
+    return;
   }
-  if(working.length){
-    html+='<h4 style="margin:16px 0 10px;color:var(--p);font-weight:700">Working ('+working.length+')</h4><div class="t-wrap" style="margin-bottom:20px"><table><thead><tr><th>#</th><th>Name</th><th>Shift</th><th>In</th><th>Action</th></tr></thead><tbody>';
-    for(var j=0;j<working.length;j++){var a=working[j];html+='<tr><td>'+(j+1)+'</td><td><b>'+a.name+'</b></td><td><span class="tag '+(a.shift==='Night'?'tag-o':'tag-b')+'">'+(a.shift==='Night'?'Night':'Day')+'</span></td><td style="color:#059669">'+fT(a.checkinTime)+'</td><td><button class="btn btn-danger btn-sm" onclick="manualSingleCheckOut(\''+a.id+'\')">Out</button></td></tr>';}
-    html+='</tbody></table></div>';
+  
+  if (type === 'in' || type === 'both') {
+    if (!inTime) { showToast('Enter check-in time', 'error'); return; }
+    manualCheckin(wid, shift, date, inTime).then(function(res) {
+      if (!res.ok) { showToast(res.msg, 'error'); return; }
+      showToast(res.msg, 'success');
+      if (type === 'both' && outTime) {
+        setTimeout(function() {
+          manualCheckout(wid, shift, date, outTime).then(function(r) {
+            if (r.ok) showToast(r.msg, 'success');
+            else showToast(r.msg, 'error');
+            renderManualEntry();
+          });
+        }, 500);
+      } else {
+        renderManualEntry();
+      }
+    });
+  } else if (type === 'out') {
+    if (!outTime) { showToast('Enter check-out time', 'error'); return; }
+    manualCheckout(wid, shift, date, outTime).then(function(res) {
+      if (res.ok) showToast(res.msg, 'success');
+      else showToast(res.msg, 'error');
+      renderManualEntry();
+    });
   }
-  if(pending.length){
-    html+='<h4 style="margin:16px 0 10px;color:var(--o);font-weight:700">Pending ('+pending.length+')</h4><div class="t-wrap" style="margin-bottom:20px"><table><thead><tr><th>#</th><th>Name</th><th>Type</th><th>Shift</th><th>Time</th><th>Action</th></tr></thead><tbody>';
-    for(var k=0;k<pending.length;k++){var p=pending[k];var isIn=p.status==='pending_checkin';html+='<tr><td>'+(k+1)+'</td><td><b>'+p.name+'</b></td><td><span class="tag '+(isIn?'tag-g':'tag-r')+'">'+(isIn?'IN':'OUT')+'</span></td><td><span class="tag '+(p.shift==='Night'?'tag-o':'tag-b')+'">'+(p.shift==='Night'?'Night':'Day')+'</span></td><td>'+fT(isIn?p.checkinReqTime:p.checkoutReqTime)+'</td><td><button class="btn btn-success btn-sm" onclick="doApprove(\''+p.id+'\')">Approve</button> <button class="btn btn-danger btn-sm" onclick="doReject(\''+p.id+'\')">Reject</button></td></tr>';}
-    html+='</tbody></table></div>';
-  }
-  if(done.length){
-    html+='<h4 style="margin:16px 0 10px;color:var(--g);font-weight:700">Completed ('+done.length+')</h4><div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>OT</th><th>Act</th></tr></thead><tbody>';
-    for(var m=0;m<done.length;m++){var d=done[m];html+='<tr><td>'+(m+1)+'</td><td><b>'+d.name+'</b></td><td><span class="tag '+(d.shift==='Night'?'tag-o':'tag-b')+'">'+(d.shift==='Night'?'Night':'Day')+'</span></td><td style="color:#059669">'+fT(d.checkinTime)+'</td><td style="color:#dc2626">'+fT(d.checkoutTime)+'</td><td style="color:var(--p);font-weight:700">'+d.total.toFixed(2)+'h</td><td style="color:#d97706">'+d.ot.toFixed(2)+'h</td><td><button class="btn btn-outline btn-sm" onclick="undoCO(\''+d.id+'\')">Undo</button> <button class="btn btn-danger btn-sm" onclick="undoCI(\''+d.id+'\')">Del</button></td></tr>';}
-    html+='</tbody></table></div>';
-  }
-  if(!html)html='<div class="empty"><h3>No records today</h3></div>';
-  el.innerHTML=html;
 }
 
-async function manualSingleCheckIn(wid,shift){
-  var worker=null;var ws=gW();for(var i=0;i<ws.length;i++){if(ws[i].wid===wid){worker=ws[i];break;}}
-  if(!worker)return;var today=tD();var now=new Date().toISOString();var recId='att_'+Date.now()+'_'+wid;
-  await FB.save(COL.A,recId,{recId:recId,wid:wid,name:worker.name,prof:worker.prof,sec:worker.sec,shift:shift||'Day',date:today,checkinReqTime:now,checkinTime:now,checkoutReqTime:null,checkoutTime:null,total:0,regular:0,compOT:0,extraOT:0,ot:0,status:'checked_in'});
-  toast(worker.name+' in ('+shift+')!');
+// ====== BULK WORKER LIST ======
+function renderBulkWorkerList() {
+  var container = document.getElementById('bulkWorkerList');
+  if (!container) return;
+  
+  var shift = document.getElementById('bulkShift') ? document.getElementById('bulkShift').value : 'All';
+  var section = document.getElementById('bulkSection') ? document.getElementById('bulkSection').value : 'All';
+  var ws = gW();
+  var filtered = [];
+  
+  for (var i = 0; i < ws.length; i++) {
+    var w = ws[i];
+    if (!w.on) continue;
+    if (shift !== 'All' && w.shift !== shift) continue;
+    if (section !== 'All' && w.sec !== section) continue;
+    filtered.push(w);
+  }
+  
+  _bulkSelected = [];
+  
+  var html = '<div class="bulk-controls">' +
+    '<button class="btn btn-sm btn-secondary" onclick="selectAllBulk()">Select All</button>' +
+    '<button class="btn btn-sm btn-secondary" onclick="deselectAllBulk()">Deselect All</button>' +
+    '<span class="bulk-count" id="bulkCount">0 selected</span>' +
+    '</div>' +
+    '<div class="bulk-list">';
+  
+  for (var j = 0; j < filtered.length; j++) {
+    var fw = filtered[j];
+    html += '<div class="bulk-item">' +
+      '<label class="bulk-label">' +
+        '<input type="checkbox" class="bulk-cb" value="' + fw.wid + '" onchange="updateBulkSelection()">' +
+        '<span class="bulk-name">' + fw.name + '</span>' +
+        '<span class="bulk-meta">' + fw.wid + ' | ' + fw.sec + ' | ' + fw.shift + '</span>' +
+      '</label>' +
+      '</div>';
+  }
+  
+  html += '</div>';
+  container.innerHTML = html;
 }
 
-async function manualSingleCheckOut(attId){
-  var att=gA();var rec=null;for(var i=0;i<att.length;i++){if(att[i].id===attId){rec=att[i];break;}}
-  if(!rec)return;var now=new Date().toISOString();var u=Object.assign({},rec);u.checkoutReqTime=now;u.checkoutTime=now;
-  var c=calcHours(rec.checkinTime,now);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';
-  await FB.save(COL.A,rec.id,u);toast(rec.name+' out! '+u.total.toFixed(2)+'h');
+function updateBulkSelection() {
+  var cbs = document.querySelectorAll('.bulk-cb:checked');
+  _bulkSelected = [];
+  for (var i = 0; i < cbs.length; i++) {
+    _bulkSelected.push(cbs[i].value);
+  }
+  var countEl = document.getElementById('bulkCount');
+  if (countEl) countEl.textContent = _bulkSelected.length + ' selected';
 }
 
-console.log('Manual Loaded!');
+function selectAllBulk() {
+  var cbs = document.querySelectorAll('.bulk-cb');
+  for (var i = 0; i < cbs.length; i++) cbs[i].checked = true;
+  updateBulkSelection();
+}
+
+function deselectAllBulk() {
+  var cbs = document.querySelectorAll('.bulk-cb');
+  for (var i = 0; i < cbs.length; i++) cbs[i].checked = false;
+  updateBulkSelection();
+}
+
+function submitBulkAction(type) {
+  if (_bulkSelected.length === 0) {
+    showToast('Select at least one worker', 'warn');
+    return;
+  }
+  
+  var date = document.getElementById('bulkDate') ? document.getElementById('bulkDate').value : tD();
+  var shift = document.getElementById('bulkShift') ? document.getElementById('bulkShift').value : 'Day';
+  var time = type === 'in' ?
+    (document.getElementById('bulkInTime') ? document.getElementById('bulkInTime').value : '') :
+    (document.getElementById('bulkOutTime') ? document.getElementById('bulkOutTime').value : '');
+  
+  if (!date || !time) {
+    showToast('Enter date and time', 'error');
+    return;
+  }
+  
+  var action = type === 'in' ? 'check in' : 'check out';
+  showConfirm('Bulk ' + action + ' for ' + _bulkSelected.length + ' workers at ' + time + '?', function() {
+    var fn = type === 'in' ? bulkCheckin : bulkCheckout;
+    fn(_bulkSelected, shift, date, time).then(function(res) {
+      showToast('Done! ' + res.success + ' succeeded, ' + res.failed + ' failed.', 'success');
+      renderManualEntry();
+    });
+  });
+}
+
+console.log('[ALB] manual.js v16 loaded');
