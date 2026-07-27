@@ -10,10 +10,10 @@
   <link rel="icon" href="logo.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
-  <link rel="stylesheet" href="mobile.css?v=5">
+  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="mobile.css?v=8">
 </head>
 <body>
 
@@ -21,7 +21,7 @@
 <div id="loadingScreen" class="loading-screen">
   <div class="loading-content">
     <div class="loading-logo">
-      <img src="logo.png?v=2" alt="AL BOWRY" class="loading-logo-img"
+      <img src="logo.png?v=3" alt="AL BOWRY" class="loading-logo-img"
            onerror="this.outerHTML='<div class=\'logo-box-lg\'>A</div>'">
     </div>
     <div class="loading-company">AL BOWRY CARPENTRY LLC</div>
@@ -47,134 +47,196 @@
 <!-- ====== TOAST CONTAINER ====== -->
 <div id="toastContainer"></div>
 
-<!-- ====== LOGIN PAGE ====== -->
-<div id="loginPage" class="login-page" style="display:none">
-  <div class="login-bg">
-    <div class="login-bg-shape shape1"></div>
-    <div class="login-bg-shape shape2"></div>
-    <div class="login-bg-shape shape3"></div>
-    <div class="login-bg-pattern"></div>
+<!-- ====== LOGIN PAGE - SPLIT SCREEN PREMIUM ====== -->
+<div id="loginPage" class="login-page-premium" style="display:none">
+
+  <!-- LEFT SIDE - Brand Panel -->
+  <div class="login-brand-panel">
+    <div class="brand-bg-shapes">
+      <div class="brand-shape brand-shape-1"></div>
+      <div class="brand-shape brand-shape-2"></div>
+      <div class="brand-shape brand-shape-3"></div>
+    </div>
+
+    <div class="brand-content">
+      <div class="brand-logo-wrap">
+        <img src="logo.png?v=3" alt="AL BOWRY" class="brand-logo-img"
+             onerror="this.outerHTML='<div class=\'logo-box-xl\' style=\'background:white;color:var(--primary)\'>A</div>'">
+      </div>
+
+      <div class="brand-title-wrap">
+        <h1 class="brand-title">AL BOWRY</h1>
+        <div class="brand-subtitle">CARPENTRY</div>
+        <div class="brand-divider"></div>
+        <p class="brand-tagline">Premium woodworking and carpentry solutions with excellence in craftsmanship.</p>
+      </div>
+
+      <div class="brand-features">
+        <div class="brand-feature">
+          <div class="feature-icon feature-icon-gold">
+            <span class="material-symbols-outlined">workspace_premium</span>
+          </div>
+          <div class="feature-text">
+            <div class="feature-title">Premium Quality</div>
+            <div class="feature-desc">Excellence Guaranteed</div>
+          </div>
+        </div>
+
+        <div class="brand-feature">
+          <div class="feature-icon feature-icon-blue">
+            <span class="material-symbols-outlined">handyman</span>
+          </div>
+          <div class="feature-text">
+            <div class="feature-title">Expert Team</div>
+            <div class="feature-desc">Skilled Craftsmen</div>
+          </div>
+        </div>
+
+        <div class="brand-feature">
+          <div class="feature-icon feature-icon-green">
+            <span class="material-symbols-outlined">verified</span>
+          </div>
+          <div class="feature-text">
+            <div class="feature-title">Trusted Service</div>
+            <div class="feature-desc">Since Years</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-footer">
+        <div class="brand-project-tag">
+          <span class="material-symbols-outlined">construction</span>
+          PROJECT COP31 · ANTALYA · TURKEY
+        </div>
+        <div class="brand-location-info">
+          <span><span class="material-symbols-outlined">business</span> Sharjah, UAE</span>
+          <span class="brand-dot">·</span>
+          <span><span class="material-symbols-outlined">language</span> www.albowry.com</span>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="login-container">
-    <!-- Company Header -->
-    <div class="login-header">
-      <div class="login-logo">
-        <img src="logo.png?v=2" alt="AL BOWRY CARPENTRY LLC" class="login-logo-img"
-             onerror="this.outerHTML='<div class=\'logo-box-xl\'>A</div>'">
-      </div>
-      <div class="login-company-text">
-        <div class="login-company-name">AL BOWRY <span>CARPENTRY LLC</span></div>
-        <div class="login-project-tag">
-          <span class="material-symbols-outlined" style="font-size:13px">construction</span>
-          CURRENT PROJECT: COP31 at Antalya, Turkey
-        </div>
-        <div class="login-location-row">
-          <span><span class="material-symbols-outlined" style="font-size:13px">business</span> Head Office: Sharjah, UAE</span>
-          <span><span class="material-symbols-outlined" style="font-size:13px">location_on</span> Project Site: Antalya, Turkey</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- Login Tabs -->
-    <div class="login-tabs">
-      <button class="login-tab active" id="tabWorker" onclick="switchLoginTab('worker')">
-        <span class="material-symbols-outlined">person</span> Worker Login
-      </button>
-      <button class="login-tab" id="tabAdmin" onclick="switchLoginTab('admin')">
-        <span class="material-symbols-outlined">admin_panel_settings</span> Admin Login
-      </button>
-    </div>
-
-    <!-- Worker Login Form -->
-    <div id="workerLoginForm" class="login-form">
-      <div class="form-group">
-        <label class="form-label">Select Your Name</label>
-        <select id="workerNameSel" class="form-control form-select-lg">
-          <option value="">-- Select Your Name --</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Select Shift</label>
-        <div class="shift-selector">
-          <label class="shift-option" id="dayShiftOpt">
-            <input type="radio" name="loginShift" value="Day" checked>
-            <span class="shift-opt-content">
-              <span class="material-symbols-outlined">wb_sunny</span>
-              <span>Day Shift</span>
-              <small>8AM - 8PM</small>
-            </span>
-          </label>
-          <label class="shift-option" id="nightShiftOpt">
-            <input type="radio" name="loginShift" value="Night">
-            <span class="shift-opt-content">
-              <span class="material-symbols-outlined">nights_stay</span>
-              <span>Night Shift</span>
-              <small>8PM - 8AM</small>
-            </span>
-          </label>
+  <!-- RIGHT SIDE - Login Panel -->
+  <div class="login-form-panel">
+    <div class="login-form-scroll">
+      <div class="login-form-card">
+        <div class="login-form-header">
+          <h2 class="login-welcome">Welcome Back <span class="wave">👋</span></h2>
+          <p class="login-subtitle">Sign in to Attendance System</p>
+          <div class="login-clock-badge" id="loginClockBadge">
+            <span class="clock-live-dot"></span>
+            <span id="loginClock">Loading...</span>
+            <span class="clock-tz">TURKEY</span>
+          </div>
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <div class="input-with-icon">
-          <span class="material-symbols-outlined input-icon">lock</span>
-          <input type="password" id="workerPw" class="form-control" placeholder="Enter your password">
-          <button type="button" class="pw-toggle" onclick="togglePw('workerPw', this)">
-            <span class="material-symbols-outlined">visibility</span>
+
+        <div class="login-tabs">
+          <button class="login-tab active" id="tabWorker" onclick="switchLoginTab('worker')">
+            <span class="material-symbols-outlined">person</span> Worker
+          </button>
+          <button class="login-tab" id="tabAdmin" onclick="switchLoginTab('admin')">
+            <span class="material-symbols-outlined">admin_panel_settings</span> Admin
           </button>
         </div>
-      </div>
-      <button class="btn btn-primary btn-block btn-lg" onclick="doWorkerLogin()">
-        <span class="material-symbols-outlined">login</span> Login
-      </button>
-      <div class="login-hint">Default password: <strong>Worker@123</strong></div>
-    </div>
 
-    <!-- Admin Login Form -->
-    <div id="adminLoginForm" class="login-form" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Admin ID</label>
-        <div class="input-with-icon">
-          <span class="material-symbols-outlined input-icon">badge</span>
-          <input type="text" id="adminIdInp" class="form-control" placeholder="Enter Admin ID" value="ADMIN001">
+        <!-- Worker Form -->
+        <div id="workerLoginForm" class="login-form">
+          <div class="form-group">
+            <label class="form-label">Select Your Name</label>
+            <select id="workerNameSel" class="form-control form-select-lg">
+              <option value="">— Choose your name —</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Select Shift</label>
+            <div class="shift-selector">
+              <label class="shift-option">
+                <input type="radio" name="loginShift" value="Day" checked>
+                <span class="shift-opt-content">
+                  <span class="material-symbols-outlined">wb_sunny</span>
+                  <span>Day Shift</span>
+                  <small>8AM - 8PM</small>
+                </span>
+              </label>
+              <label class="shift-option">
+                <input type="radio" name="loginShift" value="Night">
+                <span class="shift-opt-content">
+                  <span class="material-symbols-outlined">nights_stay</span>
+                  <span>Night Shift</span>
+                  <small>8PM - 8AM</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined input-icon">lock</span>
+              <input type="password" id="workerPw" class="form-control" placeholder="Enter your password">
+              <button type="button" class="pw-toggle" onclick="togglePw('workerPw', this)">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-signin" onclick="doWorkerLogin()">
+            <span class="material-symbols-outlined">login</span> Sign In
+          </button>
+
+          <div class="login-hint">
+            <span class="material-symbols-outlined">info</span>
+            Default password: <strong>Worker@123</strong>
+          </div>
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <div class="input-with-icon">
-          <span class="material-symbols-outlined input-icon">lock</span>
-          <input type="password" id="adminPwInp" class="form-control" placeholder="Enter password">
-          <button type="button" class="pw-toggle" onclick="togglePw('adminPwInp', this)">
-            <span class="material-symbols-outlined">visibility</span>
+
+        <!-- Admin Form -->
+        <div id="adminLoginForm" class="login-form" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Admin ID</label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined input-icon">badge</span>
+              <input type="text" id="adminIdInp" class="form-control" placeholder="Enter Admin ID" value="ADMIN001">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined input-icon">lock</span>
+              <input type="password" id="adminPwInp" class="form-control" placeholder="Enter password">
+              <button type="button" class="pw-toggle" onclick="togglePw('adminPwInp', this)">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-signin" onclick="doAdminLogin()">
+            <span class="material-symbols-outlined">admin_panel_settings</span> Admin Sign In
           </button>
         </div>
-      </div>
-      <button class="btn btn-primary btn-block btn-lg" onclick="doAdminLogin()">
-        <span class="material-symbols-outlined">admin_panel_settings</span> Admin Login
-      </button>
-    </div>
 
-    <div class="login-footer">
-      <div class="login-footer-logo">
-        <img src="logo.png?v=2" alt="" style="width:20px;height:20px;object-fit:contain;border-radius:4px;opacity:0.5" onerror="this.style.display='none'">
-        AL BOWRY CARPENTRY LLC &copy; 2026
+        <div class="login-form-footer">
+          <div>AL BOWRY CARPENTRY LLC © 2026</div>
+          <div>v17 · <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
+        </div>
       </div>
-      <div>Attendance System v16 | <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
     </div>
   </div>
 </div>
 
 <!-- ====== WORKER DASHBOARD ====== -->
 <div id="workerDashboard" style="display:none">
-  <!-- Worker Navbar -->
   <nav class="worker-nav">
     <div class="worker-nav-brand">
-      <img src="logo.png?v=2" alt="A" class="nav-logo-img"
+      <img src="logo.png?v=3" alt="A" class="nav-logo-img"
            onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
       <span>AL BOWRY CARPENTRY LLC</span>
     </div>
     <div class="worker-nav-right">
-      <div class="sync-indicator" id="workerSyncDot" title="Synced with server">
+      <div class="sync-indicator" title="Synced">
         <span class="sync-dot sync-ok"></span>
       </div>
       <button class="btn btn-sm btn-outline-white" onclick="logout()">
@@ -184,7 +246,6 @@
   </nav>
 
   <div class="worker-content">
-    <!-- Worker Hero -->
     <div class="worker-hero">
       <div class="worker-hero-left">
         <div class="worker-avatar" id="workerAvatar">?</div>
@@ -202,9 +263,7 @@
       </div>
     </div>
 
-    <!-- Worker Action Cards -->
     <div class="worker-action-grid">
-      <!-- Check In/Out Card -->
       <div class="worker-card">
         <div class="worker-card-header">
           <span class="material-symbols-outlined">fingerprint</span>
@@ -240,7 +299,6 @@
         </div>
       </div>
 
-      <!-- Stats Card -->
       <div class="worker-card">
         <div class="worker-card-header">
           <span class="material-symbols-outlined">analytics</span>
@@ -268,7 +326,6 @@
       </div>
     </div>
 
-    <!-- Attendance History -->
     <div class="worker-card worker-card-full">
       <div class="worker-card-header">
         <span class="material-symbols-outlined">history</span>
@@ -280,14 +337,8 @@
           <table class="data-table" id="workerHistTable">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Shift</th>
-                <th>Check In</th>
-                <th>Check Out</th>
-                <th>Hours</th>
-                <th>OT</th>
-                <th>Status</th>
+                <th>#</th><th>Date</th><th>Shift</th><th>Check In</th>
+                <th>Check Out</th><th>Hours</th><th>OT</th><th>Status</th>
               </tr>
             </thead>
             <tbody id="workerHistBody">
@@ -298,7 +349,6 @@
       </div>
     </div>
 
-    <!-- Change Password -->
     <div class="worker-card worker-card-full">
       <div class="worker-card-header">
         <span class="material-symbols-outlined">key</span>
@@ -308,41 +358,39 @@
         <div class="form-grid form-grid-3">
           <div class="form-group">
             <label class="form-label">Current Password</label>
-            <input type="password" id="wpOld" class="form-control" placeholder="Current password">
+            <input type="password" id="wpOld" class="form-control" placeholder="Current">
           </div>
           <div class="form-group">
             <label class="form-label">New Password</label>
-            <input type="password" id="wpNew" class="form-control" placeholder="New password (min 6)">
+            <input type="password" id="wpNew" class="form-control" placeholder="Min 6 chars">
           </div>
           <div class="form-group">
-            <label class="form-label">Confirm Password</label>
-            <input type="password" id="wpConf" class="form-control" placeholder="Confirm new password">
+            <label class="form-label">Confirm</label>
+            <input type="password" id="wpConf" class="form-control" placeholder="Confirm">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="doChangeWorkerPw()" style="margin-top:12px">
+        <button class="btn btn-primary" onclick="doChangeWorkerPw()" style="margin-top:14px">
           <span class="material-symbols-outlined">save</span> Change Password
         </button>
       </div>
     </div>
 
-    <!-- Worker Footer -->
     <div class="worker-footer">
-      <img src="logo.png?v=2" alt="" style="width:18px;height:18px;object-fit:contain;border-radius:3px;opacity:0.4" onerror="this.style.display='none'">
-      <span>AL BOWRY CARPENTRY LLC | COP31 Project | v16</span>
+      <img src="logo.png?v=3" alt="" style="width:18px;height:18px;object-fit:contain;border-radius:3px;opacity:0.4" onerror="this.style.display='none'">
+      <span>AL BOWRY CARPENTRY LLC · COP31 Project · v17</span>
     </div>
   </div>
 </div>
 
 <!-- ====== ADMIN PANEL ====== -->
 <div id="adminPanel" style="display:none">
-  <!-- Admin Navbar -->
   <nav class="admin-nav" id="adminNav">
     <div class="admin-nav-brand">
-      <img src="logo.png?v=2" alt="A" class="nav-logo-img"
+      <img src="logo.png?v=3" alt="A" class="nav-logo-img"
            onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
       <div class="admin-nav-title">
         <span class="admin-nav-company">AL BOWRY CARPENTRY LLC</span>
-        <span class="admin-nav-project">COP31 Project | Antalya, Turkey</span>
+        <span class="admin-nav-project">COP31 Project · Antalya, Turkey</span>
       </div>
     </div>
     <div class="admin-nav-right">
@@ -364,7 +412,6 @@
   </nav>
 
   <div class="admin-layout">
-    <!-- Sidebar -->
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-inner">
         <nav class="sidebar-nav">
@@ -388,7 +435,7 @@
             <span class="material-symbols-outlined">edit_calendar</span> Manual Entry
           </a>
           <a class="nav-link" data-section="secHistory" onclick="showSection('secHistory')">
-            <span class="material-symbols-outlined">history</span> History & Backdated
+            <span class="material-symbols-outlined">history</span> History
           </a>
 
           <div class="sidebar-section-label">REPORTS</div>
@@ -412,21 +459,19 @@
         </nav>
 
         <div class="sidebar-footer">
-          <img src="logo.png?v=2" alt="" style="width:24px;height:24px;object-fit:contain;border-radius:5px;opacity:0.5" onerror="this.style.display='none'">
+          <img src="logo.png?v=3" alt="" style="width:28px;height:28px;object-fit:contain;border-radius:6px;opacity:0.6" onerror="this.style.display='none'">
           <div class="sidebar-footer-company">AL BOWRY CARPENTRY LLC</div>
-          <div class="sidebar-footer-ver">Attendance System v16</div>
-          <div class="sidebar-footer-site">COP31 | Antalya, Turkey</div>
+          <div class="sidebar-footer-ver">v17 · Attendance System</div>
+          <div class="sidebar-footer-site">COP31 · Antalya, Turkey</div>
         </div>
       </div>
     </aside>
 
-    <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- Main Content -->
     <main class="admin-main" id="adminMain">
 
-      <!-- ====== SECTION 1: DASHBOARD ====== -->
+      <!-- DASHBOARD -->
       <section class="admin-section" id="secDashboard">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">dashboard</span> Dashboard</h2>
@@ -552,7 +597,7 @@
         </div>
       </section>
 
-      <!-- ====== SECTION 2: APPROVALS ====== -->
+      <!-- APPROVALS -->
       <section class="admin-section" id="secApprovals" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">approval</span> Approvals</h2>
@@ -565,7 +610,6 @@
             </button>
           </div>
         </div>
-
         <div class="card">
           <div class="card-header">
             <span class="material-symbols-outlined">pending</span>
@@ -576,7 +620,6 @@
             <div class="empty-state"><span class="material-symbols-outlined">check_circle</span><p>No pending requests</p></div>
           </div>
         </div>
-
         <div class="card" style="margin-top:20px">
           <div class="card-header">
             <span class="material-symbols-outlined">undo</span>
@@ -588,13 +631,11 @@
         </div>
       </section>
 
-      <!-- ====== SECTION 3: LIVE STATUS ====== -->
+      <!-- LIVE STATUS -->
       <section class="admin-section" id="secLive" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">sensors</span> Live Status</h2>
-          <div class="live-indicator">
-            <span class="live-dot"></span> LIVE
-          </div>
+          <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
         </div>
         <div class="live-grid">
           <div class="card">
@@ -620,12 +661,11 @@
         </div>
       </section>
 
-      <!-- ====== SECTION 4: ATTENDANCE ====== -->
+      <!-- ATTENDANCE -->
       <section class="admin-section" id="secAttendance" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">event_available</span> Attendance</h2>
         </div>
-
         <div class="card filter-card">
           <div class="filter-row">
             <div class="form-group"><label class="form-label">Date</label>
@@ -644,13 +684,11 @@
               </select></div>
           </div>
         </div>
-
         <div class="att-summary-row" id="attSummary">
           <div class="att-sum-card"><span class="att-sum-num" id="attSumTotal">0</span><span>Total</span></div>
           <div class="att-sum-card att-sum-present"><span class="att-sum-num" id="attSumPresent">0</span><span>Present</span></div>
           <div class="att-sum-card att-sum-absent"><span class="att-sum-num" id="attSumAbsent">0</span><span>Absent</span></div>
         </div>
-
         <div class="card" id="attPresentCard">
           <div class="card-header">
             <span class="material-symbols-outlined">check_circle</span>
@@ -664,7 +702,6 @@
             <tr><td colspan="11" class="text-center text-muted">No records</td></tr>
           </tbody></table></div></div>
         </div>
-
         <div class="card" id="attAbsentCard" style="margin-top:20px">
           <div class="card-header">
             <span class="material-symbols-outlined">cancel</span>
@@ -677,7 +714,7 @@
         </div>
       </section>
 
-      <!-- ====== SECTION 5: WORKERS ====== -->
+      <!-- WORKERS -->
       <section class="admin-section" id="secWorkers" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">group</span> Workers</h2>
@@ -685,13 +722,12 @@
             <span class="material-symbols-outlined">person_add</span> Add Worker
           </button>
         </div>
-
         <div class="card filter-card">
           <div class="filter-row">
             <div class="form-group" style="flex:2">
               <div class="input-with-icon">
                 <span class="material-symbols-outlined input-icon">search</span>
-                <input type="text" id="workerSearch" class="form-control" placeholder="Search by name, ID, profession..." onkeyup="renderAdminWorkers()">
+                <input type="text" id="workerSearch" class="form-control" placeholder="Search..." onkeyup="renderAdminWorkers()">
               </div>
             </div>
             <div class="form-group">
@@ -706,7 +742,6 @@
             </div>
           </div>
         </div>
-
         <div class="worker-tabs">
           <button class="wtab active" id="wtabIndian" onclick="setWorkerTab('Indian')">
             <span class="material-symbols-outlined">flag</span> Indian (<span id="wtabIndCount">37</span>)
@@ -715,7 +750,6 @@
             <span class="material-symbols-outlined">flag</span> Pakistani (<span id="wtabPakCount">19</span>)
           </button>
         </div>
-
         <div class="card"><div class="card-body"><div class="table-responsive">
           <table class="data-table" id="workersTable"><thead><tr>
             <th>#</th><th>ID</th><th>Name</th><th>Profession</th><th>Section</th><th>Shift</th><th>Status</th><th>Actions</th>
@@ -725,12 +759,11 @@
         </div></div></div>
       </section>
 
-      <!-- ====== SECTION 6: MANUAL ENTRY ====== -->
+      <!-- MANUAL ENTRY -->
       <section class="admin-section" id="secManual" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">edit_calendar</span> Manual Entry</h2>
         </div>
-
         <div class="card">
           <div class="card-header">
             <span class="material-symbols-outlined">today</span>
@@ -741,7 +774,6 @@
           </div>
           <div class="card-body" id="manualOverview"><div class="text-muted text-center">Loading...</div></div>
         </div>
-
         <div class="dash-grid-2" style="margin-top:20px">
           <div class="card">
             <div class="card-header"><span class="material-symbols-outlined">login</span><h3>Quick Check In</h3></div>
@@ -768,7 +800,6 @@
             </div>
           </div>
         </div>
-
         <div class="card" style="margin-top:20px">
           <div class="card-header"><span class="material-symbols-outlined">calendar_clock</span><h3>Custom Date & Time Entry</h3></div>
           <div class="card-body">
@@ -788,7 +819,6 @@
               <span class="material-symbols-outlined">save</span> Save Entry</button>
           </div>
         </div>
-
         <div class="card" style="margin-top:20px">
           <div class="card-header"><span class="material-symbols-outlined">groups</span><h3>Bulk Check In / Out</h3></div>
           <div class="card-body">
@@ -810,12 +840,11 @@
         </div>
       </section>
 
-      <!-- ====== SECTION 7: HISTORY ====== -->
+      <!-- HISTORY -->
       <section class="admin-section" id="secHistory" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">history</span> History & Backdated</h2>
         </div>
-
         <div class="card filter-card">
           <div class="filter-row">
             <div class="form-group"><label class="form-label">Date</label><input type="date" id="histDate" class="form-control"></div>
@@ -831,9 +860,7 @@
             <button class="btn btn-success btn-sm" onclick="exportHistoryExcel()"><span class="material-symbols-outlined">table_view</span> Excel</button>
           </div>
         </div>
-
         <div id="historyViewContainer"><div class="text-muted text-center">Loading...</div></div>
-
         <div class="card" style="margin-top:20px">
           <div class="card-header"><span class="material-symbols-outlined">person_add</span><h3>Add Backdated Entry</h3></div>
           <div class="card-body">
@@ -847,7 +874,6 @@
             <button class="btn btn-primary" onclick="submitBackdatedEntry()" style="margin-top:12px"><span class="material-symbols-outlined">save</span> Add Entry</button>
           </div>
         </div>
-
         <div class="card" style="margin-top:20px">
           <div class="card-header"><span class="material-symbols-outlined">groups</span><h3>Bulk Backdated</h3></div>
           <div class="card-body">
@@ -861,17 +887,16 @@
             <button class="btn btn-warning" onclick="submitBulkBackdated()" style="margin-top:12px"><span class="material-symbols-outlined">group_add</span> Add Bulk</button>
           </div>
         </div>
-
         <div class="card" style="margin-top:20px">
           <div class="card-header"><span class="material-symbols-outlined">calendar_view_day</span><h3>Day-wise Summary</h3></div>
           <div class="card-body">
-            <div class="form-group" style="max-width:200px;margin-bottom:16px"><input type="date" id="dwDate" class="form-control" onchange="renderDayWiseView()"></div>
+            <div class="form-group" style="max-width:220px;margin-bottom:16px"><input type="date" id="dwDate" class="form-control" onchange="renderDayWiseView()"></div>
             <div id="dayWiseContainer"><div class="text-muted">Select a date</div></div>
           </div>
         </div>
       </section>
 
-      <!-- ====== SECTION 8: MONTHLY REPORT ====== -->
+      <!-- MONTHLY -->
       <section class="admin-section" id="secMonthly" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">calendar_month</span> Monthly Report</h2>
@@ -898,7 +923,7 @@
         <div id="monthlyReportContainer" style="margin-top:20px"><div class="text-muted text-center py-3">Select & Generate</div></div>
       </section>
 
-      <!-- ====== SECTION 9: END DAY ====== -->
+      <!-- END DAY -->
       <section class="admin-section" id="secEndDay" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">bedtime</span> End Day</h2>
@@ -922,7 +947,7 @@
         </div>
       </section>
 
-      <!-- ====== SECTION 10: EXPORT ====== -->
+      <!-- EXPORT -->
       <section class="admin-section" id="secExport" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">download</span> Export Data</h2>
@@ -949,28 +974,26 @@
         </div>
       </section>
 
-      <!-- ====== SECTION 11: SETTINGS ====== -->
+      <!-- SETTINGS -->
       <section class="admin-section" id="secSettings" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">settings</span> Settings</h2>
         </div>
-
         <div class="card company-info-card">
           <div class="company-info-header">
-            <img src="logo.png?v=2" alt="AL BOWRY" class="company-logo-lg"
+            <img src="logo.png?v=3" alt="AL BOWRY" class="company-logo-lg"
                  onerror="this.outerHTML='<div class=\'logo-box-xl\' style=\'background:rgba(255,255,255,0.2);color:white\'>A</div>'">
             <div>
               <div class="company-info-name">AL BOWRY CARPENTRY LLC</div>
-              <div class="company-info-sub">Registered: Sharjah, UAE | Project: COP31, Antalya, Turkey</div>
+              <div class="company-info-sub">Registered: Sharjah, UAE · Project: COP31, Antalya, Turkey</div>
               <a href="http://www.albowry.com" target="_blank" class="company-info-web">www.albowry.com</a>
             </div>
           </div>
         </div>
-
         <div class="settings-grid">
           <div class="card"><div class="card-header"><span class="material-symbols-outlined">person</span><h3>Admin Name</h3></div>
             <div class="card-body">
-              <div class="form-group"><label class="form-label">Display Name</label><input type="text" id="setAdminName" class="form-control" placeholder="Name"></div>
+              <div class="form-group"><label class="form-label">Display Name</label><input type="text" id="setAdminName" class="form-control"></div>
               <button class="btn btn-primary" onclick="doUpdateAdminName()" style="margin-top:10px"><span class="material-symbols-outlined">save</span> Update</button>
             </div>
           </div>
@@ -996,11 +1019,10 @@
             </div></div>
           </div>
         </div>
-
         <div class="card" style="margin-top:20px">
           <div class="card-header"><span class="material-symbols-outlined">info</span><h3>System Information</h3></div>
           <div class="card-body"><div class="sys-info-grid">
-            <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v16</span></div>
+            <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v17</span></div>
             <div class="sys-info-item"><span class="sys-info-label">Workers</span><span class="sys-info-val" id="sysWorkerCount">56</span></div>
             <div class="sys-info-item"><span class="sys-info-label">Attendance Records</span><span class="sys-info-val" id="sysAttCount">0</span></div>
             <div class="sys-info-item"><span class="sys-info-label">Firebase</span><span class="sys-info-val">albowry-attendance</span></div>
@@ -1014,7 +1036,7 @@
   </div>
 </div>
 
-<!-- ====== FIREBASE MODULE ====== -->
+<!-- ====== FIREBASE ====== -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
   import {
@@ -1065,15 +1087,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
-<script src="app.js?v=6"></script>
-<script src="manual.js?v=6"></script>
-<script src="history.js?v=6"></script>
+<script src="app.js?v=8"></script>
+<script src="manual.js?v=8"></script>
+<script src="history.js?v=8"></script>
 
 <script>
-// ====== APP BOOTSTRAP ======
 var _workerTab = 'Indian';
 var _clockInterval = null;
 var _workerTabActive = 'Indian';
+var _loginClockInt = null;
 
 function bootstrap() {
   setLoadingText('Connecting to Firebase...');
@@ -1112,33 +1134,46 @@ function checkSession() {
   else showLoginPage();
 }
 
-// ====== LOGIN ======
 function showLoginPage() {
   document.getElementById('loginPage').style.display = 'flex';
   document.getElementById('workerDashboard').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'none';
   populateWorkerDropdown();
   setCurrentTimeOnLogin();
+  startLoginClock();
+}
+
+function startLoginClock() {
+  if (_loginClockInt) clearInterval(_loginClockInt);
+  function tick() {
+    var el = document.getElementById('loginClock');
+    if (!el) return;
+    var t = new Date().toLocaleTimeString('en-US', {
+      timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    el.textContent = t;
+  }
+  tick();
+  _loginClockInt = setInterval(tick, 1000);
 }
 
 function populateWorkerDropdown() {
   var sel = document.getElementById('workerNameSel');
   if (!sel) return;
   var val = sel.value;
-  sel.innerHTML = '<option value="">-- Select Your Name --</option>';
+  sel.innerHTML = '<option value="">— Choose your name —</option>';
   var ws = gW();
   var sections = ['Indian', 'Pakistani'];
   for (var s = 0; s < sections.length; s++) {
     var grp = document.createElement('optgroup');
-    grp.label = '-- ' + sections[s].toUpperCase() + ' --';
+    grp.label = '— ' + sections[s].toUpperCase() + ' —';
     var cnt = 0;
     for (var i = 0; i < ws.length; i++) {
       if (!ws[i].on || ws[i].sec !== sections[s]) continue;
       var opt = document.createElement('option');
       opt.value = ws[i].wid;
       opt.text = ws[i].name + ' (' + ws[i].prof + ')';
-      grp.appendChild(opt);
-      cnt++;
+      grp.appendChild(opt); cnt++;
     }
     if (cnt > 0) sel.appendChild(grp);
   }
@@ -1178,12 +1213,17 @@ function doAdminLogin() {
   var pw = document.getElementById('adminPwInp').value;
   if (!id || !pw) { showToast('Enter Admin ID and Password', 'error'); return; }
   var result = adminLogin(id, pw);
-  if (result.ok) { document.getElementById('adminPwInp').value = ''; var session = getSession(); speakWelcome(session.name || 'Admin'); showAdminPanel(session); }
+  if (result.ok) {
+    document.getElementById('adminPwInp').value = '';
+    var session = getSession();
+    speakWelcome(session.name || 'Admin');
+    showAdminPanel(session);
+  }
   else showToast(result.msg, 'error');
 }
 
-// ====== WORKER DASHBOARD ======
 function showWorkerDashboard(session) {
+  if (_loginClockInt) { clearInterval(_loginClockInt); _loginClockInt = null; }
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('workerDashboard').style.display = 'block';
   document.getElementById('adminPanel').style.display = 'none';
@@ -1242,32 +1282,32 @@ function updateWorkerAttStatus(att) {
     icon.textContent = 'schedule'; icon.style.color = '#94a3b8';
     text.textContent = 'Not checked in today';
     detail.textContent = 'Tap below to request check-in';
-    btnIn.style.display = 'block';
+    btnIn.style.display = 'flex';
     statusCard.className = 'worker-status-display status-idle';
   } else if (att.status === 'pending_checkin') {
-    icon.textContent = 'hourglass_top'; icon.style.color = '#f59e0b';
+    icon.textContent = 'hourglass_top'; icon.style.color = '#d97706';
     text.textContent = 'Check-in Pending';
     detail.textContent = 'Requested at ' + fmtTime(att.checkinReqTime);
     pendingMsg.style.display = 'flex';
     statusCard.className = 'worker-status-display status-pending';
   } else if (att.status === 'checked_in') {
-    icon.textContent = 'engineering'; icon.style.color = '#10b981';
+    icon.textContent = 'engineering'; icon.style.color = '#059669';
     text.textContent = 'Currently Working';
     detail.textContent = 'Checked in at ' + fmtTime(att.checkinTime);
-    btnOut.style.display = 'block';
+    btnOut.style.display = 'flex';
     statusCard.className = 'worker-status-display status-working';
   } else if (att.status === 'pending_checkout') {
-    icon.textContent = 'hourglass_bottom'; icon.style.color = '#f59e0b';
+    icon.textContent = 'hourglass_bottom'; icon.style.color = '#d97706';
     text.textContent = 'Checkout Pending';
     detail.textContent = 'Checked in at ' + fmtTime(att.checkinTime);
     pendingMsg.style.display = 'flex';
     statusCard.className = 'worker-status-display status-pending';
   } else if (att.status === 'completed') {
-    icon.textContent = 'verified'; icon.style.color = '#10b981';
+    icon.textContent = 'verified'; icon.style.color = '#059669';
     text.textContent = 'Completed';
     detail.textContent = '';
     completedMsg.style.display = 'flex';
-    completedDetail.textContent = fmtTime(att.checkinTime) + ' - ' + fmtTime(att.checkoutTime) + ' | ' + (att.total || 0) + 'h | OT: ' + (att.ot || 0) + 'h';
+    completedDetail.textContent = fmtTime(att.checkinTime) + ' → ' + fmtTime(att.checkoutTime) + ' · ' + (att.total || 0) + 'h · OT: ' + (att.ot || 0) + 'h';
     statusCard.className = 'worker-status-display status-completed';
   }
 }
@@ -1322,8 +1362,8 @@ function doChangeWorkerPw() {
   });
 }
 
-// ====== ADMIN PANEL ======
 function showAdminPanel(session) {
+  if (_loginClockInt) { clearInterval(_loginClockInt); _loginClockInt = null; }
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('workerDashboard').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'block';
@@ -1355,27 +1395,22 @@ function showAdminPanel(session) {
   renderDashboard(); renderApprovals(); renderLiveStatus(); renderAttendanceView(); renderAdminWorkers(); renderManualEntry(); updateEndDayStats(); updateSettingsInfo();
 }
 
-// ====== RENDER DASHBOARD ======
 function renderDashboard() {
   var today = tD(); var allAtt = gA(); var allWorkers = gW();
   var activeWorkers = [];
   for (var i = 0; i < allWorkers.length; i++) { if (allWorkers[i].on) activeWorkers.push(allWorkers[i]); }
-
   var presentWids = getPresentWorkerIds(today, allAtt, 'All');
   var working = 0, done = 0, pending = 0;
   for (var j = 0; j < allAtt.length; j++) {
-    var a = allAtt[j];
-    var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    var a = allAtt[j]; var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
     if (aDate !== today) continue;
     if (a.status === 'checked_in') working++;
     else if (a.status === 'completed') done++;
     else if (a.status === 'pending_checkin' || a.status === 'pending_checkout') pending++;
   }
-
   setEl('dTotalWorkers', activeWorkers.length); setEl('dPresent', presentWids.length);
   setEl('dAbsent', activeWorkers.length - presentWids.length); setEl('dWorking', working);
   setEl('dDone', done); setEl('dPending', pending); setEl('approvalCount', pending);
-
   var dayW=0,nightW=0,dayP=0,nightP=0,indT=0,pakT=0,indP=0,pakP=0;
   for (var k = 0; k < activeWorkers.length; k++) { if (activeWorkers[k].shift==='Day') dayW++; else nightW++; if (activeWorkers[k].sec==='Indian') indT++; else pakT++; }
   for (var l = 0; l < presentWids.length; l++) {
@@ -1384,7 +1419,6 @@ function renderDashboard() {
   }
   setEl('dDayPresent',dayP); setEl('dDayTotal',dayW); setEl('dNightPresent',nightP); setEl('dNightTotal',nightW);
   setEl('dIndPresent',indP); setEl('dIndTotal',indT); setEl('dPakPresent',pakP); setEl('dPakTotal',pakT);
-
   var absentWorkers = getAbsentWorkers(today, allAtt, activeWorkers, 'All', 'All');
   setEl('dashAbsentCount', absentWorkers.length);
   var abC = document.getElementById('dashAbsentList');
@@ -1397,14 +1431,13 @@ function renderDashboard() {
         var abW = absentWorkers[ab];
         html += '<div class="absent-tag"><div class="absent-tag-init">' + getInitials(abW.name) + '</div>' +
           '<div class="absent-tag-info"><div class="absent-tag-name">' + abW.name + '</div>' +
-          '<div class="absent-tag-meta">' + abW.wid + ' | ' + abW.shift + '</div></div></div>';
+          '<div class="absent-tag-meta">' + abW.wid + ' · ' + abW.shift + '</div></div></div>';
       }
       abC.innerHTML = html;
     }
   }
 }
 
-// ====== RENDER APPROVALS ======
 function renderApprovals() {
   var allAtt = gA(); var pending = []; var recentApproved = [];
   for (var i = 0; i < allAtt.length; i++) {
@@ -1422,7 +1455,7 @@ function renderApprovals() {
       for (var j = 0; j < pending.length; j++) {
         var p = pending[j]; var isIn = p.status === 'pending_checkin';
         html += '<div class="approval-item"><div class="approval-info"><div class="approval-name">' + p.name + '</div>' +
-          '<div class="approval-meta">' + p.wid + ' | ' + p.sec + ' | ' + (p.shift||'Day') + '</div>' +
+          '<div class="approval-meta">' + p.wid + ' · ' + p.sec + ' · ' + (p.shift||'Day') + '</div>' +
           '<div class="approval-time">' + (isIn ? 'In: '+fmtTime(p.checkinReqTime) : 'Out: '+fmtTime(p.checkoutReqTime)) + '</div></div>' +
           '<div class="approval-type"><span class="badge ' + (isIn?'badge-success':'badge-warn') + '">' + (isIn?'CHECK IN':'CHECK OUT') + '</span></div>' +
           '<div class="approval-actions">' +
@@ -1440,8 +1473,8 @@ function renderApprovals() {
       var uH = '<div class="undo-list">';
       for (var u = 0; u < recentApproved.length; u++) {
         var ua = recentApproved[u];
-        uH += '<div class="undo-item"><div class="undo-info"><strong>' + ua.name + '</strong> | ' + ua.wid +
-          '<div class="undo-detail">' + (ua.status==='checked_in'?'In: '+fmtTime(ua.checkinTime):'Done | Out: '+fmtTime(ua.checkoutTime)) + '</div></div>' +
+        uH += '<div class="undo-item"><div class="undo-info"><strong>' + ua.name + '</strong> · ' + ua.wid +
+          '<div class="undo-detail">' + (ua.status==='checked_in'?'In: '+fmtTime(ua.checkinTime):'Done · Out: '+fmtTime(ua.checkoutTime)) + '</div></div>' +
           '<button class="btn btn-warning btn-sm" onclick="doUndoApproval(\''+ua.recId+'\')"><span class="material-symbols-outlined">undo</span> Undo</button></div>';
       }
       uH += '</div>'; undoC.innerHTML = uH;
@@ -1456,7 +1489,6 @@ function approveRecord(recId, isCheckin) {
 function rejectRecord(recId) { adminReject(recId).then(function(){refreshApprovals();renderDashboard();}); }
 function doUndoApproval(recId) { showConfirm('Undo this approval?', function(){ undoApproval(recId).then(function(){refreshApprovals();renderDashboard();}); }); }
 
-// ====== RENDER LIVE STATUS ======
 function renderLiveStatus() {
   var today = tD(); var allAtt = gA(); var working = [], done = [];
   for (var i = 0; i < allAtt.length; i++) {
@@ -1475,8 +1507,8 @@ function renderLiveStatus() {
         var w = working[j]; var elapsed = w.checkinTime ? Math.round((Date.now()-new Date(w.checkinTime).getTime())/3600000*10)/10 : 0;
         h += '<div class="live-worker-item"><div class="live-worker-avatar">'+getInitials(w.name)+'</div>' +
           '<div class="live-worker-info"><div class="live-worker-name">'+w.name+'</div>' +
-          '<div class="live-worker-meta">'+w.wid+' | '+(w.shift||'Day')+'</div>' +
-          '<div class="live-worker-time">In: '+fmtTime(w.checkinTime)+' | '+elapsed+'h</div></div>' +
+          '<div class="live-worker-meta">'+w.wid+' · '+(w.shift||'Day')+'</div>' +
+          '<div class="live-worker-time">In: '+fmtTime(w.checkinTime)+' · '+elapsed+'h</div></div>' +
           '<button class="btn btn-sm btn-danger" onclick="adminCheckoutLive(\''+w.recId+'\')"><span class="material-symbols-outlined">logout</span></button></div>';
       }
       h += '</div>'; wEl.innerHTML = h;
@@ -1489,9 +1521,9 @@ function renderLiveStatus() {
       var dH = '<div class="live-worker-list">';
       for (var k = 0; k < done.length; k++) {
         var da = done[k];
-        dH += '<div class="live-worker-item"><div class="live-worker-avatar" style="background:#10b981">'+getInitials(da.name)+'</div>' +
+        dH += '<div class="live-worker-item"><div class="live-worker-avatar" style="background:linear-gradient(135deg,#059669,#10b981)">'+getInitials(da.name)+'</div>' +
           '<div class="live-worker-info"><div class="live-worker-name">'+da.name+'</div>' +
-          '<div class="live-worker-time">'+fmtTime(da.checkinTime)+' - '+fmtTime(da.checkoutTime)+' | '+(da.total||0)+'h</div></div>' +
+          '<div class="live-worker-time">'+fmtTime(da.checkinTime)+' → '+fmtTime(da.checkoutTime)+' · '+(da.total||0)+'h</div></div>' +
           '<span class="badge badge-success">Done</span></div>';
       }
       dH += '</div>'; dEl.innerHTML = dH;
@@ -1500,7 +1532,6 @@ function renderLiveStatus() {
 }
 function adminCheckoutLive(recId) { showConfirm('Checkout now?', function(){ adminApproveCheckout(recId).then(function(){renderLiveStatus();renderDashboard();}); }); }
 
-// ====== RENDER ATTENDANCE VIEW ======
 function renderAttendanceView() {
   var date = document.getElementById('attDate') ? document.getElementById('attDate').value : tD();
   if (!date) date = tD();
@@ -1508,7 +1539,6 @@ function renderAttendanceView() {
   var section = document.getElementById('attSection') ? document.getElementById('attSection').value : 'All';
   var statusFilter = document.getElementById('attStatus') ? document.getElementById('attStatus').value : 'All';
   var allAtt = gA(); var allWorkers = gW();
-
   var presentWids = []; var presentRecs = []; var processedWids = [];
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i]; var aDate = a.date || getTurkeyDate(a.checkinTime||a.checkinReqTime);
@@ -1521,7 +1551,6 @@ function renderAttendanceView() {
     processedWids.push(a.wid); presentWids.push(a.wid);
     presentRecs.push({ worker: w2, att: a });
   }
-
   var absentWorkers = [];
   for (var j = 0; j < allWorkers.length; j++) {
     var w3 = allWorkers[j];
@@ -1531,11 +1560,9 @@ function renderAttendanceView() {
     if (indexOf(presentWids, w3.wid) !== -1) continue;
     absentWorkers.push(w3);
   }
-
   var totalF = presentRecs.length + absentWorkers.length;
   setEl('attSumTotal', totalF); setEl('attSumPresent', presentRecs.length); setEl('attSumAbsent', absentWorkers.length);
   setEl('attPresentCount', presentRecs.length); setEl('attAbsentCount', absentWorkers.length);
-
   var presentBody = document.getElementById('attPresentBody');
   if (presentBody) {
     if (statusFilter === 'Absent') { document.getElementById('attPresentCard').style.display = 'none'; }
@@ -1551,14 +1578,13 @@ function renderAttendanceView() {
             '<td>'+fmtTime(pr.att.checkinTime||pr.att.checkinReqTime)+'</td><td>'+(pr.att.checkoutTime?fmtTime(pr.att.checkoutTime):'-')+'</td>' +
             '<td>'+(pr.att.total?'<strong>'+pr.att.total+'h</strong>':'-')+'</td><td>'+(pr.att.regular||0)+'h</td>' +
             '<td>'+(pr.att.ot?'<span class="ot-val">'+pr.att.ot+'h</span>':'-')+'</td><td>'+sb+'</td>' +
-            '<td><button class="btn-icon btn-edit" onclick="editAttRecord(\''+pr.att.recId+'\')" title="Edit"><span class="material-symbols-outlined">edit</span></button>' +
-            '<button class="btn-icon btn-delete" onclick="deleteAttRecord(\''+pr.att.recId+'\')" title="Delete"><span class="material-symbols-outlined">delete</span></button></td></tr>';
+            '<td><button class="btn-icon btn-edit" onclick="editAttRecord(\''+pr.att.recId+'\')"><span class="material-symbols-outlined">edit</span></button>' +
+            '<button class="btn-icon btn-delete" onclick="deleteAttRecord(\''+pr.att.recId+'\')"><span class="material-symbols-outlined">delete</span></button></td></tr>';
         }
         presentBody.innerHTML = pH;
       }
     }
   }
-
   var abG = document.getElementById('attAbsentGrid');
   if (abG) {
     if (statusFilter === 'Present') { document.getElementById('attAbsentCard').style.display = 'none'; }
@@ -1570,8 +1596,8 @@ function renderAttendanceView() {
         for (var ab = 0; ab < absentWorkers.length; ab++) {
           var abW = absentWorkers[ab];
           aH += '<div class="absent-card"><div class="absent-initials">'+getInitials(abW.name)+'</div>' +
-            '<div class="absent-info"><div class="absent-name">'+abW.name+'</div><div class="absent-meta">'+abW.wid+' | '+abW.prof+'</div>' +
-            '<div class="absent-meta">'+abW.sec+' | '+abW.shift+'</div></div>' +
+            '<div class="absent-info"><div class="absent-name">'+abW.name+'</div><div class="absent-meta">'+abW.wid+' · '+abW.prof+'</div>' +
+            '<div class="absent-meta">'+abW.sec+' · '+abW.shift+'</div></div>' +
             '<button class="btn-absent-in" onclick="quickAttAbsent(\''+abW.wid+'\',\''+date+'\')">' +
             '<span class="material-symbols-outlined">add_circle</span> Add</button></div>';
         }
@@ -1603,7 +1629,6 @@ function deleteAttRecord(recId) {
   showConfirm('Delete this record?', function(){ FB.delete('attendance', recId).then(function(){ showToast('Deleted!','info'); renderAttendanceView(); }); });
 }
 
-// ====== RENDER ADMIN WORKERS ======
 function setWorkerTab(tab) {
   _workerTabActive = tab;
   document.getElementById('wtabIndian').classList.toggle('active', tab === 'Indian');
@@ -1619,7 +1644,6 @@ function renderAdminWorkers() {
   var indCount = 0, pakCount = 0;
   for (var x = 0; x < ws.length; x++) { if (ws[x].on && ws[x].sec === 'Indian') indCount++; if (ws[x].on && ws[x].sec === 'Pakistani') pakCount++; }
   setEl('wtabIndCount', indCount); setEl('wtabPakCount', pakCount);
-
   for (var i = 0; i < ws.length; i++) {
     var w = ws[i];
     if (w.sec !== _workerTabActive) continue;
@@ -1629,7 +1653,6 @@ function renderAdminWorkers() {
     if (search) { if ((w.name+w.wid+w.prof+w.sec).toLowerCase().indexOf(search) === -1) continue; }
     filtered.push(w);
   }
-
   var tbody = document.getElementById('workersTableBody'); if (!tbody) return;
   if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No workers found</td></tr>'; return; }
   var html = '';
@@ -1641,10 +1664,10 @@ function renderAdminWorkers() {
       '<td><span class="shift-badge shift-'+(fw.shift||'day').toLowerCase()+' shift-clickable" onclick="doToggleShift(\''+fw.wid+'\')">'+(fw.shift||'Day')+'</span></td>' +
       '<td><span class="status-dot '+(fw.on?'status-active':'status-inactive')+'"></span>'+(fw.on?'Active':'Inactive')+'</td>' +
       '<td class="action-cell">' +
-        '<button class="btn-icon btn-edit" onclick="showEditWorker(\''+fw.wid+'\')" title="Edit"><span class="material-symbols-outlined">edit</span></button>' +
-        '<button class="btn-icon '+(fw.on?'btn-warn':'btn-success')+'" onclick="doToggleActive(\''+fw.wid+'\')" title="'+(fw.on?'Deactivate':'Activate')+'"><span class="material-symbols-outlined">'+(fw.on?'person_off':'person')+'</span></button>' +
-        '<button class="btn-icon btn-info" onclick="doResetWorkerPw(\''+fw.wid+'\')" title="Reset PW"><span class="material-symbols-outlined">lock_reset</span></button>' +
-        '<button class="btn-icon btn-delete" onclick="doDeleteWorker(\''+fw.wid+'\')" title="Delete"><span class="material-symbols-outlined">delete</span></button>' +
+        '<button class="btn-icon btn-edit" onclick="showEditWorker(\''+fw.wid+'\')"><span class="material-symbols-outlined">edit</span></button>' +
+        '<button class="btn-icon '+(fw.on?'btn-warn':'btn-success')+'" onclick="doToggleActive(\''+fw.wid+'\')"><span class="material-symbols-outlined">'+(fw.on?'person_off':'person')+'</span></button>' +
+        '<button class="btn-icon btn-info" onclick="doResetWorkerPw(\''+fw.wid+'\')"><span class="material-symbols-outlined">lock_reset</span></button>' +
+        '<button class="btn-icon btn-delete" onclick="doDeleteWorker(\''+fw.wid+'\')"><span class="material-symbols-outlined">delete</span></button>' +
       '</td></tr>';
   }
   tbody.innerHTML = html;
@@ -1691,7 +1714,6 @@ function doToggleActive(wid) { var w=findWorker(wid); if(!w) return; showConfirm
 function doResetWorkerPw(wid) { var w=findWorker(wid); if(!w) return; showConfirm('Reset password for '+w.name+'?', function(){ FB.update('workers',wid,{pw:'Worker@123'}).then(function(){showToast('Reset to Worker@123','success');}); }); }
 function doDeleteWorker(wid) { var w=findWorker(wid); if(!w) return; showConfirm('Delete '+w.name+'? Attendance records remain.', function(){ deleteWorker(wid).then(function(){renderAdminWorkers();}); }); }
 
-// ====== MANUAL ENTRY HELPERS ======
 function doQuickCheckin() {
   var wid=document.getElementById('qcInWorker').value, shift=document.getElementById('qcInShift').value, time=document.getElementById('qcInTime').value;
   if (!wid){showToast('Select worker','error');return;} if(!time){showToast('Enter time','error');return;}
@@ -1703,7 +1725,6 @@ function doQuickCheckout() {
   manualCheckout(wid,null,tD(),time).then(function(res){ if(res.ok) showToast(res.msg,'success'); else showToast(res.msg,'error'); renderManualEntry(); });
 }
 
-// ====== END DAY ======
 function updateEndDayStats() {
   var today=tD(),allAtt=gA(),working=0,pending=0;
   for(var i=0;i<allAtt.length;i++){var a=allAtt[i],aD=a.date||getTurkeyDate(a.checkinTime||a.checkinReqTime);
@@ -1716,7 +1737,6 @@ function doEndDay() {
   showConfirm('Checkout ALL active workers at '+time+'?', function(){endDay(time).then(function(res){showToast(res.msg,'success');updateEndDayStats();renderDashboard();});});
 }
 
-// ====== MONTHLY REPORT ======
 function generateMonthlyReport() {
   var wid=document.getElementById('monthlyWorker').value, year=parseInt(document.getElementById('monthlyYear').value),
     month=parseInt(document.getElementById('monthlyMonth').value);
@@ -1782,7 +1802,6 @@ function exportMonthlyCSV() {
   var blob=new Blob([csv],{type:'text/csv'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='albowry_monthly_'+year+'_'+month+'.csv';a.click();URL.revokeObjectURL(url);showToast('CSV downloaded!','success');
 }
 
-// ====== EXPORT ======
 function exportRangePDF() {
   var from=document.getElementById('expFrom').value,to=document.getElementById('expTo').value,filter=document.getElementById('expFilter').value;
   if(!from||!to){showToast('Select dates','error');return;}
@@ -1800,7 +1819,6 @@ function exportRangeExcel() {
 }
 function exportRangeCSV() { exportRangeExcel(); }
 
-// ====== SETTINGS ======
 function doUpdateAdminName() {var name=document.getElementById('setAdminName').value.trim();updateAdmin('name',name).then(function(res){if(res.ok){var el=document.getElementById('adminDisplayName');if(el)el.textContent=name;}});}
 function doUpdateAdminId() {var id=document.getElementById('setAdminId').value.trim(),pw=document.getElementById('setAdminIdPw').value;updateAdmin('id',id,pw).then(function(res){if(res.ok){document.getElementById('setAdminId').value='';document.getElementById('setAdminIdPw').value='';}});}
 function doUpdateAdminPw() {var old=document.getElementById('setOldPw').value,nw=document.getElementById('setNewPw').value;updateAdmin('pw',nw,old).then(function(res){if(res.ok){document.getElementById('setOldPw').value='';document.getElementById('setNewPw').value='';}});}
@@ -1808,7 +1826,6 @@ function doResetPasswords() {showConfirm('Reset ALL passwords to Worker@123?', f
 function doClearAttendance() {showConfirm('DANGER: Clear ALL attendance?', function(){showConfirm('Absolutely sure? Cannot undo!', function(){clearAllAttendance();updateSettingsInfo();});});}
 function updateSettingsInfo() {setEl('sysWorkerCount',gW().length);setEl('sysAttCount',gA().length);if(_lastSyncTime)setEl('sysLastSync',fmtDT(_lastSyncTime.toISOString()));}
 
-// ====== HELPERS ======
 function setEl(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
 function togglePw(inputId, btn) {
   var inp = document.getElementById(inputId); if (!inp) return;
