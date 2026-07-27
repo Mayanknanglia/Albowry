@@ -1,8 +1,11 @@
-// AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
-// app.js v16 - Complete with sync fix, present/absent fix
+// ================================================
+// AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT
+// app.js v17 - Complete Professional Sync
+// COP31 Project | Antalya, Turkey
+// ================================================
 
-var APP_VERSION = 'v16';
-var CACHE_KEY = 'alb_v16';
+var APP_VERSION = 'v17';
+var CACHE_KEY = 'alb_v17';
 
 // ====== COMPANY INFO ======
 var COMPANY = {
@@ -34,39 +37,19 @@ var _lastSyncTime = null;
 // ====== FIREBASE WRAPPER ======
 var FB = {
   db: null,
-  init: function(db) {
-    FB.db = db;
-  },
-  col: function(name) {
-    return window.firestoreCol(FB.db, name);
-  },
-  doc: function(col, id) {
-    return window.firestoreDoc(FB.db, col, id);
-  },
-  save: function(col, id, data) {
-    return window.firestoreSet(FB.db, col, id, data);
-  },
-  update: function(col, id, data) {
-    return window.firestoreUpdate(FB.db, col, id, data);
-  },
-  delete: function(col, id) {
-    return window.firestoreDelete(FB.db, col, id);
-  },
-  getAll: function(col) {
-    return window.firestoreGetAll(FB.db, col);
-  },
-  getDoc: function(col, id) {
-    return window.firestoreGetDoc(FB.db, col, id);
-  },
-  listen: function(col, cb) {
-    return window.firestoreListen(FB.db, col, cb);
-  },
-  listenDoc: function(col, id, cb) {
-    return window.firestoreListenDoc(FB.db, col, id, cb);
-  }
+  init: function(db) { FB.db = db; },
+  col: function(name) { return window.firestoreCol(FB.db, name); },
+  doc: function(col, id) { return window.firestoreDoc(FB.db, col, id); },
+  save: function(col, id, data) { return window.firestoreSet(FB.db, col, id, data); },
+  update: function(col, id, data) { return window.firestoreUpdate(FB.db, col, id, data); },
+  delete: function(col, id) { return window.firestoreDelete(FB.db, col, id); },
+  getAll: function(col) { return window.firestoreGetAll(FB.db, col); },
+  getDoc: function(col, id) { return window.firestoreGetDoc(FB.db, col, id); },
+  listen: function(col, cb) { return window.firestoreListen(FB.db, col, cb); },
+  listenDoc: function(col, id, cb) { return window.firestoreListenDoc(FB.db, col, id, cb); }
 };
 
-// ====== DATA GETTERS (always fresh from memory) ======
+// ====== DATA GETTERS ======
 function gW() { return _workers || []; }
 function gA() { return _attendance || []; }
 function gAd() { return _adminData || {}; }
@@ -117,9 +100,7 @@ function getTurkeyDate(iso) {
 }
 
 function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
-  // Build ISO from date string (YYYY-MM-DD) and time string (HH:MM)
   var dt = new Date(dateStr + 'T' + timeStr + ':00');
-  // If night checkout and time < checkin time, add 1 day
   if (isNightCheckout && checkinISO) {
     var cin = new Date(checkinISO);
     if (dt <= cin) {
@@ -151,24 +132,15 @@ function calcHours(checkinISO, checkoutISO) {
   };
 }
 
-// ====== PRESENT/ABSENT LOGIC (CORE FIX) ======
-// A worker is PRESENT on a date if they have ANY attendance record for that date
-// with status: checked_in, pending_checkout, or completed
-// A worker is ABSENT only if they have NO such record
-// pending_checkin is NOT counted as present (not yet approved)
-
+// ====== PRESENT/ABSENT LOGIC ======
 function getPresentWorkerIds(date, attendanceList, shift) {
   var presentIds = [];
   var filtered = attendanceList || gA();
-  
   for (var i = 0; i < filtered.length; i++) {
     var att = filtered[i];
-    // Check date match
     var attDate = att.date || getTurkeyDate(att.checkinTime || att.checkinReqTime);
     if (attDate !== date) continue;
-    // Check shift filter
     if (shift && shift !== 'All' && att.shift !== shift) continue;
-    // Status must be present (not pending_checkin)
     if (att.status === 'checked_in' || att.status === 'pending_checkout' || att.status === 'completed') {
       if (indexOf(presentIds, att.wid) === -1) {
         presentIds.push(att.wid);
@@ -182,10 +154,9 @@ function getAbsentWorkers(date, attendanceList, workers, shift, section) {
   var present = getPresentWorkerIds(date, attendanceList, shift);
   var absentWorkers = [];
   var allWorkers = workers || gW();
-  
   for (var i = 0; i < allWorkers.length; i++) {
     var w = allWorkers[i];
-    if (!w.on) continue; // skip inactive
+    if (!w.on) continue;
     if (section && section !== 'All' && w.sec !== section) continue;
     if (shift && shift !== 'All' && w.shift !== shift) continue;
     if (indexOf(present, w.wid) === -1) {
@@ -199,13 +170,11 @@ function getPresentWorkers(date, attendanceList, workers, shift, section) {
   var present = getPresentWorkerIds(date, attendanceList, shift);
   var presentWorkers = [];
   var allWorkers = workers || gW();
-  
   for (var i = 0; i < allWorkers.length; i++) {
     var w = allWorkers[i];
     if (!w.on) continue;
     if (section && section !== 'All' && w.sec !== section) continue;
     if (indexOf(present, w.wid) === -1) continue;
-    // Find their attendance record for this date
     var attRec = null;
     var allAtt = attendanceList || gA();
     for (var j = 0; j < allAtt.length; j++) {
@@ -225,7 +194,7 @@ function getPresentWorkers(date, attendanceList, workers, shift, section) {
   return presentWorkers;
 }
 
-// ====== indexOf helper (IE compatibility) ======
+// ====== HELPERS ======
 function indexOf(arr, val) {
   if (!arr) return -1;
   for (var i = 0; i < arr.length; i++) {
@@ -254,7 +223,7 @@ function clearSession() {
   } catch(e) {}
 }
 
-// ====== SYNC STATUS INDICATOR ======
+// ====== SYNC STATUS ======
 function updateSyncUI() {
   var el = document.getElementById('syncStatus');
   if (!el) return;
@@ -271,13 +240,11 @@ function updateSyncUI() {
 
 // ====== REAL-TIME LISTENERS ======
 function startRealtimeSync() {
-  // Clear old listeners
   for (var i = 0; i < _listeners.length; i++) {
     try { _listeners[i](); } catch(e) {}
   }
   _listeners = [];
 
-  // Listen to workers collection
   var unsubW = FB.listen('workers', function(docs) {
     _workers = docs;
     _syncStatus.workers = true;
@@ -286,7 +253,6 @@ function startRealtimeSync() {
   });
   _listeners.push(unsubW);
 
-  // Listen to attendance collection
   var unsubA = FB.listen('attendance', function(docs) {
     _attendance = docs;
     _syncStatus.attendance = true;
@@ -295,7 +261,6 @@ function startRealtimeSync() {
   });
   _listeners.push(unsubA);
 
-  // Listen to admin doc
   var unsubAd = FB.listenDoc('admin', ADMIN_DOC, function(doc) {
     if (doc) {
       _adminData = doc;
@@ -310,13 +275,11 @@ function startRealtimeSync() {
 function onWorkersUpdated() {
   var session = getSession();
   if (!session) return;
-  
   if (session.role === 'admin') {
     refreshAdminWorkers();
     refreshDashboard();
     renderWorkerDropdowns();
   } else if (session.role === 'worker') {
-    // Update worker info if their record changed
     var w = findWorker(session.wid);
     if (w) {
       setSession({ role: 'worker', wid: w.wid, name: w.name, prof: w.prof, sec: w.sec, shift: w.shift });
@@ -328,7 +291,6 @@ function onWorkersUpdated() {
 function onAttendanceUpdated() {
   var session = getSession();
   if (!session) return;
-  
   if (session.role === 'admin') {
     refreshDashboard();
     refreshApprovals();
@@ -344,7 +306,6 @@ function onAttendanceUpdated() {
 function onAdminUpdated() {
   var session = getSession();
   if (!session || session.role !== 'admin') return;
-  // Update admin display name if changed
   var nameEl = document.getElementById('adminDisplayName');
   if (nameEl && _adminData.name) nameEl.textContent = _adminData.name;
 }
@@ -384,7 +345,6 @@ function getWorkerAtt(wid) {
   for (var i = 0; i < att.length; i++) {
     if (att[i].wid === wid) result.push(att[i]);
   }
-  // Sort by date desc
   result.sort(function(a, b) {
     return (b.date || '') > (a.date || '') ? 1 : -1;
   });
@@ -401,7 +361,6 @@ function getDateAtt(date) {
   return result;
 }
 
-// ====== GENERATE RECORD ID ======
 function genRecId(wid, backdated) {
   var prefix = backdated ? 'att_bd_' : 'att_';
   return prefix + Date.now() + '_' + wid;
@@ -413,7 +372,6 @@ function workerLogin(wid, pw, shift) {
   if (!w) return { ok: false, msg: 'Worker not found' };
   if (!w.on) return { ok: false, msg: 'Account deactivated. Contact admin.' };
   if (w.pw !== pw) return { ok: false, msg: 'Wrong password' };
-  
   var session = { role: 'worker', wid: w.wid, name: w.name, prof: w.prof, sec: w.sec, shift: shift || w.shift };
   setSession(session);
   return { ok: true, worker: w, session: session };
@@ -426,7 +384,6 @@ function adminLogin(id, pw) {
     setSession({ role: 'admin', name: ad.name || 'Admin' });
     return { ok: true };
   }
-  // Fallback hardcoded
   if (id === 'ADMIN001' && pw === 'Admin@2026') {
     setSession({ role: 'admin', name: 'Pradeep Jangir' });
     return { ok: true };
@@ -434,21 +391,22 @@ function adminLogin(id, pw) {
   return { ok: false, msg: 'Wrong Admin ID or Password' };
 }
 
-// ====== WORKER CHECK-IN REQUEST ======
+// ====== WORKER CHECK-IN REQUEST (TIME STARTS NOW) ======
 function workerCheckinReq(wid, shift) {
   var today = tD();
   var existing = getTodayAtt(wid);
-  
+
   if (existing) {
-    if (existing.status === 'pending_checkin') return { ok: false, msg: 'Check-in already pending approval' };
-    if (existing.status === 'checked_in') return { ok: false, msg: 'Already checked in' };
-    if (existing.status === 'pending_checkout') return { ok: false, msg: 'Checkout pending approval' };
-    if (existing.status === 'completed') return { ok: false, msg: 'Today\'s attendance already completed' };
+    if (existing.status === 'pending_checkin') return Promise.resolve({ ok: false, msg: 'Check-in already pending approval' });
+    if (existing.status === 'checked_in') return Promise.resolve({ ok: false, msg: 'Already checked in' });
+    if (existing.status === 'pending_checkout') return Promise.resolve({ ok: false, msg: 'Checkout pending approval' });
+    if (existing.status === 'completed') return Promise.resolve({ ok: false, msg: 'Today\'s attendance already completed' });
   }
-  
+
   var w = findWorker(wid);
-  if (!w) return { ok: false, msg: 'Worker not found' };
-  
+  if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
+
+  var nowISO = tNow();
   var recId = genRecId(wid, false);
   var rec = {
     recId: recId,
@@ -458,17 +416,17 @@ function workerCheckinReq(wid, shift) {
     sec: w.sec,
     shift: shift || w.shift,
     date: today,
-    checkinReqTime: tNow(),
-    checkinTime: null,
+    checkinReqTime: nowISO,
+    checkinTime: nowISO,
     checkoutReqTime: null,
     checkoutTime: null,
     total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
     status: 'pending_checkin',
     backdated: false
   };
-  
+
   return FB.save('attendance', recId, rec).then(function() {
-    return { ok: true, msg: 'Check-in request sent. Waiting for admin approval.' };
+    return { ok: true, msg: 'Check-in requested at ' + fmtTime(nowISO) + '. Waiting for admin approval.' };
   }).catch(function(e) {
     return { ok: false, msg: 'Error: ' + e.message };
   });
@@ -479,33 +437,45 @@ function workerCheckoutReq(wid) {
   var today = tD();
   var att = null;
   var allAtt = gA();
-  
+
   for (var i = 0; i < allAtt.length; i++) {
     if (allAtt[i].wid === wid && allAtt[i].date === today && allAtt[i].status === 'checked_in') {
       att = allAtt[i];
       break;
     }
   }
-  
+
   if (!att) return Promise.resolve({ ok: false, msg: 'No active check-in found for today' });
-  
+
+  var nowISO = tNow();
+
   return FB.update('attendance', att.recId, {
-    checkoutReqTime: tNow(),
+    checkoutReqTime: nowISO,
     status: 'pending_checkout'
   }).then(function() {
-    return { ok: true, msg: 'Checkout request sent. Waiting for admin approval.' };
+    return { ok: true, msg: 'Checkout requested at ' + fmtTime(nowISO) + '. Waiting for admin approval.' };
   }).catch(function(e) {
     return { ok: false, msg: 'Error: ' + e.message };
   });
 }
 
-// ====== ADMIN APPROVE CHECK-IN ======
+// ====== ADMIN APPROVE CHECK-IN (Uses worker's request time) ======
 function adminApproveCheckin(recId) {
+  var att = null;
+  var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) {
+    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
+  }
+
+  if (!att) return Promise.resolve({ ok: false });
+
+  var checkinTime = att.checkinReqTime || att.checkinTime || tNow();
+
   return FB.update('attendance', recId, {
-    checkinTime: tNow(),
+    checkinTime: checkinTime,
     status: 'checked_in'
   }).then(function() {
-    showToast('Check-in approved!', 'success');
+    showToast(att.name + ' check-in approved! Time: ' + fmtTime(checkinTime), 'success');
     return { ok: true };
   }).catch(function(e) {
     showToast('Error: ' + e.message, 'error');
@@ -513,7 +483,7 @@ function adminApproveCheckin(recId) {
   });
 }
 
-// ====== ADMIN APPROVE CHECKOUT ======
+// ====== ADMIN APPROVE CHECKOUT (Uses worker's request time) ======
 function adminApproveCheckout(recId) {
   var att = null;
   var allAtt = gA();
@@ -521,10 +491,9 @@ function adminApproveCheckout(recId) {
     if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
-  
-  var checkoutTime = tNow();
-  
-  // Night shift: if checkout time < checkin time, add 1 day
+
+  var checkoutTime = att.checkoutReqTime || tNow();
+
   if (att.shift === 'Night' && att.checkinTime) {
     var cin = new Date(att.checkinTime);
     var cout = new Date(checkoutTime);
@@ -533,9 +502,9 @@ function adminApproveCheckout(recId) {
       checkoutTime = cout.toISOString();
     }
   }
-  
+
   var hrs = calcHours(att.checkinTime, checkoutTime);
-  
+
   return FB.update('attendance', recId, {
     checkoutTime: checkoutTime,
     total: hrs.total,
@@ -545,7 +514,7 @@ function adminApproveCheckout(recId) {
     ot: hrs.ot,
     status: 'completed'
   }).then(function() {
-    showToast('Checkout approved!', 'success');
+    showToast(att.name + ' checkout approved! ' + hrs.total + 'h worked', 'success');
     return { ok: true };
   }).catch(function(e) {
     showToast('Error: ' + e.message, 'error');
@@ -561,7 +530,7 @@ function adminReject(recId, reason) {
     if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   }
   if (!att) return Promise.resolve({ ok: false });
-  
+
   if (att.status === 'pending_checkin') {
     return FB.delete('attendance', recId).then(function() {
       showToast('Check-in rejected and removed', 'info');
@@ -584,7 +553,7 @@ function adminApproveAll(type) {
   var allAtt = gA();
   var promises = [];
   var statusFilter = type === 'checkin' ? 'pending_checkin' : 'pending_checkout';
-  
+
   for (var i = 0; i < allAtt.length; i++) {
     var att = allAtt[i];
     if (att.status === statusFilter) {
@@ -595,7 +564,7 @@ function adminApproveAll(type) {
       }
     }
   }
-  
+
   return Promise.all(promises).then(function() {
     showToast('All ' + type + ' approved!', 'success');
     return { ok: true, count: promises.length };
@@ -610,15 +579,13 @@ function undoApproval(recId) {
     if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
-  
+
   if (att.status === 'checked_in' && !att.checkoutTime) {
-    // Undo check-in: delete record
     return FB.delete('attendance', recId).then(function() {
       showToast('Check-in undone', 'info');
       return { ok: true };
     });
   } else if (att.status === 'completed' && att.checkoutTime) {
-    // Undo checkout: revert to checked_in
     return FB.update('attendance', recId, {
       checkoutTime: null,
       checkoutReqTime: null,
@@ -636,12 +603,11 @@ function undoApproval(recId) {
 function manualCheckin(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
-  
+
   var date = dateStr || tD();
   var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   var checkinISO = buildISO(date, time, false, null);
-  
-  // Check if already has record for this date
+
   var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
@@ -652,7 +618,7 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
       }
     }
   }
-  
+
   var recId = genRecId(wid, dateStr ? true : false);
   var rec = {
     recId: recId,
@@ -670,7 +636,7 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
     status: 'checked_in',
     backdated: dateStr ? true : false
   };
-  
+
   return FB.save('attendance', recId, rec).then(function() {
     return { ok: true, msg: w.name + ' checked in at ' + fmtTime(checkinISO) };
   }).catch(function(e) {
@@ -682,11 +648,11 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
 function manualCheckout(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
-  
+
   var date = dateStr || tD();
   var allAtt = gA();
   var att = null;
-  
+
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
@@ -695,13 +661,13 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
       break;
     }
   }
-  
+
   if (!att) return Promise.resolve({ ok: false, msg: w.name + ' has no active check-in for ' + date });
-  
+
   var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   var checkoutISO = buildISO(date, time, att.shift === 'Night', att.checkinTime);
   var hrs = calcHours(att.checkinTime, checkoutISO);
-  
+
   return FB.update('attendance', att.recId, {
     checkoutTime: checkoutISO,
     checkoutReqTime: checkoutISO,
@@ -718,7 +684,7 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
   });
 }
 
-// ====== BULK CHECK-IN (Admin) ======
+// ====== BULK OPERATIONS ======
 function bulkCheckin(wids, shift, dateStr, timeStr) {
   var promises = [];
   for (var i = 0; i < wids.length; i++) {
@@ -733,7 +699,6 @@ function bulkCheckin(wids, shift, dateStr, timeStr) {
   });
 }
 
-// ====== BULK CHECK-OUT (Admin) ======
 function bulkCheckout(wids, shift, dateStr, timeStr) {
   var promises = [];
   for (var i = 0; i < wids.length; i++) {
@@ -748,12 +713,11 @@ function bulkCheckout(wids, shift, dateStr, timeStr) {
   });
 }
 
-// ====== END DAY (Admin bulk checkout) ======
 function endDay(timeStr) {
   var today = tD();
   var allAtt = gA();
   var activeWids = [];
-  
+
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
@@ -761,21 +725,21 @@ function endDay(timeStr) {
       activeWids.push(a.wid);
     }
   }
-  
+
   if (activeWids.length === 0) return Promise.resolve({ ok: true, msg: 'No active workers to checkout', count: 0 });
-  
+
   return bulkCheckout(activeWids, null, today, timeStr).then(function(res) {
     return { ok: true, msg: 'Checked out ' + res.success + ' workers', count: res.success };
   });
 }
 
-// ====== WORKER PASSWORD CHANGE ======
+// ====== WORKER PASSWORD ======
 function changeWorkerPassword(wid, oldPw, newPw) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
   if (w.pw !== oldPw) return Promise.resolve({ ok: false, msg: 'Current password is wrong' });
   if (newPw.length < 6) return Promise.resolve({ ok: false, msg: 'New password must be at least 6 characters' });
-  
+
   return FB.update('workers', wid, { pw: newPw }).then(function() {
     return { ok: true, msg: 'Password changed successfully' };
   }).catch(function(e) {
@@ -787,7 +751,7 @@ function changeWorkerPassword(wid, oldPw, newPw) {
 function updateAdmin(field, value, confirmPw) {
   var ad = gAd();
   var update = {};
-  
+
   if (field === 'name') {
     if (!value) return Promise.resolve({ ok: false, msg: 'Name cannot be empty' });
     update.name = value;
@@ -800,7 +764,7 @@ function updateAdmin(field, value, confirmPw) {
     if (!value || value.length < 6) return Promise.resolve({ ok: false, msg: 'New password min 6 chars' });
     update.pw = value;
   }
-  
+
   return FB.update('admin', ADMIN_DOC, update).then(function() {
     Object.assign(_adminData, update);
     showToast(field + ' updated!', 'success');
@@ -810,11 +774,11 @@ function updateAdmin(field, value, confirmPw) {
   });
 }
 
-// ====== ADD WORKER ======
+// ====== WORKER CRUD ======
 function addWorker(wid, name, prof, sec, shift) {
   if (!wid || !name) return Promise.resolve({ ok: false, msg: 'ID and Name required' });
   if (findWorker(wid)) return Promise.resolve({ ok: false, msg: 'Worker ID already exists' });
-  
+
   var w = {
     wid: wid,
     name: name.trim(),
@@ -824,7 +788,7 @@ function addWorker(wid, name, prof, sec, shift) {
     pw: 'Worker@123',
     on: true
   };
-  
+
   return FB.save('workers', wid, w).then(function() {
     showToast(name + ' added!', 'success');
     return { ok: true };
@@ -833,7 +797,6 @@ function addWorker(wid, name, prof, sec, shift) {
   });
 }
 
-// ====== EDIT WORKER ======
 function editWorker(wid, updates) {
   return FB.update('workers', wid, updates).then(function() {
     showToast('Worker updated!', 'success');
@@ -843,7 +806,6 @@ function editWorker(wid, updates) {
   });
 }
 
-// ====== DELETE WORKER ======
 function deleteWorker(wid) {
   return FB.delete('workers', wid).then(function() {
     showToast('Worker deleted', 'info');
@@ -853,7 +815,6 @@ function deleteWorker(wid) {
   });
 }
 
-// ====== TOGGLE WORKER ACTIVE ======
 function toggleWorkerActive(wid) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false });
@@ -863,7 +824,6 @@ function toggleWorkerActive(wid) {
   });
 }
 
-// ====== TOGGLE WORKER SHIFT ======
 function toggleWorkerShift(wid) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false });
@@ -874,7 +834,6 @@ function toggleWorkerShift(wid) {
   });
 }
 
-// ====== RESET ALL PASSWORDS ======
 function resetAllPasswords() {
   var ws = gW();
   var promises = [];
@@ -887,7 +846,6 @@ function resetAllPasswords() {
   });
 }
 
-// ====== CLEAR ALL ATTENDANCE ======
 function clearAllAttendance() {
   var allAtt = gA();
   var promises = [];
@@ -900,7 +858,6 @@ function clearAllAttendance() {
   });
 }
 
-// ====== BACKUP DATA ======
 function backupData() {
   var data = {
     exportedAt: new Date().toISOString(),
@@ -920,37 +877,37 @@ function backupData() {
   showToast('Backup downloaded!', 'success');
 }
 
-// ====== MONTHLY REPORT DATA ======
+// ====== MONTHLY REPORT ======
 function getMonthlyReport(wid, year, month) {
   var allAtt = gA();
   var result = [];
   var monthStr = year + '-' + (month < 10 ? '0' + month : '' + month);
-  
+
   var workers = wid === 'all' ? gW() : [findWorker(wid)];
-  
+
   for (var i = 0; i < workers.length; i++) {
     var w = workers[i];
     if (!w || !w.on) continue;
-    
+
     var workerAtt = [];
     var totalDays = 0, totalHrs = 0, totalOT = 0, dayShift = 0, nightShift = 0;
-    
+
     for (var j = 0; j < allAtt.length; j++) {
       var a = allAtt[j];
       if (a.wid !== w.wid) continue;
       var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
       if (attDate.indexOf(monthStr) !== 0) continue;
       if (a.status !== 'completed') continue;
-      
+
       workerAtt.push(a);
       totalDays++;
       totalHrs += a.total || 0;
       totalOT += a.ot || 0;
       if (a.shift === 'Night') nightShift++; else dayShift++;
     }
-    
+
     workerAtt.sort(function(a, b) { return a.date > b.date ? 1 : -1; });
-    
+
     result.push({
       worker: w,
       records: workerAtt,
@@ -961,15 +918,15 @@ function getMonthlyReport(wid, year, month) {
       nightShift: nightShift
     });
   }
-  
+
   return result;
 }
 
-// ====== EXPORT HELPERS ======
+// ====== EXPORT DATA ======
 function getExportData(fromDate, toDate, filter) {
   var allAtt = gA();
   var result = [];
-  
+
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     if (a.status !== 'completed') continue;
@@ -983,70 +940,131 @@ function getExportData(fromDate, toDate, filter) {
     }
     result.push(a);
   }
-  
+
   result.sort(function(a, b) {
     if (a.date !== b.date) return a.date > b.date ? 1 : -1;
     return a.name > b.name ? 1 : -1;
   });
-  
+
   return result;
 }
 
-// ====== PDF HELPERS ======
+// ====== PDF HEADER WITH LOGO ======
 function addPDFHeader(doc, title, subtitle) {
   var pageW = doc.internal.pageSize.getWidth();
-  
-  // Background header
+
+  // Dark blue header background
+  doc.setFillColor(15, 30, 74);
+  doc.rect(0, 0, pageW, 44, 'F');
+
+  // Lighter blue gradient effect
   doc.setFillColor(30, 64, 175);
-  doc.rect(0, 0, pageW, 42, 'F');
-  
-  // Logo box
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(8, 6, 28, 28, 3, 3, 'F');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 64, 175);
-  doc.setFont('helvetica', 'bold');
-  doc.text('A', 22, 24, { align: 'center' });
-  
+  doc.rect(0, 22, pageW, 22, 'F');
+
+  // Try to load logo image
+  var logoLoaded = false;
+  try {
+    var img = document.querySelector('.nav-logo-img') ||
+              document.querySelector('.login-logo-img') ||
+              document.querySelector('.loading-logo-img') ||
+              document.querySelector('.company-logo-lg');
+
+    if (img && img.complete && img.naturalWidth > 0) {
+      var canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      var dataUrl = canvas.toDataURL('image/png');
+      doc.addImage(dataUrl, 'PNG', 8, 5, 32, 32);
+      logoLoaded = true;
+    }
+  } catch(e) {
+    logoLoaded = false;
+  }
+
+  // Fallback logo box
+  if (!logoLoaded) {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(8, 6, 32, 32, 4, 4, 'F');
+    doc.setFontSize(20);
+    doc.setTextColor(30, 64, 175);
+    doc.setFont('helvetica', 'bold');
+    doc.text('A', 24, 27, { align: 'center' });
+  }
+
   // Company name
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('AL BOWRY CARPENTRY LLC', 42, 14);
-  
+  doc.text('AL BOWRY CARPENTRY LLC', 46, 15);
+
+  // Project line
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Attendance Report | PROJECT COP31 at Antalya, Turkey', 42, 21);
-  doc.text('Registered: Sharjah, UAE | www.albowry.com', 42, 27);
-  
-  // Title
-  doc.setFontSize(12);
+  doc.setTextColor(220, 220, 240);
+  doc.text('PROJECT COP31 at Antalya, Turkey | Registered: Sharjah, UAE', 46, 22);
+
+  // Gold accent line
+  doc.setDrawColor(245, 158, 11);
+  doc.setLineWidth(1.5);
+  doc.line(46, 26, 140, 26);
+
+  // Report title
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text(title || 'Attendance Report', 42, 35);
+  doc.setTextColor(255, 255, 255);
+  doc.text(title || 'Attendance Report', 46, 35);
+
+  // Website - right side
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(220, 220, 240);
+  doc.text('www.albowry.com', pageW - 10, 12, { align: 'right' });
+
+  // Date generated
+  doc.setFontSize(7);
+  doc.text('Generated: ' + fmtDate(tNow()), pageW - 10, 18, { align: 'right' });
+
   if (subtitle) {
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(245, 158, 11);
     doc.text(subtitle, pageW - 10, 35, { align: 'right' });
   }
-  
-  return 48;
+
+  return 52;
 }
 
+// ====== PDF FOOTER ======
 function addPDFFooter(doc) {
   var pageCount = doc.internal.getNumberOfPages();
   var pageW = doc.internal.pageSize.getWidth();
   var pageH = doc.internal.pageSize.getHeight();
-  
+
   for (var i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFillColor(30, 64, 175);
-    doc.rect(0, pageH - 14, pageW, 14, 'F');
-    doc.setTextColor(255, 255, 255);
+
+    // Footer background
+    doc.setFillColor(15, 30, 74);
+    doc.rect(0, pageH - 16, pageW, 16, 'F');
+
+    // Gold accent line at top of footer
+    doc.setDrawColor(245, 158, 11);
+    doc.setLineWidth(0.8);
+    doc.line(0, pageH - 16, pageW, pageH - 16);
+
+    doc.setTextColor(200, 200, 220);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text(COMPANY.full, pageW / 2, pageH - 8, { align: 'center' });
+    doc.text(
+      'AL BOWRY CARPENTRY LLC | Sharjah, UAE | COP31, Antalya, Turkey | www.albowry.com',
+      pageW / 2, pageH - 9, { align: 'center' }
+    );
     doc.text('Generated: ' + fmtDT(tNow()), 10, pageH - 4);
-    doc.text('Page ' + i + ' / ' + pageCount, pageW - 10, pageH - 4, { align: 'right' });
+    doc.text('Page ' + i + ' of ' + pageCount, pageW - 10, pageH - 4, { align: 'right' });
   }
 }
 
@@ -1057,11 +1075,11 @@ function exportCSV(data, filename) {
     '# Generated: ' + fmtDT(tNow()),
     ''
   ];
-  
+
   var cols = ['Date', 'Worker ID', 'Name', 'Profession', 'Section', 'Shift', 'Check In', 'Check Out', 'Total Hrs', 'Regular', 'CompOT', 'ExtraOT', 'OT', 'Status'];
-  
+
   var rows = [header.join('\n'), cols.join(',')];
-  
+
   for (var i = 0; i < data.length; i++) {
     var a = data[i];
     var row = [
@@ -1082,7 +1100,7 @@ function exportCSV(data, filename) {
     ];
     rows.push(row.join(','));
   }
-  
+
   var csv = rows.join('\n');
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
@@ -1100,21 +1118,21 @@ function showToast(msg, type, duration) {
   if (!container) {
     container = document.createElement('div');
     container.id = 'toastContainer';
-    container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;';
+    container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;';
     document.body.appendChild(container);
   }
-  
-  var colors = { success: '#10b981', error: '#ef4444', info: '#3b82f6', warn: '#f59e0b' };
+
+  var colors = { success: '#059669', error: '#dc2626', info: '#2563eb', warn: '#d97706' };
   var icons = { success: 'check_circle', error: 'error', info: 'info', warn: 'warning' };
-  
+
   var toast = document.createElement('div');
-  toast.style.cssText = 'background:' + (colors[type] || colors.info) + ';color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:220px;max-width:380px;animation:slideIn 0.3s ease;';
-  toast.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px">' + (icons[type] || icons.info) + '</span>' + msg;
+  toast.style.cssText = 'background:' + (colors[type] || colors.info) + ';color:#fff;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.15);min-width:240px;max-width:400px;animation:slideIn 0.3s ease;';
+  toast.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px">' + (icons[type] || icons.info) + '</span>' + msg;
   container.appendChild(toast);
-  
+
   setTimeout(function() {
     toast.style.opacity = '0';
-    toast.style.transform = 'translateX(100%)';
+    toast.style.transform = 'translateX(120%)';
     toast.style.transition = 'all 0.3s ease';
     setTimeout(function() {
       if (toast.parentNode) toast.parentNode.removeChild(toast);
@@ -1125,20 +1143,21 @@ function showToast(msg, type, duration) {
 // ====== CONFIRM DIALOG ======
 function showConfirm(msg, onYes, onNo) {
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
-  
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+
   var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:16px;padding:28px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
-  box.innerHTML = '<div style="font-weight:700;font-size:18px;color:#0f172a;margin-bottom:12px">Confirm Action</div>' +
-    '<div style="color:#475569;font-size:14px;margin-bottom:24px;line-height:1.6">' + msg + '</div>' +
+  box.style.cssText = 'background:#fff;border-radius:20px;padding:32px;max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);';
+  box.innerHTML =
+    '<div style="font-weight:800;font-size:19px;color:#0f172a;margin-bottom:14px">Confirm Action</div>' +
+    '<div style="color:#475569;font-size:14px;margin-bottom:26px;line-height:1.6;font-weight:500">' + msg + '</div>' +
     '<div style="display:flex;gap:12px;justify-content:flex-end">' +
-    '<button onclick="this.closest(\'div[style]\').previousSibling&&document.body.removeChild(this.parentNode.parentNode.parentNode)" style="padding:10px 20px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;font-weight:600;color:#475569" id="cfmNo">Cancel</button>' +
-    '<button style="padding:10px 20px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600" id="cfmYes">Confirm</button>' +
+    '<button id="cfmNo" style="padding:11px 22px;border:2px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-weight:700;color:#475569;font-family:Inter,sans-serif">Cancel</button>' +
+    '<button id="cfmYes" style="padding:11px 22px;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(220,38,38,0.25)">Confirm</button>' +
     '</div>';
-  
+
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-  
+
   document.getElementById('cfmYes').onclick = function() {
     document.body.removeChild(overlay);
     if (onYes) onYes();
@@ -1159,23 +1178,23 @@ function showConfirm(msg, onYes, onNo) {
 function showModal(html, title) {
   var existing = document.getElementById('globalModal');
   if (existing) document.body.removeChild(existing);
-  
+
   var overlay = document.createElement('div');
   overlay.id = 'globalModal';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;';
-  
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+
   var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:16px;padding:28px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
-  
+  box.style.cssText = 'background:#fff;border-radius:20px;padding:32px;max-width:640px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.3);';
+
   if (title) {
-    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;color:#0f172a;font-size:18px">' + title + '</h3><button onclick="document.getElementById(\'globalModal\')&&document.body.removeChild(document.getElementById(\'globalModal\'))" style="background:none;border:none;cursor:pointer;font-size:22px;color:#94a3b8">&times;</button></div>' + html;
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid #e2e8f0"><h3 style="margin:0;color:#0f172a;font-size:19px;font-weight:800">' + title + '</h3><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:26px;color:#94a3b8;padding:0 4px;font-weight:400">&times;</button></div>' + html;
   } else {
     box.innerHTML = html;
   }
-  
+
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-  
+
   overlay.onclick = function(e) {
     if (e.target === overlay) document.body.removeChild(overlay);
   };
@@ -1192,7 +1211,7 @@ function speakWelcome(name) {
   var utter = new SpeechSynthesisUtterance('Welcome ' + (name || 'Admin'));
   utter.rate = 0.9;
   utter.pitch = 1;
-  
+
   var voices = window.speechSynthesis.getVoices();
   for (var i = 0; i < voices.length; i++) {
     if (voices[i].lang.indexOf('en') === 0) {
@@ -1200,11 +1219,10 @@ function speakWelcome(name) {
       break;
     }
   }
-  
   window.speechSynthesis.speak(utter);
 }
 
-// ====== LIVE CLOCK (Turkey Time) ======
+// ====== LIVE CLOCK ======
 function startClock(elementId) {
   function tick() {
     var el = document.getElementById(elementId);
@@ -1221,7 +1239,7 @@ function startClock(elementId) {
   return setInterval(tick, 1000);
 }
 
-// ====== NAV / UI HELPERS ======
+// ====== NAV/UI HELPERS ======
 function showSection(id) {
   var sections = document.querySelectorAll('.admin-section');
   for (var i = 0; i < sections.length; i++) {
@@ -1232,8 +1250,7 @@ function showSection(id) {
     target.style.display = 'block';
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  
-  // Update nav active state
+
   var navLinks = document.querySelectorAll('.nav-link');
   for (var j = 0; j < navLinks.length; j++) {
     navLinks[j].classList.remove('active');
@@ -1250,12 +1267,12 @@ function logout() {
   });
 }
 
-// ====== WORKER DROPDOWN BUILDER ======
+// ====== WORKER DROPDOWN ======
 function buildWorkerDropdown(selectEl, includeAll, filter) {
   if (!selectEl) return;
   var val = selectEl.value;
   selectEl.innerHTML = '';
-  
+
   if (includeAll) {
     var allOpt = document.createElement('option');
     allOpt.value = 'all';
@@ -1267,16 +1284,16 @@ function buildWorkerDropdown(selectEl, includeAll, filter) {
     defOpt.text = '-- Select Worker --';
     selectEl.appendChild(defOpt);
   }
-  
+
   var ws = gW();
   var sections = ['Indian', 'Pakistani'];
-  
+
   for (var s = 0; s < sections.length; s++) {
     var sec = sections[s];
     var group = document.createElement('optgroup');
     group.label = '-- ' + sec.toUpperCase() + ' WORKERS --';
     var added = 0;
-    
+
     for (var i = 0; i < ws.length; i++) {
       var w = ws[i];
       if (!w.on) continue;
@@ -1291,11 +1308,10 @@ function buildWorkerDropdown(selectEl, includeAll, filter) {
       group.appendChild(opt);
       added++;
     }
-    
+
     if (added > 0) selectEl.appendChild(group);
   }
-  
-  // Restore value
+
   if (val) selectEl.value = val;
 }
 
@@ -1315,14 +1331,14 @@ function getWorkerStats(wid) {
   for (var i = 0; i < att.length; i++) {
     if (att[i].status === 'completed') completed.push(att[i]);
   }
-  
+
   var totalDays = completed.length;
   var totalHrs = 0, totalOT = 0;
   for (var j = 0; j < completed.length; j++) {
     totalHrs += completed[j].total || 0;
     totalOT += completed[j].ot || 0;
   }
-  
+
   return {
     totalDays: totalDays,
     totalHrs: Math.round(totalHrs * 100) / 100,
@@ -1331,7 +1347,7 @@ function getWorkerStats(wid) {
   };
 }
 
-// ====== INIT 56 WORKERS ======
+// ====== ALL 56 WORKERS ======
 var ALL_WORKERS = [
   {wid:'IND0001',name:'Hajari Lal',prof:'Foreman',sec:'Indian'},
   {wid:'IND0002',name:'Rajeev Punia',prof:'Supervisor',sec:'Indian'},
@@ -1394,10 +1410,10 @@ var ALL_WORKERS = [
 function initWorkers() {
   var existing = gW();
   if (existing.length >= 56) return Promise.resolve();
-  
+
   var existingIds = [];
   for (var i = 0; i < existing.length; i++) existingIds.push(existing[i].wid);
-  
+
   var promises = [];
   for (var j = 0; j < ALL_WORKERS.length; j++) {
     var aw = ALL_WORKERS[j];
@@ -1413,38 +1429,27 @@ function initWorkers() {
       }));
     }
   }
-  
+
+  // Also init admin if missing
+  if (!gAd().adminId) {
+    promises.push(FB.save('admin', ADMIN_DOC, {
+      adminId: 'ADMIN001',
+      pw: 'Admin@2026',
+      name: 'Pradeep Jangir'
+    }));
+  }
+
   return Promise.all(promises);
 }
 
-// ====== RENDER FUNCTIONS (placeholders - implemented in index.html) ======
-function refreshDashboard() {
-  if (typeof renderDashboard === 'function') renderDashboard();
-}
-
-function refreshApprovals() {
-  if (typeof renderApprovals === 'function') renderApprovals();
-}
-
-function refreshLiveStatus() {
-  if (typeof renderLiveStatus === 'function') renderLiveStatus();
-}
-
-function refreshAttendanceView() {
-  if (typeof renderAttendanceView === 'function') renderAttendanceView();
-}
-
-function refreshAdminWorkers() {
-  if (typeof renderAdminWorkers === 'function') renderAdminWorkers();
-}
-
-function refreshManualEntry() {
-  if (typeof renderManualEntry === 'function') renderManualEntry();
-}
-
-function renderWorkerDashboard() {
-  if (typeof renderWorkerUI === 'function') renderWorkerUI();
-}
+// ====== RENDER STUBS (implemented in index.html) ======
+function refreshDashboard() { if (typeof renderDashboard === 'function') renderDashboard(); }
+function refreshApprovals() { if (typeof renderApprovals === 'function') renderApprovals(); }
+function refreshLiveStatus() { if (typeof renderLiveStatus === 'function') renderLiveStatus(); }
+function refreshAttendanceView() { if (typeof renderAttendanceView === 'function') renderAttendanceView(); }
+function refreshAdminWorkers() { if (typeof renderAdminWorkers === 'function') renderAdminWorkers(); }
+function refreshManualEntry() { if (typeof renderManualEntry === 'function') renderManualEntry(); }
+function renderWorkerDashboard() { if (typeof renderWorkerUI === 'function') renderWorkerUI(); }
 
 // ====== PWA INSTALL ======
 window.addEventListener('beforeinstallprompt', function(e) {
@@ -1475,7 +1480,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ====== SPEECH SYNTHESIS INIT ======
+// ====== SPEECH INIT ======
 if (window.speechSynthesis) {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = function() {
@@ -1483,4 +1488,4 @@ if (window.speechSynthesis) {
   };
 }
 
-console.log('[ALB] app.js v16 loaded - ' + COMPANY.full);
+console.log('[ALB] app.js v17 loaded - ' + COMPANY.full);
