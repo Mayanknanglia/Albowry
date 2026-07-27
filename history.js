@@ -1,964 +1,523 @@
-// AL BOWRY CARPENTRY LLC - History & Backdated Attendance
-// history.js v16 - Complete sync fix
+// AL BOWRY - History & Backdated v17
 
 var _historyDate = '';
 var _historyShift = 'All';
 var _historySection = 'All';
 var _historyWorkerFilter = 'all';
 
-// ====== INIT HISTORY SECTION ======
 function initHistory() {
   _historyDate = tD();
+  var d = document.getElementById('histDate'); if (d) d.value = _historyDate;
   loadHistoryWorkers();
   renderHistoryView();
   renderDayWiseView();
 }
 
-// ====== LOAD WORKERS INTO HISTORY DROPDOWNS ======
 function loadHistoryWorkers() {
-  var selects = [
-    document.getElementById('histWorkerSel'),
-    document.getElementById('histBdWorker'),
-    document.getElementById('histBulkFilter')
-  ];
-  
+  var selects = [document.getElementById('histWorkerSel'), document.getElementById('histBdWorker'), document.getElementById('histBulkFilter')];
   var ws = gW();
-  
   if (!ws || ws.length === 0) {
-    // Fallback: load directly from Firebase
-    FB.getAll('workers').then(function(docs) {
-      _workers = docs;
-      loadHistoryWorkers();
-    });
+    FB.getAll('workers').then(function(docs) { _workers = docs; loadHistoryWorkers(); });
     return;
   }
-  
   var sections = ['Indian', 'Pakistani'];
-  
-  for (var s = 0; s < selects.length; s++) {
-    var sel = selects[s];
-    if (!sel) continue;
-    
-    var prevVal = sel.value;
+  for (var s=0; s<selects.length; s++) {
+    var sel = selects[s]; if (!sel) continue;
+    var prev = sel.value;
     sel.innerHTML = '';
-    
     if (sel.id === 'histWorkerSel' || sel.id === 'histBulkFilter') {
-      var allOpt = document.createElement('option');
-      allOpt.value = 'all';
-      allOpt.text = '-- All Workers --';
-      sel.appendChild(allOpt);
+      var o = document.createElement('option'); o.value = 'all'; o.text = '-- All Workers --'; sel.appendChild(o);
     } else {
-      var defOpt = document.createElement('option');
-      defOpt.value = '';
-      defOpt.text = '-- Select Worker --';
-      sel.appendChild(defOpt);
+      var o2 = document.createElement('option'); o2.value = ''; o2.text = '-- Select Worker --'; sel.appendChild(o2);
     }
-    
-    for (var sc = 0; sc < sections.length; sc++) {
-      var group = document.createElement('optgroup');
-      group.label = '-- ' + sections[sc].toUpperCase() + ' --';
+    for (var sc=0; sc<sections.length; sc++) {
+      var grp = document.createElement('optgroup');
+      grp.label = '-- ' + sections[sc].toUpperCase() + ' --';
       var cnt = 0;
-      
-      for (var i = 0; i < ws.length; i++) {
+      for (var i=0; i<ws.length; i++) {
         var w = ws[i];
-        if (!w.on) continue;
-        if (w.sec !== sections[sc]) continue;
-        
+        if (!w.on || w.sec !== sections[sc]) continue;
         var opt = document.createElement('option');
-        opt.value = w.wid;
-        opt.text = w.wid + ' - ' + w.name;
-        group.appendChild(opt);
-        cnt++;
+        opt.value = w.wid; opt.text = w.wid + ' - ' + w.name;
+        grp.appendChild(opt); cnt++;
       }
-      
-      if (cnt > 0) sel.appendChild(group);
+      if (cnt > 0) sel.appendChild(grp);
     }
-    
-    if (prevVal) sel.value = prevVal;
+    if (prev) sel.value = prev;
   }
 }
 
-// ====== RENDER HISTORY VIEW (Day-wise present/absent) ======
 function renderHistoryView() {
-  var container = document.getElementById('historyViewContainer');
-  if (!container) return;
-  
+  var c = document.getElementById('historyViewContainer');
+  if (!c) return;
   var date = _historyDate || tD();
   var shift = _historyShift || 'All';
   var section = _historySection || 'All';
-  var workerFilter = _historyWorkerFilter || 'all';
-  
-  var allAtt = gA();
-  var allWorkers = gW();
-  
-  if (!allAtt || !allWorkers) {
-    container.innerHTML = '<div class="loading-msg">Loading data...</div>';
-    return;
-  }
-  
-  // Filter attendance for this date
+  var workerF = _historyWorkerFilter || 'all';
+  var all = gA(); var ws = gW();
+  if (!all || !ws) { c.innerHTML = '<div class="text-muted text-center">Loading...</div>'; return; }
+
   var dateAtt = [];
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i];
-    var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
-    if (attDate === date) dateAtt.push(a);
+  for (var i=0; i<all.length; i++) {
+    var a = all[i];
+    var d = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (d === date) dateAtt.push(a);
   }
-  
-  // Get present worker IDs (properly - no duplicate logic)
-  // KEY FIX: Use Set-like approach with indexOf
+
   var presentWids = [];
-  for (var j = 0; j < dateAtt.length; j++) {
-    var att = dateAtt[j];
-    // Only count as present if status is meaningful
-    if (att.status === 'checked_in' || att.status === 'pending_checkout' || att.status === 'completed') {
-      // Apply shift filter
-      if (shift !== 'All' && att.shift !== shift) continue;
-      if (indexOf(presentWids, att.wid) === -1) {
-        presentWids.push(att.wid);
-      }
+  for (var j=0; j<dateAtt.length; j++) {
+    var a2 = dateAtt[j];
+    if (a2.status === 'checked_in' || a2.status === 'pending_checkout' || a2.status === 'completed') {
+      if (shift !== 'All' && a2.shift !== shift) continue;
+      if (indexOf(presentWids, a2.wid) === -1) presentWids.push(a2.wid);
     }
   }
-  
-  // Build present list (with attendance records)
-  var presentList = [];
-  var processedPresent = [];
-  
-  for (var k = 0; k < dateAtt.length; k++) {
-    var a2 = dateAtt[k];
-    if (a2.status !== 'checked_in' && a2.status !== 'pending_checkout' && a2.status !== 'completed') continue;
-    if (shift !== 'All' && a2.shift !== shift) continue;
-    if (indexOf(processedPresent, a2.wid) !== -1) continue; // Skip duplicate
-    
-    var w2 = null;
-    for (var wi = 0; wi < allWorkers.length; wi++) {
-      if (allWorkers[wi].wid === a2.wid) { w2 = allWorkers[wi]; break; }
-    }
-    
-    if (!w2) continue;
-    if (section !== 'All' && w2.sec !== section) continue;
-    if (workerFilter !== 'all' && a2.wid !== workerFilter) continue;
-    
-    presentList.push({ worker: w2, att: a2 });
-    processedPresent.push(a2.wid);
-  }
-  
-  // Build absent list
-  var absentList = [];
-  for (var m = 0; m < allWorkers.length; m++) {
-    var w3 = allWorkers[m];
-    if (!w3.on) continue;
+
+  var presentList = []; var processed = [];
+  for (var k=0; k<dateAtt.length; k++) {
+    var a3 = dateAtt[k];
+    if (a3.status !== 'checked_in' && a3.status !== 'pending_checkout' && a3.status !== 'completed') continue;
+    if (shift !== 'All' && a3.shift !== shift) continue;
+    if (indexOf(processed, a3.wid) !== -1) continue;
+    var w3 = findWorker(a3.wid); if (!w3) continue;
     if (section !== 'All' && w3.sec !== section) continue;
-    if (shift !== 'All' && w3.shift !== shift) continue;
-    if (workerFilter !== 'all' && w3.wid !== workerFilter) continue;
-    
-    // Check: is this worker in presentWids for the given shift?
-    var isPresent = false;
-    for (var pi = 0; pi < presentWids.length; pi++) {
-      if (presentWids[pi] === w3.wid) { isPresent = true; break; }
-    }
-    
-    // CRITICAL FIX: If shift filter is active, check if worker has record for different shift
-    // If they do, they might appear absent for this shift but present for another
-    if (!isPresent) {
-      absentList.push(w3);
-    }
+    if (workerF !== 'all' && a3.wid !== workerF) continue;
+    presentList.push({ worker:w3, att:a3 });
+    processed.push(a3.wid);
   }
-  
-  // Stats
-  var totalActive = 0;
-  for (var ti = 0; ti < allWorkers.length; ti++) {
-    if (!allWorkers[ti].on) continue;
-    if (section !== 'All' && allWorkers[ti].sec !== section) continue;
-    if (shift !== 'All' && allWorkers[ti].shift !== shift) continue;
-    totalActive++;
+
+  var absentList = [];
+  for (var m=0; m<ws.length; m++) {
+    var w4 = ws[m];
+    if (!w4.on) continue;
+    if (section !== 'All' && w4.sec !== section) continue;
+    if (shift !== 'All' && w4.shift !== shift) continue;
+    if (workerF !== 'all' && w4.wid !== workerF) continue;
+    if (indexOf(presentWids, w4.wid) === -1) absentList.push(w4);
   }
-  
+
+  var total = 0;
+  for (var t=0; t<ws.length; t++) {
+    if (!ws[t].on) continue;
+    if (section !== 'All' && ws[t].sec !== section) continue;
+    if (shift !== 'All' && ws[t].shift !== shift) continue;
+    total++;
+  }
+
   var html = '<div class="hist-stats-row">' +
-    '<div class="hist-stat-card hist-total"><span class="hist-stat-num">' + totalActive + '</span><span>Total</span></div>' +
+    '<div class="hist-stat-card hist-total"><span class="hist-stat-num">' + total + '</span><span>Total</span></div>' +
     '<div class="hist-stat-card hist-present"><span class="hist-stat-num">' + presentList.length + '</span><span>Present</span></div>' +
     '<div class="hist-stat-card hist-absent"><span class="hist-stat-num">' + absentList.length + '</span><span>Absent</span></div>' +
     '</div>';
-  
-  // Present table
-  html += '<div class="hist-section">';
-  html += '<div class="hist-section-header hist-present-hdr"><span class="material-symbols-outlined">check_circle</span> Present (' + presentList.length + ')</div>';
-  
+
+  html += '<div><div class="hist-section-header hist-present-hdr"><span class="material-symbols-outlined">check_circle</span> Present (' + presentList.length + ')</div>';
   if (presentList.length === 0) {
-    html += '<div class="hist-empty">No workers present on ' + fmtDate(date + 'T00:00:00') + '</div>';
+    html += '<div class="hist-empty">No workers present on ' + fmtDate(date+'T00:00:00') + '</div>';
   } else {
-    html += '<div class="table-responsive"><table class="hist-table">' +
-      '<thead><tr><th>#</th><th>Worker</th><th>Section</th><th>Shift</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>OT</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-    
-    for (var p = 0; p < presentList.length; p++) {
-      var item = presentList[p];
-      var w4 = item.worker;
-      var a4 = item.att;
-      var statusBadge = getStatusBadge(a4.status);
-      var isManual = a4.backdated ? '<span class="tag-manual">Manual</span>' : '';
-      
-      html += '<tr>' +
-        '<td>' + (p + 1) + '</td>' +
-        '<td><strong>' + w4.name + '</strong><br><small style="color:#94a3b8">' + w4.wid + '</small>' + isManual + '</td>' +
-        '<td>' + w4.sec + '</td>' +
-        '<td><span class="shift-badge shift-' + (a4.shift || 'Day').toLowerCase() + '">' + (a4.shift || 'Day') + '</span></td>' +
-        '<td>' + fmtTime(a4.checkinTime || a4.checkinReqTime) + '</td>' +
-        '<td>' + fmtTime(a4.checkoutTime) + '</td>' +
-        '<td>' + (a4.total ? a4.total + 'h' : '-') + '</td>' +
-        '<td>' + (a4.ot ? a4.ot + 'h' : '-') + '</td>' +
-        '<td>' + statusBadge + '</td>' +
+    html += '<div class="table-responsive"><table class="hist-table"><thead><tr><th>#</th><th>Worker</th><th>Section</th><th>Shift</th><th>In</th><th>Out</th><th>Hours</th><th>OT</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+    for (var p=0; p<presentList.length; p++) {
+      var it = presentList[p];
+      var sb = getStatusBadge(it.att.status);
+      var isM = it.att.backdated ? '<span class="tag-manual">M</span>' : '';
+      html += '<tr><td>' + (p+1) + '</td><td><strong>' + it.worker.name + '</strong><br><small>' + it.worker.wid + '</small>' + isM + '</td>' +
+        '<td>' + it.worker.sec + '</td>' +
+        '<td><span class="shift-badge shift-' + (it.att.shift||'day').toLowerCase() + '">' + (it.att.shift||'Day') + '</span></td>' +
+        '<td>' + fmtTime(it.att.checkinTime || it.att.checkinReqTime) + '</td>' +
+        '<td>' + fmtTime(it.att.checkoutTime) + '</td>' +
+        '<td>' + (it.att.total ? it.att.total+'h' : '-') + '</td>' +
+        '<td>' + (it.att.ot ? it.att.ot+'h' : '-') + '</td>' +
+        '<td>' + sb + '</td>' +
         '<td class="hist-actions">' +
-          '<button class="btn-icon btn-edit" onclick="editHistRecord(\'' + a4.recId + '\')" title="Edit"><span class="material-symbols-outlined">edit</span></button>' +
-          (a4.status === 'checked_in' ? '<button class="btn-icon btn-success" onclick="forceCheckout(\'' + a4.recId + '\')" title="Force Checkout"><span class="material-symbols-outlined">logout</span></button>' : '') +
-          '<button class="btn-icon btn-delete" onclick="deleteHistRecord(\'' + a4.recId + '\')" title="Delete"><span class="material-symbols-outlined">delete</span></button>' +
-        '</td>' +
-        '</tr>';
+          '<button class="btn-icon btn-edit" onclick="editHistRecord(\''+it.att.recId+'\')"><span class="material-symbols-outlined">edit</span></button>' +
+          (it.att.status === 'checked_in' ? '<button class="btn-icon btn-success" onclick="forceCheckout(\''+it.att.recId+'\')"><span class="material-symbols-outlined">logout</span></button>' : '') +
+          '<button class="btn-icon btn-delete" onclick="deleteHistRecord(\''+it.att.recId+'\')"><span class="material-symbols-outlined">delete</span></button>' +
+        '</td></tr>';
     }
-    
     html += '</tbody></table></div>';
   }
   html += '</div>';
-  
-  // Absent table
-  html += '<div class="hist-section" style="margin-top:20px">';
-  html += '<div class="hist-section-header hist-absent-hdr"><span class="material-symbols-outlined">cancel</span> Absent (' + absentList.length + ')</div>';
-  
+
+  html += '<div style="margin-top:20px"><div class="hist-section-header hist-absent-hdr"><span class="material-symbols-outlined">cancel</span> Absent (' + absentList.length + ')</div>';
   if (absentList.length === 0) {
     html += '<div class="hist-empty hist-empty-good">All workers are present!</div>';
   } else {
     html += '<div class="absent-grid">';
-    for (var ab = 0; ab < absentList.length; ab++) {
+    for (var ab=0; ab<absentList.length; ab++) {
       var abW = absentList[ab];
-      html += '<div class="absent-card">' +
-        '<div class="absent-initials">' + getInitials(abW.name) + '</div>' +
-        '<div class="absent-info">' +
-          '<div class="absent-name">' + abW.name + '</div>' +
-          '<div class="absent-meta">' + abW.wid + ' | ' + abW.prof + '</div>' +
-          '<div class="absent-meta">' + abW.sec + ' | ' + abW.shift + ' Shift</div>' +
-        '</div>' +
-        '<button class="btn-absent-in" onclick="quickAddAbsent(\'' + abW.wid + '\',\'' + date + '\')" title="Add attendance">' +
-          '<span class="material-symbols-outlined">add_circle</span> Mark Present' +
-        '</button>' +
-        '</div>';
+      html += '<div class="absent-card"><div class="absent-initials">' + getInitials(abW.name) + '</div>' +
+        '<div class="absent-info"><div class="absent-name">' + abW.name + '</div>' +
+        '<div class="absent-meta">' + abW.wid + ' · ' + abW.prof + '</div>' +
+        '<div class="absent-meta">' + abW.sec + ' · ' + abW.shift + '</div></div>' +
+        '<button class="btn-absent-in" onclick="quickAddAbsent(\''+abW.wid+'\',\''+date+'\')"><span class="material-symbols-outlined">add_circle</span> Mark Present</button></div>';
     }
     html += '</div>';
   }
   html += '</div>';
-  
-  container.innerHTML = html;
+  c.innerHTML = html;
 }
 
-// ====== QUICK ADD FOR ABSENT WORKER ======
 function quickAddAbsent(wid, date) {
-  var w = findWorker(wid);
-  if (!w) return;
-  
+  var w = findWorker(wid); if (!w) return;
   var shift = w.shift;
-  var defaultIn = shift === 'Night' ? '20:00' : '08:00';
-  var defaultOut = shift === 'Night' ? '08:00' : '20:00';
-  
+  var dIn = shift === 'Night' ? '20:00' : '08:00';
+  var dOut = shift === 'Night' ? '08:00' : '20:00';
   var html = '<div class="form-grid">' +
-    '<div class="form-group">' +
-      '<label>Worker</label>' +
-      '<input type="text" value="' + w.name + '" readonly class="form-control">' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Date</label>' +
-      '<input type="date" id="qaDate" value="' + date + '" class="form-control">' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Shift</label>' +
-      '<select id="qaShift" class="form-control">' +
-        '<option value="Day"' + (shift === 'Day' ? ' selected' : '') + '>Day Shift (8AM-8PM)</option>' +
-        '<option value="Night"' + (shift === 'Night' ? ' selected' : '') + '>Night Shift (8PM-8AM)</option>' +
-      '</select>' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Check In Time</label>' +
-      '<input type="time" id="qaIn" value="' + defaultIn + '" class="form-control">' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Check Out Time</label>' +
-      '<input type="time" id="qaOut" value="' + defaultOut + '" class="form-control">' +
-    '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
-      '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="submitQuickAbsent(\'' + wid + '\')">Add Attendance</button>' +
-    '</div>';
-  
+    '<div class="form-group"><label class="form-label">Worker</label><input type="text" value="' + w.name + '" readonly class="form-control"></div>' +
+    '<div class="form-group"><label class="form-label">Date</label><input type="date" id="qaDate" value="' + date + '" class="form-control"></div>' +
+    '<div class="form-group"><label class="form-label">Shift</label><select id="qaShift" class="form-control"><option value="Day"'+(shift==='Day'?' selected':'')+'>Day</option><option value="Night"'+(shift==='Night'?' selected':'')+'>Night</option></select></div>' +
+    '<div class="form-group"><label class="form-label">In Time</label><input type="time" id="qaIn" value="'+dIn+'" class="form-control"></div>' +
+    '<div class="form-group"><label class="form-label">Out Time</label><input type="time" id="qaOut" value="'+dOut+'" class="form-control"></div>' +
+    '</div><div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
+    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-primary" onclick="submitQuickAbsent(\''+wid+'\')">Add Attendance</button></div>';
   showModal(html, 'Add Attendance - ' + w.name);
 }
-
 function submitQuickAbsent(wid) {
   var date = document.getElementById('qaDate').value;
   var shift = document.getElementById('qaShift').value;
-  var inTime = document.getElementById('qaIn').value;
-  var outTime = document.getElementById('qaOut').value;
-  
-  if (!date || !inTime || !outTime) {
-    showToast('Please fill all fields', 'error');
-    return;
-  }
-  
-  var w = findWorker(wid);
-  if (!w) return;
-  
-  var checkinISO = buildISO(date, inTime, false, null);
-  var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
-  var hrs = calcHours(checkinISO, checkoutISO);
-  
+  var inT = document.getElementById('qaIn').value;
+  var outT = document.getElementById('qaOut').value;
+  if (!date || !inT || !outT) { showToast('Fill all fields', 'error'); return; }
+  var w = findWorker(wid); if (!w) return;
+  var cin = buildISO(date, inT, false, null);
+  var cout = buildISO(date, outT, shift === 'Night', cin);
+  var hrs = calcHours(cin, cout);
   var recId = genRecId(wid, true);
   var rec = {
-    recId: recId,
-    wid: wid,
-    name: w.name,
-    prof: w.prof,
-    sec: w.sec,
-    shift: shift,
-    date: date,
-    checkinReqTime: checkinISO,
-    checkinTime: checkinISO,
-    checkoutReqTime: checkoutISO,
-    checkoutTime: checkoutISO,
-    total: hrs.total,
-    regular: hrs.regular,
-    compOT: hrs.compOT,
-    extraOT: hrs.extraOT,
-    ot: hrs.ot,
-    status: 'completed',
-    backdated: true
+    recId:recId, wid:wid, name:w.name, prof:w.prof, sec:w.sec, shift:shift, date:date,
+    checkinReqTime:cin, checkinTime:cin, checkoutReqTime:cout, checkoutTime:cout,
+    total:hrs.total, regular:hrs.regular, compOT:hrs.compOT, extraOT:hrs.extraOT, ot:hrs.ot,
+    status:'completed', backdated:true
   };
-  
   FB.save('attendance', recId, rec).then(function() {
     closeModal();
     showToast(w.name + ' attendance added!', 'success');
     renderHistoryView();
-  }).catch(function(e) {
-    showToast('Error: ' + e.message, 'error');
   });
 }
 
-// ====== RENDER DAY-WISE VIEW ======
 function renderDayWiseView() {
-  var container = document.getElementById('dayWiseContainer');
-  if (!container) return;
-  
+  var c = document.getElementById('dayWiseContainer');
+  if (!c) return;
   var date = document.getElementById('dwDate') ? document.getElementById('dwDate').value : tD();
   if (!date) date = tD();
-  
-  var allAtt = gA();
-  var allWorkers = gW();
-  
-  // Get all attendance for this date
+  var all = gA(); var ws = gW();
   var dateAtt = [];
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i];
-    var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
-    if (attDate === date) dateAtt.push(a);
+  for (var i=0; i<all.length; i++) {
+    var a = all[i];
+    var d = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (d === date) dateAtt.push(a);
   }
-  
-  // Calculate present worker IDs (no duplicates, correct logic)
   var presentWids = [];
-  for (var j = 0; j < dateAtt.length; j++) {
-    var att = dateAtt[j];
-    if (att.status === 'checked_in' || att.status === 'pending_checkout' || att.status === 'completed') {
-      if (indexOf(presentWids, att.wid) === -1) {
-        presentWids.push(att.wid);
-      }
+  for (var j=0; j<dateAtt.length; j++) {
+    var a2 = dateAtt[j];
+    if (a2.status === 'checked_in' || a2.status === 'pending_checkout' || a2.status === 'completed') {
+      if (indexOf(presentWids, a2.wid) === -1) presentWids.push(a2.wid);
     }
   }
-  
-  // Absent workers
-  var absentList = [];
-  for (var m = 0; m < allWorkers.length; m++) {
-    var w = allWorkers[m];
-    if (!w.on) continue;
-    var found = false;
-    for (var pi = 0; pi < presentWids.length; pi++) {
-      if (presentWids[pi] === w.wid) { found = true; break; }
-    }
-    if (!found) absentList.push(w);
+  var absent = [];
+  for (var m=0; m<ws.length; m++) {
+    if (!ws[m].on) continue;
+    if (indexOf(presentWids, ws[m].wid) === -1) absent.push(ws[m]);
   }
-  
+  var activeCount = 0;
+  for (var t=0; t<ws.length; t++) if (ws[t].on) activeCount++;
+
   var html = '<div class="dw-summary">' +
-    '<span class="dw-badge dw-total">Total: ' + (allWorkers.filter(function(w2) { return w2.on; }).length) + '</span>' +
+    '<span class="dw-badge dw-total">Total: ' + activeCount + '</span>' +
     '<span class="dw-badge dw-present">Present: ' + presentWids.length + '</span>' +
-    '<span class="dw-badge dw-absent">Absent: ' + absentList.length + '</span>' +
-    '</div>';
-  
-  // Present table
+    '<span class="dw-badge dw-absent">Absent: ' + absent.length + '</span></div>';
+
   html += '<h4 class="dw-title present-title">Present Workers</h4>';
-  if (presentWids.length === 0) {
-    html += '<div class="hist-empty">No attendance records for ' + date + '</div>';
-  } else {
+  if (presentWids.length === 0) html += '<div class="hist-empty">No records for ' + date + '</div>';
+  else {
     html += '<table class="dw-table"><thead><tr><th>#</th><th>Name</th><th>ID</th><th>Section</th><th>Shift</th><th>In</th><th>Out</th><th>Hours</th><th>OT</th></tr></thead><tbody>';
     var num = 1;
-    for (var k = 0; k < dateAtt.length; k++) {
-      var a2 = dateAtt[k];
-      if (a2.status !== 'checked_in' && a2.status !== 'pending_checkout' && a2.status !== 'completed') continue;
-      html += '<tr>' +
-        '<td>' + (num++) + '</td>' +
-        '<td>' + a2.name + (a2.backdated ? ' <span class="tag-manual">M</span>' : '') + '</td>' +
-        '<td>' + a2.wid + '</td>' +
-        '<td>' + a2.sec + '</td>' +
-        '<td>' + (a2.shift || 'Day') + '</td>' +
-        '<td>' + fmtTime(a2.checkinTime || a2.checkinReqTime) + '</td>' +
-        '<td>' + fmtTime(a2.checkoutTime) + '</td>' +
-        '<td>' + (a2.total ? a2.total + 'h' : '-') + '</td>' +
-        '<td>' + (a2.ot ? a2.ot + 'h' : '-') + '</td>' +
-        '</tr>';
+    for (var k=0; k<dateAtt.length; k++) {
+      var a3 = dateAtt[k];
+      if (a3.status !== 'checked_in' && a3.status !== 'pending_checkout' && a3.status !== 'completed') continue;
+      html += '<tr><td>' + (num++) + '</td><td>' + a3.name + (a3.backdated ? ' <span class="tag-manual">M</span>' : '') + '</td>' +
+        '<td>' + a3.wid + '</td><td>' + a3.sec + '</td><td>' + (a3.shift||'Day') + '</td>' +
+        '<td>' + fmtTime(a3.checkinTime || a3.checkinReqTime) + '</td>' +
+        '<td>' + fmtTime(a3.checkoutTime) + '</td>' +
+        '<td>' + (a3.total ? a3.total+'h' : '-') + '</td>' +
+        '<td>' + (a3.ot ? a3.ot+'h' : '-') + '</td></tr>';
     }
     html += '</tbody></table>';
   }
-  
-  // Absent list
+
   html += '<h4 class="dw-title absent-title" style="margin-top:20px">Absent Workers</h4>';
-  if (absentList.length === 0) {
-    html += '<div class="hist-empty hist-empty-good">All workers present!</div>';
-  } else {
+  if (absent.length === 0) html += '<div class="hist-empty hist-empty-good">All workers present!</div>';
+  else {
     html += '<div class="absent-names-list">';
-    for (var ab = 0; ab < absentList.length; ab++) {
-      var abW = absentList[ab];
-      html += '<span class="absent-name-tag">' + abW.name + ' (' + abW.wid + ')</span>';
-    }
+    for (var ab=0; ab<absent.length; ab++) html += '<span class="absent-name-tag">' + absent[ab].name + ' (' + absent[ab].wid + ')</span>';
     html += '</div>';
   }
-  
-  container.innerHTML = html;
+  c.innerHTML = html;
 }
 
-// ====== EDIT HISTORY RECORD ======
 function editHistRecord(recId) {
-  var allAtt = gA();
-  var rec = null;
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
-  }
-  if (!rec) { showToast('Record not found', 'error'); return; }
-  
+  var all = gA(); var rec = null;
+  for (var i=0; i<all.length; i++) if (all[i].recId === recId) { rec = all[i]; break; }
+  if (!rec) { showToast('Not found', 'error'); return; }
   var cinDate = rec.date || getTurkeyDate(rec.checkinTime);
-  var cinTime = rec.checkinTime ? new Date(rec.checkinTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) : '08:00';
-  var coutTime = rec.checkoutTime ? new Date(rec.checkoutTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) : '';
-  
+  var cinT = rec.checkinTime ? new Date(rec.checkinTime).toLocaleTimeString('en-GB', { timeZone:TZ, hour:'2-digit', minute:'2-digit' }) : '08:00';
+  var coutT = rec.checkoutTime ? new Date(rec.checkoutTime).toLocaleTimeString('en-GB', { timeZone:TZ, hour:'2-digit', minute:'2-digit' }) : '';
   var html = '<div class="form-grid">' +
-    '<div class="form-group">' +
-      '<label>Worker</label>' +
-      '<input type="text" value="' + rec.name + '" readonly class="form-control">' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Date</label>' +
-      '<input type="date" id="editDate" value="' + cinDate + '" class="form-control">' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Shift</label>' +
-      '<select id="editShift" class="form-control">' +
-        '<option value="Day"' + (rec.shift === 'Day' ? ' selected' : '') + '>Day Shift</option>' +
-        '<option value="Night"' + (rec.shift === 'Night' ? ' selected' : '') + '>Night Shift</option>' +
-      '</select>' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Check In Time</label>' +
-      '<input type="time" id="editCin" value="' + cinTime + '" class="form-control">' +
-    '</div>' +
-    '<div class="form-group">' +
-      '<label>Check Out Time</label>' +
-      '<input type="time" id="editCout" value="' + coutTime + '" class="form-control">' +
-    '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
-      '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="saveHistEdit(\'' + recId + '\')">Save Changes</button>' +
-    '</div>';
-  
+    '<div class="form-group"><label class="form-label">Worker</label><input type="text" value="' + rec.name + '" readonly class="form-control"></div>' +
+    '<div class="form-group"><label class="form-label">Date</label><input type="date" id="editDate" value="' + cinDate + '" class="form-control"></div>' +
+    '<div class="form-group"><label class="form-label">Shift</label><select id="editShift" class="form-control"><option value="Day"'+(rec.shift==='Day'?' selected':'')+'>Day</option><option value="Night"'+(rec.shift==='Night'?' selected':'')+'>Night</option></select></div>' +
+    '<div class="form-group"><label class="form-label">In Time</label><input type="time" id="editCin" value="'+cinT+'" class="form-control"></div>' +
+    '<div class="form-group"><label class="form-label">Out Time</label><input type="time" id="editCout" value="'+coutT+'" class="form-control"></div>' +
+    '</div><div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
+    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-primary" onclick="saveHistEdit(\''+recId+'\')">Save</button></div>';
   showModal(html, 'Edit Record - ' + rec.name);
 }
-
 function saveHistEdit(recId) {
   var date = document.getElementById('editDate').value;
   var shift = document.getElementById('editShift').value;
-  var cinTime = document.getElementById('editCin').value;
-  var coutTime = document.getElementById('editCout').value;
-  
-  if (!date || !cinTime) {
-    showToast('Date and check-in time required', 'error');
-    return;
-  }
-  
-  var checkinISO = buildISO(date, cinTime, false, null);
-  var update = {
-    date: date,
-    shift: shift,
-    checkinTime: checkinISO,
-    checkinReqTime: checkinISO,
-    backdated: true
-  };
-  
-  if (coutTime) {
-    var checkoutISO = buildISO(date, coutTime, shift === 'Night', checkinISO);
-    var hrs = calcHours(checkinISO, checkoutISO);
-    update.checkoutTime = checkoutISO;
-    update.checkoutReqTime = checkoutISO;
-    update.total = hrs.total;
-    update.regular = hrs.regular;
-    update.compOT = hrs.compOT;
-    update.extraOT = hrs.extraOT;
-    update.ot = hrs.ot;
-    update.status = 'completed';
+  var cinT = document.getElementById('editCin').value;
+  var coutT = document.getElementById('editCout').value;
+  if (!date || !cinT) { showToast('Date and in-time required', 'error'); return; }
+  var cin = buildISO(date, cinT, false, null);
+  var upd = { date:date, shift:shift, checkinTime:cin, checkinReqTime:cin, backdated:true };
+  if (coutT) {
+    var cout = buildISO(date, coutT, shift === 'Night', cin);
+    var hrs = calcHours(cin, cout);
+    upd.checkoutTime = cout; upd.checkoutReqTime = cout;
+    upd.total = hrs.total; upd.regular = hrs.regular;
+    upd.compOT = hrs.compOT; upd.extraOT = hrs.extraOT; upd.ot = hrs.ot;
+    upd.status = 'completed';
   } else {
-    update.checkoutTime = null;
-    update.checkoutReqTime = null;
-    update.total = 0;
-    update.regular = 0;
-    update.compOT = 0;
-    update.extraOT = 0;
-    update.ot = 0;
-    update.status = 'checked_in';
+    upd.checkoutTime = null; upd.checkoutReqTime = null;
+    upd.total=0; upd.regular=0; upd.compOT=0; upd.extraOT=0; upd.ot=0;
+    upd.status = 'checked_in';
   }
-  
-  FB.update('attendance', recId, update).then(function() {
+  FB.update('attendance', recId, upd).then(function() {
     closeModal();
-    showToast('Record updated!', 'success');
+    showToast('Updated!', 'success');
     renderHistoryView();
-  }).catch(function(e) {
-    showToast('Error: ' + e.message, 'error');
   });
 }
 
-// ====== DELETE HISTORY RECORD ======
 function deleteHistRecord(recId) {
-  showConfirm('Delete this attendance record? This cannot be undone.', function() {
+  showConfirm('Delete this record?', function() {
     FB.delete('attendance', recId).then(function() {
-      showToast('Record deleted', 'info');
+      showToast('Deleted', 'info');
       renderHistoryView();
-    }).catch(function(e) {
-      showToast('Error: ' + e.message, 'error');
     });
   });
 }
 
-// ====== FORCE CHECKOUT ======
 function forceCheckout(recId) {
-  var allAtt = gA();
-  var rec = null;
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
-  }
+  var all = gA(); var rec = null;
+  for (var i=0; i<all.length; i++) if (all[i].recId === recId) { rec = all[i]; break; }
   if (!rec) return;
-  
-  var defaultOut = rec.shift === 'Night' ? '08:00' : '20:00';
+  var dOut = rec.shift === 'Night' ? '08:00' : '20:00';
   var date = rec.date || getTurkeyDate(rec.checkinTime);
-  
   var html = '<p>Force checkout <strong>' + rec.name + '</strong></p>' +
-    '<div class="form-group">' +
-      '<label>Checkout Time</label>' +
-      '<input type="time" id="fcOut" value="' + defaultOut + '" class="form-control">' +
-    '</div>' +
+    '<div class="form-group"><label class="form-label">Checkout Time</label><input type="time" id="fcOut" value="'+dOut+'" class="form-control"></div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
-      '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-warning" onclick="submitForceCheckout(\'' + recId + '\',\'' + date + '\')">Force Checkout</button>' +
-    '</div>';
-  
+    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-warning" onclick="submitForceCheckout(\''+recId+'\',\''+date+'\')">Force Checkout</button></div>';
   showModal(html, 'Force Checkout');
 }
-
 function submitForceCheckout(recId, date) {
-  var outTime = document.getElementById('fcOut').value;
-  if (!outTime) { showToast('Enter checkout time', 'error'); return; }
-  
-  var allAtt = gA();
-  var rec = null;
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
-  }
+  var t = document.getElementById('fcOut').value;
+  if (!t) return;
+  var all = gA(); var rec = null;
+  for (var i=0; i<all.length; i++) if (all[i].recId === recId) { rec = all[i]; break; }
   if (!rec) return;
-  
-  var checkoutISO = buildISO(date, outTime, rec.shift === 'Night', rec.checkinTime);
-  var hrs = calcHours(rec.checkinTime, checkoutISO);
-  
+  var cout = buildISO(date, t, rec.shift === 'Night', rec.checkinTime);
+  var hrs = calcHours(rec.checkinTime, cout);
   FB.update('attendance', recId, {
-    checkoutTime: checkoutISO,
-    checkoutReqTime: checkoutISO,
-    total: hrs.total,
-    regular: hrs.regular,
-    compOT: hrs.compOT,
-    extraOT: hrs.extraOT,
-    ot: hrs.ot,
-    status: 'completed'
+    checkoutTime:cout, checkoutReqTime:cout,
+    total:hrs.total, regular:hrs.regular, compOT:hrs.compOT, extraOT:hrs.extraOT, ot:hrs.ot,
+    status:'completed'
   }).then(function() {
     closeModal();
-    showToast('Forced checkout!', 'success');
+    showToast('Force checkout done!', 'success');
     renderHistoryView();
-  }).catch(function(e) {
-    showToast('Error: ' + e.message, 'error');
   });
 }
 
-// ====== SINGLE WORKER BACKDATED ENTRY ======
 function submitBackdatedEntry() {
-  var wid = document.getElementById('histBdWorker') ? document.getElementById('histBdWorker').value : '';
-  var date = document.getElementById('histBdDate') ? document.getElementById('histBdDate').value : '';
-  var shift = document.getElementById('histBdShift') ? document.getElementById('histBdShift').value : 'Day';
-  var inTime = document.getElementById('histBdIn') ? document.getElementById('histBdIn').value : '';
-  var outTime = document.getElementById('histBdOut') ? document.getElementById('histBdOut').value : '';
-  
-  if (!wid || !date || !inTime || !outTime) {
-    showToast('Please fill all fields', 'error');
-    return;
-  }
-  
-  var w = findWorker(wid);
-  if (!w) { showToast('Worker not found', 'error'); return; }
-  
-  // Check for existing record on this date
-  var allAtt = gA();
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i];
-    var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
-    if (a.wid === wid && aDate === date) {
-      showToast(w.name + ' already has a record for ' + date + '. Delete it first.', 'warn');
+  var wid = document.getElementById('histBdWorker').value;
+  var date = document.getElementById('histBdDate').value;
+  var shift = document.getElementById('histBdShift').value;
+  var inT = document.getElementById('histBdIn').value;
+  var outT = document.getElementById('histBdOut').value;
+  if (!wid || !date || !inT || !outT) { showToast('Fill all fields', 'error'); return; }
+  var w = findWorker(wid); if (!w) return;
+  var all = gA();
+  for (var i=0; i<all.length; i++) {
+    var a = all[i];
+    var d = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (a.wid === wid && d === date) {
+      showToast(w.name + ' already has record for ' + date + '. Delete first.', 'warn');
       return;
     }
   }
-  
-  var checkinISO = buildISO(date, inTime, false, null);
-  var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
-  var hrs = calcHours(checkinISO, checkoutISO);
-  
+  var cin = buildISO(date, inT, false, null);
+  var cout = buildISO(date, outT, shift === 'Night', cin);
+  var hrs = calcHours(cin, cout);
   var recId = genRecId(wid, true);
   var rec = {
-    recId: recId,
-    wid: wid,
-    name: w.name,
-    prof: w.prof,
-    sec: w.sec,
-    shift: shift,
-    date: date,
-    checkinReqTime: checkinISO,
-    checkinTime: checkinISO,
-    checkoutReqTime: checkoutISO,
-    checkoutTime: checkoutISO,
-    total: hrs.total,
-    regular: hrs.regular,
-    compOT: hrs.compOT,
-    extraOT: hrs.extraOT,
-    ot: hrs.ot,
-    status: 'completed',
-    backdated: true
+    recId:recId, wid:wid, name:w.name, prof:w.prof, sec:w.sec, shift:shift, date:date,
+    checkinReqTime:cin, checkinTime:cin, checkoutReqTime:cout, checkoutTime:cout,
+    total:hrs.total, regular:hrs.regular, compOT:hrs.compOT, extraOT:hrs.extraOT, ot:hrs.ot,
+    status:'completed', backdated:true
   };
-  
   FB.save('attendance', recId, rec).then(function() {
-    showToast(w.name + ' backdated entry added for ' + date, 'success');
+    showToast(w.name + ' entry added for ' + date, 'success');
     renderHistoryView();
-  }).catch(function(e) {
-    showToast('Error: ' + e.message, 'error');
   });
 }
 
-// ====== BULK BACKDATED ENTRY ======
 function submitBulkBackdated() {
-  var date = document.getElementById('histBulkDate') ? document.getElementById('histBulkDate').value : '';
-  var shift = document.getElementById('histBulkShift') ? document.getElementById('histBulkShift').value : 'Day';
-  var filter = document.getElementById('histBulkFilter') ? document.getElementById('histBulkFilter').value : 'all';
-  var inTime = document.getElementById('histBulkIn') ? document.getElementById('histBulkIn').value : '';
-  var outTime = document.getElementById('histBulkOut') ? document.getElementById('histBulkOut').value : '';
-  
-  if (!date || !inTime || !outTime) {
-    showToast('Please fill date, in-time, and out-time', 'error');
-    return;
-  }
-  
-  var ws = gW();
-  var targetWorkers = [];
-  
-  for (var i = 0; i < ws.length; i++) {
-    var w = ws[i];
-    if (!w.on) continue;
+  var date = document.getElementById('histBulkDate').value;
+  var shift = document.getElementById('histBulkShift').value;
+  var filter = document.getElementById('histBulkFilter').value;
+  var inT = document.getElementById('histBulkIn').value;
+  var outT = document.getElementById('histBulkOut').value;
+  if (!date || !inT || !outT) { showToast('Fill all', 'error'); return; }
+  var ws = gW(); var targets = [];
+  for (var i=0; i<ws.length; i++) {
+    var w = ws[i]; if (!w.on) continue;
     if (filter !== 'all' && w.wid !== filter && w.sec !== filter && w.shift !== filter) continue;
-    targetWorkers.push(w);
+    targets.push(w);
   }
-  
-  if (targetWorkers.length === 0) {
-    showToast('No workers match the filter', 'warn');
-    return;
-  }
-  
-  showConfirm('Add attendance for ' + targetWorkers.length + ' workers on ' + date + '?', function() {
-    var allAtt = gA();
-    var existingOnDate = [];
-    for (var j = 0; j < allAtt.length; j++) {
-      var a = allAtt[j];
-      var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
-      if (aDate === date) existingOnDate.push(a.wid);
+  if (targets.length === 0) { showToast('No workers match', 'warn'); return; }
+  showConfirm('Add attendance for ' + targets.length + ' workers on ' + date + '?', function() {
+    var all = gA(); var existing = [];
+    for (var j=0; j<all.length; j++) {
+      var a = all[j];
+      var d = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+      if (d === date) existing.push(a.wid);
     }
-    
-    var promises = [];
-    var skipped = 0;
-    
-    for (var k = 0; k < targetWorkers.length; k++) {
-      var tw = targetWorkers[k];
-      if (indexOf(existingOnDate, tw.wid) !== -1) {
-        skipped++;
-        continue;
-      }
-      
-      var checkinISO = buildISO(date, inTime, false, null);
-      var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
-      var hrs = calcHours(checkinISO, checkoutISO);
-      
+    var promises = []; var skipped = 0;
+    for (var k=0; k<targets.length; k++) {
+      var tw = targets[k];
+      if (indexOf(existing, tw.wid) !== -1) { skipped++; continue; }
+      var cin = buildISO(date, inT, false, null);
+      var cout = buildISO(date, outT, shift === 'Night', cin);
+      var hrs = calcHours(cin, cout);
       var recId = genRecId(tw.wid, true);
-      var rec = {
-        recId: recId,
-        wid: tw.wid,
-        name: tw.name,
-        prof: tw.prof,
-        sec: tw.sec,
-        shift: shift,
-        date: date,
-        checkinReqTime: checkinISO,
-        checkinTime: checkinISO,
-        checkoutReqTime: checkoutISO,
-        checkoutTime: checkoutISO,
-        total: hrs.total,
-        regular: hrs.regular,
-        compOT: hrs.compOT,
-        extraOT: hrs.extraOT,
-        ot: hrs.ot,
-        status: 'completed',
-        backdated: true
-      };
-      
-      promises.push(FB.save('attendance', recId, rec));
+      promises.push(FB.save('attendance', recId, {
+        recId:recId, wid:tw.wid, name:tw.name, prof:tw.prof, sec:tw.sec, shift:shift, date:date,
+        checkinReqTime:cin, checkinTime:cin, checkoutReqTime:cout, checkoutTime:cout,
+        total:hrs.total, regular:hrs.regular, compOT:hrs.compOT, extraOT:hrs.extraOT, ot:hrs.ot,
+        status:'completed', backdated:true
+      }));
     }
-    
     Promise.all(promises).then(function() {
-      showToast('Added ' + promises.length + ' records. Skipped ' + skipped + ' (already exist).', 'success');
+      showToast('Added ' + promises.length + '. Skipped ' + skipped + '.', 'success');
       renderHistoryView();
-    }).catch(function(e) {
-      showToast('Error: ' + e.message, 'error');
     });
   });
 }
 
-// ====== HISTORY PDF EXPORT ======
 function exportHistoryPDF() {
   var date = _historyDate || tD();
-  var allAtt = gA();
-  var allWorkers = gW();
-  
-  // Present records
-  var presentRecs = [];
-  var presentWids = [];
-  
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i];
-    var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
-    if (attDate !== date) continue;
+  var all = gA(); var ws = gW();
+  var pRecs = []; var pWids = [];
+  for (var i=0; i<all.length; i++) {
+    var a = all[i];
+    var d = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (d !== date) continue;
     if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed') continue;
     if (_historyShift !== 'All' && a.shift !== _historyShift) continue;
     if (_historySection !== 'All' && a.sec !== _historySection) continue;
-    
-    if (indexOf(presentWids, a.wid) === -1) {
-      presentRecs.push(a);
-      presentWids.push(a.wid);
-    }
+    if (indexOf(pWids, a.wid) === -1) { pRecs.push(a); pWids.push(a.wid); }
   }
-  
-  // Absent workers
-  var absentList = [];
-  for (var j = 0; j < allWorkers.length; j++) {
-    var w = allWorkers[j];
-    if (!w.on) continue;
+  var absent = [];
+  for (var j=0; j<ws.length; j++) {
+    var w = ws[j]; if (!w.on) continue;
     if (_historySection !== 'All' && w.sec !== _historySection) continue;
     if (_historyShift !== 'All' && w.shift !== _historyShift) continue;
-    if (indexOf(presentWids, w.wid) === -1) absentList.push(w);
+    if (indexOf(pWids, w.wid) === -1) absent.push(w);
   }
-  
-  var doc = new jspdf.jsPDF();
-  var startY = addPDFHeader(doc, 'Attendance Report - ' + fmtDate(date + 'T00:00:00'), 'Present: ' + presentRecs.length + ' | Absent: ' + absentList.length);
-  
-  // Present table
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(16, 185, 129);
-  doc.text('PRESENT WORKERS (' + presentRecs.length + ')', 14, startY + 8);
-  
-  if (presentRecs.length > 0) {
-    var pRows = [];
-    for (var p = 0; p < presentRecs.length; p++) {
-      var r = presentRecs[p];
-      pRows.push([
-        p + 1,
-        r.name,
-        r.wid,
-        r.sec,
-        r.shift || 'Day',
-        fmtTime(r.checkinTime || r.checkinReqTime),
-        fmtTime(r.checkoutTime) || '-',
-        (r.total || 0) + 'h',
-        (r.ot || 0) + 'h',
-        r.status === 'completed' ? 'Done' : 'Active'
-      ]);
+  loadLogoForPDF().then(function() {
+    var doc = new jspdf.jsPDF();
+    var startY = addPDFHeader(doc, 'Attendance - ' + fmtDate(date+'T00:00:00'), 'Present: ' + pRecs.length + ' | Absent: ' + absent.length);
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(5,150,105);
+    doc.text('PRESENT WORKERS (' + pRecs.length + ')', 14, startY + 8);
+    if (pRecs.length > 0) {
+      var rows = [];
+      for (var p=0; p<pRecs.length; p++) {
+        var r = pRecs[p];
+        rows.push([p+1, r.name, r.wid, r.sec, r.shift||'Day', fmtTime(r.checkinTime||r.checkinReqTime), fmtTime(r.checkoutTime)||'-', (r.total||0)+'h', (r.ot||0)+'h', r.status==='completed'?'Done':'Active']);
+      }
+      doc.autoTable({ startY:startY+12, head:[['#','Name','ID','Section','Shift','In','Out','Hours','OT','Status']], body:rows,
+        theme:'grid', styles:{fontSize:8, cellPadding:2}, headStyles:{fillColor:[5,150,105], textColor:255},
+        alternateRowStyles:{fillColor:[240,255,250]} });
     }
-    
-    doc.autoTable({
-      startY: startY + 12,
-      head: [['#', 'Name', 'ID', 'Section', 'Shift', 'Check In', 'Check Out', 'Hours', 'OT', 'Status']],
-      body: pRows,
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [240, 255, 250] }
-    });
-  }
-  
-  var finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : startY + 20;
-  
-  // Absent table
-  if (finalY + 40 > doc.internal.pageSize.getHeight() - 20) {
-    doc.addPage();
-    finalY = 20;
-  }
-  
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(239, 68, 68);
-  doc.text('ABSENT WORKERS (' + absentList.length + ')', 14, finalY);
-  
-  if (absentList.length > 0) {
-    var aRows = [];
-    for (var ab = 0; ab < absentList.length; ab++) {
-      var abW = absentList[ab];
-      aRows.push([ab + 1, abW.name, abW.wid, abW.sec, abW.prof, abW.shift]);
+    var finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : startY + 20;
+    if (finalY + 40 > doc.internal.pageSize.getHeight() - 20) { doc.addPage(); finalY = 20; }
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(220,38,38);
+    doc.text('ABSENT WORKERS (' + absent.length + ')', 14, finalY);
+    if (absent.length > 0) {
+      var aRows = [];
+      for (var ab=0; ab<absent.length; ab++) {
+        var abW = absent[ab];
+        aRows.push([ab+1, abW.name, abW.wid, abW.sec, abW.prof, abW.shift]);
+      }
+      doc.autoTable({ startY:finalY+4, head:[['#','Name','ID','Section','Profession','Shift']], body:aRows,
+        theme:'grid', styles:{fontSize:8, cellPadding:2}, headStyles:{fillColor:[220,38,38], textColor:255},
+        alternateRowStyles:{fillColor:[255,245,245]} });
     }
-    
-    doc.autoTable({
-      startY: finalY + 4,
-      head: [['#', 'Name', 'ID', 'Section', 'Profession', 'Shift']],
-      body: aRows,
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [239, 68, 68], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [255, 245, 245] }
-    });
-  }
-  
-  addPDFFooter(doc);
-  doc.save('albowry_attendance_' + date + '.pdf');
-  showToast('PDF downloaded!', 'success');
+    addPDFFooter(doc);
+    doc.save('albowry_attendance_' + date + '.pdf');
+    showToast('PDF downloaded!', 'success');
+  });
 }
 
-// ====== HISTORY EXCEL EXPORT ======
 function exportHistoryExcel() {
   var date = _historyDate || tD();
-  var allAtt = gA();
-  var allWorkers = gW();
-  
-  var presentRecs = [];
-  var presentWids = [];
-  
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i];
-    var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
-    if (attDate !== date) continue;
+  var all = gA(); var ws = gW();
+  var pRecs = []; var pWids = [];
+  for (var i=0; i<all.length; i++) {
+    var a = all[i];
+    var d = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (d !== date) continue;
     if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed') continue;
-    if (_historyShift !== 'All' && a.shift !== _historyShift) continue;
-    if (_historySection !== 'All' && a.sec !== _historySection) continue;
-    
-    if (indexOf(presentWids, a.wid) === -1) {
-      presentRecs.push(a);
-      presentWids.push(a.wid);
-    }
+    if (indexOf(pWids, a.wid) === -1) { pRecs.push(a); pWids.push(a.wid); }
   }
-  
-  var absentList = [];
-  for (var j = 0; j < allWorkers.length; j++) {
-    var w = allWorkers[j];
-    if (!w.on) continue;
-    if (_historySection !== 'All' && w.sec !== _historySection) continue;
-    if (_historyShift !== 'All' && w.shift !== _historyShift) continue;
-    if (indexOf(presentWids, w.wid) === -1) absentList.push(w);
+  var absent = [];
+  for (var j=0; j<ws.length; j++) {
+    if (!ws[j].on) continue;
+    if (indexOf(pWids, ws[j].wid) === -1) absent.push(ws[j]);
   }
-  
-  var csvContent = COMPANY.full + '\nDate: ' + date + '\nPresent: ' + presentRecs.length + ' | Absent: ' + absentList.length + '\n\n';
-  csvContent += 'PRESENT WORKERS\n';
-  csvContent += '#,Name,Worker ID,Section,Shift,Check In,Check Out,Total Hours,OT Hours,Status\n';
-  
-  for (var p = 0; p < presentRecs.length; p++) {
-    var r = presentRecs[p];
-    csvContent += (p+1) + ',"' + r.name + '",' + r.wid + ',' + r.sec + ',' + (r.shift||'Day') + ',' +
-      fmtTime(r.checkinTime||r.checkinReqTime) + ',' + (fmtTime(r.checkoutTime)||'-') + ',' +
-      (r.total||0) + ',' + (r.ot||0) + ',' + r.status + '\n';
+  var csv = COMPANY.full + '\nDate: ' + date + '\n\nPRESENT WORKERS\n#,Name,ID,Section,Shift,In,Out,Total,OT,Status\n';
+  for (var p=0; p<pRecs.length; p++) {
+    var r = pRecs[p];
+    csv += (p+1) + ',"' + r.name + '",' + r.wid + ',' + r.sec + ',' + (r.shift||'Day') + ',' + fmtTime(r.checkinTime||r.checkinReqTime) + ',' + (fmtTime(r.checkoutTime)||'-') + ',' + (r.total||0) + ',' + (r.ot||0) + ',' + r.status + '\n';
   }
-  
-  csvContent += '\nABSENT WORKERS\n';
-  csvContent += '#,Name,Worker ID,Section,Profession,Default Shift\n';
-  
-  for (var ab = 0; ab < absentList.length; ab++) {
-    var abW = absentList[ab];
-    csvContent += (ab+1) + ',"' + abW.name + '",' + abW.wid + ',' + abW.sec + ',"' + abW.prof + '",' + abW.shift + '\n';
+  csv += '\nABSENT WORKERS\n#,Name,ID,Section,Profession,Shift\n';
+  for (var ab=0; ab<absent.length; ab++) {
+    var abW = absent[ab];
+    csv += (ab+1) + ',"' + abW.name + '",' + abW.wid + ',' + abW.sec + ',"' + abW.prof + '",' + abW.shift + '\n';
   }
-  
-  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  var blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
-  var link = document.createElement('a');
-  link.href = url;
-  link.download = 'albowry_attendance_' + date + '.csv';
-  link.click();
+  var a = document.createElement('a');
+  a.href = url; a.download = 'albowry_attendance_' + date + '.csv'; a.click();
   URL.revokeObjectURL(url);
   showToast('Excel/CSV downloaded!', 'success');
 }
 
-// ====== HELPER: STATUS BADGE ======
-function getStatusBadge(status) {
-  var badges = {
-    'pending_checkin': '<span class="badge badge-warn">Pending In</span>',
-    'checked_in': '<span class="badge badge-info">Working</span>',
-    'pending_checkout': '<span class="badge badge-warn">Pending Out</span>',
-    'completed': '<span class="badge badge-success">Completed</span>'
-  };
-  return badges[status] || '<span class="badge badge-muted">' + status + '</span>';
-}
-
-// ====== HELPER: INITIALS ======
-function getInitials(name) {
-  if (!name) return '?';
-  var parts = name.split(' ');
-  if (parts.length >= 2) return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
-  return name.substring(0, 2).toUpperCase();
-}
-
-// ====== EVENT LISTENERS ======
 document.addEventListener('DOMContentLoaded', function() {
-  var histDateInput = document.getElementById('histDate');
-  if (histDateInput) {
-    histDateInput.addEventListener('change', function() {
-      _historyDate = this.value;
-      renderHistoryView();
-    });
-  }
-  
-  var histShiftSel = document.getElementById('histShift');
-  if (histShiftSel) {
-    histShiftSel.addEventListener('change', function() {
-      _historyShift = this.value;
-      renderHistoryView();
-    });
-  }
-  
-  var histSecSel = document.getElementById('histSection');
-  if (histSecSel) {
-    histSecSel.addEventListener('change', function() {
-      _historySection = this.value;
-      renderHistoryView();
-    });
-  }
-  
-  var dwDateInput = document.getElementById('dwDate');
-  if (dwDateInput) {
-    dwDateInput.addEventListener('change', function() {
-      renderDayWiseView();
-    });
-  }
+  var d = document.getElementById('histDate');
+  if (d) d.addEventListener('change', function() { _historyDate = this.value; renderHistoryView(); });
+  var s = document.getElementById('histShift');
+  if (s) s.addEventListener('change', function() { _historyShift = this.value; renderHistoryView(); });
+  var se = document.getElementById('histSection');
+  if (se) se.addEventListener('change', function() { _historySection = this.value; renderHistoryView(); });
+  var w = document.getElementById('histWorkerSel');
+  if (w) w.addEventListener('change', function() { _historyWorkerFilter = this.value; renderHistoryView(); });
+  var dw = document.getElementById('dwDate');
+  if (dw) dw.addEventListener('change', function() { renderDayWiseView(); });
 });
 
-console.log('[ALB] history.js v16 loaded');
+console.log('[ALB] history.js v17 loaded');
