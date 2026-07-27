@@ -1,244 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1e40af">
-  <meta name="description" content="AL BOWRY CARPENTRY LLC - Attendance Management System - COP31 Project Antalya Turkey">
-  <title>AL BOWRY CARPENTRY LLC | Attendance</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="logo.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=8">
-  <link rel="stylesheet" href="mobile.css?v=8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e40af">
+<title>AL BOWRY CARPENTRY LLC | Attendance</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="logo.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="mobile.css?v=10">
 </head>
 <body>
 
-<!-- ====== LOADING SCREEN ====== -->
+<!-- LOADING -->
 <div id="loadingScreen" class="loading-screen">
   <div class="loading-content">
-    <div class="loading-logo">
-      <img src="logo.png?v=3" alt="AL BOWRY" class="loading-logo-img"
-           onerror="this.outerHTML='<div class=\'logo-box-lg\'>A</div>'">
-    </div>
+    <img src="logo.png?v=3" alt="AL BOWRY" class="loading-logo-img" onerror="this.outerHTML='<div class=\'logo-box-lg\'>A</div>'">
     <div class="loading-company">AL BOWRY CARPENTRY LLC</div>
-    <div class="loading-project">PROJECT COP31 | Antalya, Turkey</div>
-    <div class="loading-spinner">
-      <div class="spinner"></div>
-    </div>
+    <div class="loading-project">PROJECT COP31 · Antalya, Turkey</div>
+    <div class="spinner"></div>
     <div class="loading-text" id="loadingText">Initializing...</div>
-    <div class="loading-sub">Registered: Sharjah, UAE | www.albowry.com</div>
+    <div class="loading-sub">Registered: Sharjah, UAE · www.albowry.com</div>
   </div>
 </div>
 
-<!-- ====== INSTALL BANNER ====== -->
 <div id="installBanner" class="install-banner" style="display:none">
   <div class="install-banner-content">
     <span class="material-symbols-outlined">install_mobile</span>
-    <span>Install AL BOWRY App for offline access</span>
+    <span>Install AL BOWRY App</span>
     <button class="btn btn-sm btn-white" onclick="installApp()">Install</button>
     <button class="install-close" onclick="document.getElementById('installBanner').style.display='none'">&times;</button>
   </div>
 </div>
 
-<!-- ====== TOAST CONTAINER ====== -->
 <div id="toastContainer"></div>
 
-<!-- ====== LOGIN PAGE - SPLIT SCREEN PREMIUM ====== -->
-<div id="loginPage" class="login-page-premium" style="display:none">
-
-  <!-- LEFT SIDE - Brand Panel -->
-  <div class="login-brand-panel">
-    <div class="brand-bg-shapes">
-      <div class="brand-shape brand-shape-1"></div>
-      <div class="brand-shape brand-shape-2"></div>
-      <div class="brand-shape brand-shape-3"></div>
-    </div>
-
-    <div class="brand-content">
-      <div class="brand-logo-wrap">
-        <img src="logo.png?v=3" alt="AL BOWRY" class="brand-logo-img"
-             onerror="this.outerHTML='<div class=\'logo-box-xl\' style=\'background:white;color:var(--primary)\'>A</div>'">
-      </div>
-
-      <div class="brand-title-wrap">
-        <h1 class="brand-title">AL BOWRY</h1>
-        <div class="brand-subtitle">CARPENTRY</div>
-        <div class="brand-divider"></div>
-        <p class="brand-tagline">Premium woodworking and carpentry solutions with excellence in craftsmanship.</p>
-      </div>
-
-      <div class="brand-features">
-        <div class="brand-feature">
-          <div class="feature-icon feature-icon-gold">
-            <span class="material-symbols-outlined">workspace_premium</span>
-          </div>
-          <div class="feature-text">
-            <div class="feature-title">Premium Quality</div>
-            <div class="feature-desc">Excellence Guaranteed</div>
-          </div>
-        </div>
-
-        <div class="brand-feature">
-          <div class="feature-icon feature-icon-blue">
-            <span class="material-symbols-outlined">handyman</span>
-          </div>
-          <div class="feature-text">
-            <div class="feature-title">Expert Team</div>
-            <div class="feature-desc">Skilled Craftsmen</div>
-          </div>
-        </div>
-
-        <div class="brand-feature">
-          <div class="feature-icon feature-icon-green">
-            <span class="material-symbols-outlined">verified</span>
-          </div>
-          <div class="feature-text">
-            <div class="feature-title">Trusted Service</div>
-            <div class="feature-desc">Since Years</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="brand-footer">
-        <div class="brand-project-tag">
-          <span class="material-symbols-outlined">construction</span>
-          PROJECT COP31 · ANTALYA · TURKEY
-        </div>
-        <div class="brand-location-info">
-          <span><span class="material-symbols-outlined">business</span> Sharjah, UAE</span>
-          <span class="brand-dot">·</span>
-          <span><span class="material-symbols-outlined">language</span> www.albowry.com</span>
-        </div>
-      </div>
-    </div>
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-page" style="display:none">
+  <div class="login-bg">
+    <div class="login-bg-shape shape1"></div>
+    <div class="login-bg-shape shape2"></div>
+    <div class="login-bg-shape shape3"></div>
   </div>
-
-  <!-- RIGHT SIDE - Login Panel -->
-  <div class="login-form-panel">
-    <div class="login-form-scroll">
-      <div class="login-form-card">
-        <div class="login-form-header">
-          <h2 class="login-welcome">Welcome Back <span class="wave">👋</span></h2>
-          <p class="login-subtitle">Sign in to Attendance System</p>
-          <div class="login-clock-badge" id="loginClockBadge">
-            <span class="clock-live-dot"></span>
-            <span id="loginClock">Loading...</span>
-            <span class="clock-tz">TURKEY</span>
-          </div>
+  <div class="login-container">
+    <div class="login-header">
+      <img src="logo.png?v=3" alt="AL BOWRY" class="login-logo-img" onerror="this.outerHTML='<div class=\'logo-box-xl\'>A</div>'">
+      <div class="login-company-text">
+        <div class="login-company-name">AL BOWRY <span>CARPENTRY LLC</span></div>
+        <div class="login-project-tag">
+          <span class="material-symbols-outlined">construction</span>
+          PROJECT COP31 · ANTALYA, TURKEY
         </div>
-
-        <div class="login-tabs">
-          <button class="login-tab active" id="tabWorker" onclick="switchLoginTab('worker')">
-            <span class="material-symbols-outlined">person</span> Worker
-          </button>
-          <button class="login-tab" id="tabAdmin" onclick="switchLoginTab('admin')">
-            <span class="material-symbols-outlined">admin_panel_settings</span> Admin
-          </button>
-        </div>
-
-        <!-- Worker Form -->
-        <div id="workerLoginForm" class="login-form">
-          <div class="form-group">
-            <label class="form-label">Select Your Name</label>
-            <select id="workerNameSel" class="form-control form-select-lg">
-              <option value="">— Choose your name —</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Select Shift</label>
-            <div class="shift-selector">
-              <label class="shift-option">
-                <input type="radio" name="loginShift" value="Day" checked>
-                <span class="shift-opt-content">
-                  <span class="material-symbols-outlined">wb_sunny</span>
-                  <span>Day Shift</span>
-                  <small>8AM - 8PM</small>
-                </span>
-              </label>
-              <label class="shift-option">
-                <input type="radio" name="loginShift" value="Night">
-                <span class="shift-opt-content">
-                  <span class="material-symbols-outlined">nights_stay</span>
-                  <span>Night Shift</span>
-                  <small>8PM - 8AM</small>
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <div class="input-with-icon">
-              <span class="material-symbols-outlined input-icon">lock</span>
-              <input type="password" id="workerPw" class="form-control" placeholder="Enter your password">
-              <button type="button" class="pw-toggle" onclick="togglePw('workerPw', this)">
-                <span class="material-symbols-outlined">visibility</span>
-              </button>
-            </div>
-          </div>
-
-          <button class="btn-signin" onclick="doWorkerLogin()">
-            <span class="material-symbols-outlined">login</span> Sign In
-          </button>
-
-          <div class="login-hint">
-            <span class="material-symbols-outlined">info</span>
-            Default password: <strong>Worker@123</strong>
-          </div>
-        </div>
-
-        <!-- Admin Form -->
-        <div id="adminLoginForm" class="login-form" style="display:none">
-          <div class="form-group">
-            <label class="form-label">Admin ID</label>
-            <div class="input-with-icon">
-              <span class="material-symbols-outlined input-icon">badge</span>
-              <input type="text" id="adminIdInp" class="form-control" placeholder="Enter Admin ID" value="ADMIN001">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <div class="input-with-icon">
-              <span class="material-symbols-outlined input-icon">lock</span>
-              <input type="password" id="adminPwInp" class="form-control" placeholder="Enter password">
-              <button type="button" class="pw-toggle" onclick="togglePw('adminPwInp', this)">
-                <span class="material-symbols-outlined">visibility</span>
-              </button>
-            </div>
-          </div>
-
-          <button class="btn-signin" onclick="doAdminLogin()">
-            <span class="material-symbols-outlined">admin_panel_settings</span> Admin Sign In
-          </button>
-        </div>
-
-        <div class="login-form-footer">
-          <div>AL BOWRY CARPENTRY LLC © 2026</div>
-          <div>v17 · <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
+        <div class="login-location-row">
+          <span><span class="material-symbols-outlined">business</span> Sharjah, UAE</span>
+          <span><span class="material-symbols-outlined">location_on</span> Antalya, Turkey</span>
         </div>
       </div>
+    </div>
+
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabWorker" onclick="switchLoginTab('worker')">
+        <span class="material-symbols-outlined">person</span> Worker
+      </button>
+      <button class="login-tab" id="tabAdmin" onclick="switchLoginTab('admin')">
+        <span class="material-symbols-outlined">admin_panel_settings</span> Admin
+      </button>
+    </div>
+
+    <div id="workerLoginForm" class="login-form">
+      <div class="form-group">
+        <label class="form-label">Select Your Name</label>
+        <select id="workerNameSel" class="form-control form-select-lg">
+          <option value="">— Choose your name —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select Shift</label>
+        <div class="shift-selector">
+          <label class="shift-option">
+            <input type="radio" name="loginShift" value="Day" checked>
+            <span class="shift-opt-content">
+              <span class="material-symbols-outlined">wb_sunny</span>
+              <span>Day Shift</span>
+              <small>8AM - 8PM</small>
+            </span>
+          </label>
+          <label class="shift-option">
+            <input type="radio" name="loginShift" value="Night">
+            <span class="shift-opt-content">
+              <span class="material-symbols-outlined">nights_stay</span>
+              <span>Night Shift</span>
+              <small>8PM - 8AM</small>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-with-icon">
+          <span class="material-symbols-outlined input-icon">lock</span>
+          <input type="password" id="workerPw" class="form-control" placeholder="Enter password">
+          <button type="button" class="pw-toggle" onclick="togglePw('workerPw', this)">
+            <span class="material-symbols-outlined">visibility</span>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="doWorkerLogin()">
+        <span class="material-symbols-outlined">login</span> Sign In
+      </button>
+      <div class="login-hint">Default password: <strong>Worker@123</strong></div>
+    </div>
+
+    <div id="adminLoginForm" class="login-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Admin ID</label>
+        <div class="input-with-icon">
+          <span class="material-symbols-outlined input-icon">badge</span>
+          <input type="text" id="adminIdInp" class="form-control" value="ADMIN001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-with-icon">
+          <span class="material-symbols-outlined input-icon">lock</span>
+          <input type="password" id="adminPwInp" class="form-control" placeholder="Enter password">
+          <button type="button" class="pw-toggle" onclick="togglePw('adminPwInp', this)">
+            <span class="material-symbols-outlined">visibility</span>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="doAdminLogin()">
+        <span class="material-symbols-outlined">admin_panel_settings</span> Admin Sign In
+      </button>
+    </div>
+
+    <div class="login-footer">
+      <div>AL BOWRY CARPENTRY LLC © 2026</div>
+      <div>v17 · <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
     </div>
   </div>
 </div>
 
-<!-- ====== WORKER DASHBOARD ====== -->
+<!-- WORKER DASHBOARD -->
 <div id="workerDashboard" style="display:none">
   <nav class="worker-nav">
     <div class="worker-nav-brand">
-      <img src="logo.png?v=3" alt="A" class="nav-logo-img"
-           onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
+      <img src="logo.png?v=3" alt="A" class="nav-logo-img" onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
       <span>AL BOWRY CARPENTRY LLC</span>
     </div>
     <div class="worker-nav-right">
-      <div class="sync-indicator" title="Synced">
-        <span class="sync-dot sync-ok"></span>
-      </div>
+      <div class="sync-badge sync-good"><span class="sync-dot sync-ok"></span> Synced</div>
       <button class="btn btn-sm btn-outline-white" onclick="logout()">
         <span class="material-symbols-outlined">logout</span> Logout
       </button>
@@ -267,17 +182,16 @@
       <div class="worker-card">
         <div class="worker-card-header">
           <span class="material-symbols-outlined">fingerprint</span>
-          <h3>Attendance</h3>
+          <h3>Today's Attendance</h3>
         </div>
         <div class="worker-card-body">
           <div id="workerStatusCard" class="worker-status-display">
-            <div class="status-icon-wrap">
-              <span class="material-symbols-outlined status-icon-main" id="workerStatusIcon">pending</span>
-            </div>
-            <div class="status-text" id="workerStatusText">No attendance today</div>
-            <div class="status-detail" id="workerStatusDetail"></div>
+            <span class="material-symbols-outlined status-icon-main" id="workerStatusIcon">schedule</span>
+            <div class="status-text" id="workerStatusText">Not checked in today</div>
+            <div class="status-detail" id="workerStatusDetail">Tap button below to request check-in</div>
           </div>
-          <div class="worker-btn-group" id="workerBtnGroup">
+
+          <div class="worker-btn-group">
             <button class="btn btn-checkin btn-block" id="btnCheckin" onclick="requestCheckin()">
               <span class="material-symbols-outlined">login</span> Request Check In
             </button>
@@ -285,14 +199,16 @@
               <span class="material-symbols-outlined">logout</span> Request Check Out
             </button>
           </div>
+
           <div id="pendingMsg" class="pending-msg" style="display:none">
             <span class="material-symbols-outlined spin-slow">hourglass_top</span>
             <span>Waiting for admin approval...</span>
           </div>
+
           <div id="completedMsg" class="completed-msg" style="display:none">
             <span class="material-symbols-outlined">verified</span>
             <div>
-              <strong>Today's Attendance Completed</strong>
+              <strong>Attendance Completed!</strong>
               <div id="completedDetail" class="completed-detail-text"></div>
             </div>
           </div>
@@ -307,17 +223,17 @@
         <div class="worker-card-body">
           <div class="worker-stats-grid">
             <div class="wstat-item wstat-days">
-              <div class="wstat-icon"><span class="material-symbols-outlined">calendar_month</span></div>
+              <span class="material-symbols-outlined">calendar_month</span>
               <div class="wstat-num" id="wstatDays">0</div>
               <div class="wstat-label">Total Days</div>
             </div>
             <div class="wstat-item wstat-hours">
-              <div class="wstat-icon"><span class="material-symbols-outlined">schedule</span></div>
+              <span class="material-symbols-outlined">schedule</span>
               <div class="wstat-num" id="wstatHours">0h</div>
               <div class="wstat-label">Total Hours</div>
             </div>
             <div class="wstat-item wstat-ot">
-              <div class="wstat-icon"><span class="material-symbols-outlined">more_time</span></div>
+              <span class="material-symbols-outlined">more_time</span>
               <div class="wstat-num" id="wstatOT">0h</div>
               <div class="wstat-label">Total OT</div>
             </div>
@@ -334,15 +250,12 @@
       </div>
       <div class="worker-card-body">
         <div class="table-responsive">
-          <table class="data-table" id="workerHistTable">
+          <table class="data-table">
             <thead>
-              <tr>
-                <th>#</th><th>Date</th><th>Shift</th><th>Check In</th>
-                <th>Check Out</th><th>Hours</th><th>OT</th><th>Status</th>
-              </tr>
+              <tr><th>#</th><th>Date</th><th>Shift</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>OT</th><th>Status</th></tr>
             </thead>
             <tbody id="workerHistBody">
-              <tr><td colspan="8" class="text-center text-muted">No records found</td></tr>
+              <tr><td colspan="8" class="text-center text-muted">No records</td></tr>
             </tbody>
           </table>
         </div>
@@ -358,15 +271,15 @@
         <div class="form-grid form-grid-3">
           <div class="form-group">
             <label class="form-label">Current Password</label>
-            <input type="password" id="wpOld" class="form-control" placeholder="Current">
+            <input type="password" id="wpOld" class="form-control">
           </div>
           <div class="form-group">
             <label class="form-label">New Password</label>
-            <input type="password" id="wpNew" class="form-control" placeholder="Min 6 chars">
+            <input type="password" id="wpNew" class="form-control">
           </div>
           <div class="form-group">
-            <label class="form-label">Confirm</label>
-            <input type="password" id="wpConf" class="form-control" placeholder="Confirm">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" id="wpConf" class="form-control">
           </div>
         </div>
         <button class="btn btn-primary" onclick="doChangeWorkerPw()" style="margin-top:14px">
@@ -376,18 +289,17 @@
     </div>
 
     <div class="worker-footer">
-      <img src="logo.png?v=3" alt="" style="width:18px;height:18px;object-fit:contain;border-radius:3px;opacity:0.4" onerror="this.style.display='none'">
+      <img src="logo.png?v=3" alt="" style="width:18px;height:18px;border-radius:3px;opacity:0.4" onerror="this.style.display='none'">
       <span>AL BOWRY CARPENTRY LLC · COP31 Project · v17</span>
     </div>
   </div>
 </div>
 
-<!-- ====== ADMIN PANEL ====== -->
+<!-- ADMIN PANEL -->
 <div id="adminPanel" style="display:none">
-  <nav class="admin-nav" id="adminNav">
+  <nav class="admin-nav">
     <div class="admin-nav-brand">
-      <img src="logo.png?v=3" alt="A" class="nav-logo-img"
-           onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
+      <img src="logo.png?v=3" alt="A" class="nav-logo-img" onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
       <div class="admin-nav-title">
         <span class="admin-nav-company">AL BOWRY CARPENTRY LLC</span>
         <span class="admin-nav-project">COP31 Project · Antalya, Turkey</span>
@@ -401,7 +313,7 @@
         <span class="material-symbols-outlined">admin_panel_settings</span>
         <span id="adminDisplayName">Admin</span>
       </div>
-      <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+      <button class="hamburger" onclick="toggleSidebar()">
         <span></span><span></span><span></span>
       </button>
       <button class="btn btn-sm btn-outline-white" onclick="logout()">
@@ -457,9 +369,8 @@
             <span class="material-symbols-outlined">settings</span> Settings
           </a>
         </nav>
-
         <div class="sidebar-footer">
-          <img src="logo.png?v=3" alt="" style="width:28px;height:28px;object-fit:contain;border-radius:6px;opacity:0.6" onerror="this.style.display='none'">
+          <img src="logo.png?v=3" alt="" style="width:28px;height:28px;border-radius:6px;opacity:0.6" onerror="this.style.display='none'">
           <div class="sidebar-footer-company">AL BOWRY CARPENTRY LLC</div>
           <div class="sidebar-footer-ver">v17 · Attendance System</div>
           <div class="sidebar-footer-site">COP31 · Antalya, Turkey</div>
@@ -469,131 +380,69 @@
 
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <main class="admin-main" id="adminMain">
-
+    <main class="admin-main">
       <!-- DASHBOARD -->
       <section class="admin-section" id="secDashboard">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">dashboard</span> Dashboard</h2>
-          <div class="section-header-right">
-            <div class="turkey-clock-badge">
-              <span class="material-symbols-outlined">schedule</span>
-              <span id="adminClock">Loading...</span>
-            </div>
+          <div class="turkey-clock-badge">
+            <span class="material-symbols-outlined">schedule</span>
+            <span id="adminClock">Loading...</span>
           </div>
         </div>
-
-        <div class="stats-grid" id="dashStatsGrid">
+        <div class="stats-grid">
           <div class="stat-card stat-total">
             <div class="stat-icon"><span class="material-symbols-outlined">group</span></div>
-            <div class="stat-content">
-              <div class="stat-num" id="dTotalWorkers">56</div>
-              <div class="stat-label">Total Workers</div>
-            </div>
+            <div class="stat-content"><div class="stat-num" id="dTotalWorkers">56</div><div class="stat-label">Total Workers</div></div>
           </div>
           <div class="stat-card stat-present">
             <div class="stat-icon"><span class="material-symbols-outlined">check_circle</span></div>
-            <div class="stat-content">
-              <div class="stat-num" id="dPresent">0</div>
-              <div class="stat-label">Present Today</div>
-            </div>
+            <div class="stat-content"><div class="stat-num" id="dPresent">0</div><div class="stat-label">Present Today</div></div>
           </div>
           <div class="stat-card stat-absent">
             <div class="stat-icon"><span class="material-symbols-outlined">cancel</span></div>
-            <div class="stat-content">
-              <div class="stat-num" id="dAbsent">0</div>
-              <div class="stat-label">Absent Today</div>
-            </div>
+            <div class="stat-content"><div class="stat-num" id="dAbsent">0</div><div class="stat-label">Absent Today</div></div>
           </div>
           <div class="stat-card stat-working">
             <div class="stat-icon"><span class="material-symbols-outlined">engineering</span></div>
-            <div class="stat-content">
-              <div class="stat-num" id="dWorking">0</div>
-              <div class="stat-label">Working Now</div>
-            </div>
+            <div class="stat-content"><div class="stat-num" id="dWorking">0</div><div class="stat-label">Working Now</div></div>
           </div>
           <div class="stat-card stat-done">
             <div class="stat-icon"><span class="material-symbols-outlined">task_alt</span></div>
-            <div class="stat-content">
-              <div class="stat-num" id="dDone">0</div>
-              <div class="stat-label">Completed</div>
-            </div>
+            <div class="stat-content"><div class="stat-num" id="dDone">0</div><div class="stat-label">Completed</div></div>
           </div>
           <div class="stat-card stat-pending">
             <div class="stat-icon"><span class="material-symbols-outlined">pending</span></div>
-            <div class="stat-content">
-              <div class="stat-num" id="dPending">0</div>
-              <div class="stat-label">Pending</div>
-            </div>
+            <div class="stat-content"><div class="stat-num" id="dPending">0</div><div class="stat-label">Pending</div></div>
           </div>
         </div>
-
         <div class="dash-grid-2">
           <div class="card">
-            <div class="card-header">
-              <span class="material-symbols-outlined">wb_sunny</span>
-              <h3>Shift Breakdown</h3>
-            </div>
+            <div class="card-header"><span class="material-symbols-outlined">wb_sunny</span><h3>Shift Breakdown</h3></div>
             <div class="card-body">
-              <div class="shift-breakdown">
-                <div class="shift-row">
-                  <div class="shift-label"><span class="material-symbols-outlined">wb_sunny</span> Day Shift</div>
-                  <div class="shift-nums">
-                    <span class="shift-present" id="dDayPresent">0</span>
-                    <span class="shift-sep">/</span>
-                    <span class="shift-total" id="dDayTotal">0</span>
-                  </div>
-                </div>
-                <div class="shift-row">
-                  <div class="shift-label"><span class="material-symbols-outlined">nights_stay</span> Night Shift</div>
-                  <div class="shift-nums">
-                    <span class="shift-present" id="dNightPresent">0</span>
-                    <span class="shift-sep">/</span>
-                    <span class="shift-total" id="dNightTotal">0</span>
-                  </div>
-                </div>
+              <div class="shift-row"><div class="shift-label"><span class="material-symbols-outlined">wb_sunny</span> Day Shift</div>
+                <div class="shift-nums"><span class="shift-present" id="dDayPresent">0</span><span class="shift-sep">/</span><span class="shift-total" id="dDayTotal">0</span></div>
+              </div>
+              <div class="shift-row" style="margin-top:10px"><div class="shift-label"><span class="material-symbols-outlined">nights_stay</span> Night Shift</div>
+                <div class="shift-nums"><span class="shift-present" id="dNightPresent">0</span><span class="shift-sep">/</span><span class="shift-total" id="dNightTotal">0</span></div>
               </div>
             </div>
           </div>
           <div class="card">
-            <div class="card-header">
-              <span class="material-symbols-outlined">public</span>
-              <h3>Section Breakdown</h3>
-            </div>
+            <div class="card-header"><span class="material-symbols-outlined">public</span><h3>Section Breakdown</h3></div>
             <div class="card-body">
-              <div class="shift-breakdown">
-                <div class="shift-row">
-                  <div class="shift-label"><span class="material-symbols-outlined">flag</span> Indian Workers</div>
-                  <div class="shift-nums">
-                    <span class="shift-present" id="dIndPresent">0</span>
-                    <span class="shift-sep">/</span>
-                    <span class="shift-total" id="dIndTotal">37</span>
-                  </div>
-                </div>
-                <div class="shift-row">
-                  <div class="shift-label"><span class="material-symbols-outlined">flag</span> Pakistani Workers</div>
-                  <div class="shift-nums">
-                    <span class="shift-present" id="dPakPresent">0</span>
-                    <span class="shift-sep">/</span>
-                    <span class="shift-total" id="dPakTotal">19</span>
-                  </div>
-                </div>
+              <div class="shift-row"><div class="shift-label"><span class="material-symbols-outlined">flag</span> Indian</div>
+                <div class="shift-nums"><span class="shift-present" id="dIndPresent">0</span><span class="shift-sep">/</span><span class="shift-total" id="dIndTotal">37</span></div>
+              </div>
+              <div class="shift-row" style="margin-top:10px"><div class="shift-label"><span class="material-symbols-outlined">flag</span> Pakistani</div>
+                <div class="shift-nums"><span class="shift-present" id="dPakPresent">0</span><span class="shift-sep">/</span><span class="shift-total" id="dPakTotal">19</span></div>
               </div>
             </div>
           </div>
         </div>
-
         <div class="card" style="margin-top:16px">
-          <div class="card-header">
-            <span class="material-symbols-outlined">person_off</span>
-            <h3>Absent Workers Today</h3>
-            <span class="badge badge-danger" id="dashAbsentCount">0</span>
-          </div>
-          <div class="card-body">
-            <div id="dashAbsentList" class="absent-grid-sm">
-              <div class="text-muted text-center">Loading...</div>
-            </div>
-          </div>
+          <div class="card-header"><span class="material-symbols-outlined">person_off</span><h3>Absent Workers Today</h3><span class="badge badge-danger" id="dashAbsentCount">0</span></div>
+          <div class="card-body"><div id="dashAbsentList" class="absent-grid-sm"><div class="text-muted text-center">Loading...</div></div></div>
         </div>
       </section>
 
@@ -602,36 +451,21 @@
         <div class="section-header">
           <h2><span class="material-symbols-outlined">approval</span> Approvals</h2>
           <div class="section-header-right">
-            <button class="btn btn-success btn-sm" onclick="adminApproveAll('checkin').then(function(){refreshApprovals()})">
-              <span class="material-symbols-outlined">done_all</span> Approve All In
-            </button>
-            <button class="btn btn-warning btn-sm" onclick="adminApproveAll('checkout').then(function(){refreshApprovals()})">
-              <span class="material-symbols-outlined">done_all</span> Approve All Out
-            </button>
+            <button class="btn btn-success btn-sm" onclick="adminApproveAll('checkin').then(function(){refreshApprovals()})"><span class="material-symbols-outlined">done_all</span> Approve All In</button>
+            <button class="btn btn-warning btn-sm" onclick="adminApproveAll('checkout').then(function(){refreshApprovals()})"><span class="material-symbols-outlined">done_all</span> Approve All Out</button>
           </div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <span class="material-symbols-outlined">pending</span>
-            <h3>Pending Requests</h3>
-            <span class="badge badge-warn" id="pendingCount">0</span>
-          </div>
-          <div class="card-body" id="pendingApprovalsContainer">
-            <div class="empty-state"><span class="material-symbols-outlined">check_circle</span><p>No pending requests</p></div>
-          </div>
+          <div class="card-header"><span class="material-symbols-outlined">pending</span><h3>Pending Requests</h3><span class="badge badge-warn" id="pendingCount">0</span></div>
+          <div class="card-body" id="pendingApprovalsContainer"><div class="empty-state"><span class="material-symbols-outlined">check_circle</span><p>No pending requests</p></div></div>
         </div>
         <div class="card" style="margin-top:20px">
-          <div class="card-header">
-            <span class="material-symbols-outlined">undo</span>
-            <h3>Undo Recent Approvals</h3>
-          </div>
-          <div class="card-body" id="undoContainer">
-            <div class="text-muted text-center py-3">No recent approvals to undo</div>
-          </div>
+          <div class="card-header"><span class="material-symbols-outlined">undo</span><h3>Undo Recent Approvals</h3></div>
+          <div class="card-body" id="undoContainer"><div class="text-muted text-center py-3">No recent approvals</div></div>
         </div>
       </section>
 
-      <!-- LIVE STATUS -->
+      <!-- LIVE -->
       <section class="admin-section" id="secLive" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">sensors</span> Live Status</h2>
@@ -639,78 +473,39 @@
         </div>
         <div class="live-grid">
           <div class="card">
-            <div class="card-header">
-              <span class="material-symbols-outlined">engineering</span>
-              <h3>Currently Working</h3>
-              <span class="badge badge-success" id="liveWorkingCount">0</span>
-            </div>
-            <div class="card-body" id="liveWorkingList">
-              <div class="empty-state"><span class="material-symbols-outlined">person_off</span><p>No one working</p></div>
-            </div>
+            <div class="card-header"><span class="material-symbols-outlined">engineering</span><h3>Currently Working</h3><span class="badge badge-success" id="liveWorkingCount">0</span></div>
+            <div class="card-body" id="liveWorkingList"><div class="empty-state"><span class="material-symbols-outlined">person_off</span><p>No one working</p></div></div>
           </div>
           <div class="card">
-            <div class="card-header">
-              <span class="material-symbols-outlined">task_alt</span>
-              <h3>Completed Today</h3>
-              <span class="badge badge-info" id="liveDoneCount">0</span>
-            </div>
-            <div class="card-body" id="liveDoneList">
-              <div class="empty-state"><span class="material-symbols-outlined">hourglass_empty</span><p>No completions yet</p></div>
-            </div>
+            <div class="card-header"><span class="material-symbols-outlined">task_alt</span><h3>Completed Today</h3><span class="badge badge-info" id="liveDoneCount">0</span></div>
+            <div class="card-body" id="liveDoneList"><div class="empty-state"><span class="material-symbols-outlined">hourglass_empty</span><p>No completions yet</p></div></div>
           </div>
         </div>
       </section>
 
       <!-- ATTENDANCE -->
       <section class="admin-section" id="secAttendance" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">event_available</span> Attendance</h2>
-        </div>
+        <div class="section-header"><h2><span class="material-symbols-outlined">event_available</span> Attendance</h2></div>
         <div class="card filter-card">
           <div class="filter-row">
-            <div class="form-group"><label class="form-label">Date</label>
-              <input type="date" id="attDate" class="form-control" onchange="renderAttendanceView()"></div>
-            <div class="form-group"><label class="form-label">Shift</label>
-              <select id="attShift" class="form-control" onchange="renderAttendanceView()">
-                <option value="All">All Shifts</option><option value="Day">Day Shift</option><option value="Night">Night Shift</option>
-              </select></div>
-            <div class="form-group"><label class="form-label">Section</label>
-              <select id="attSection" class="form-control" onchange="renderAttendanceView()">
-                <option value="All">All Sections</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option>
-              </select></div>
-            <div class="form-group"><label class="form-label">Status</label>
-              <select id="attStatus" class="form-control" onchange="renderAttendanceView()">
-                <option value="All">All</option><option value="Present">Present</option><option value="Absent">Absent</option>
-              </select></div>
+            <div class="form-group"><label class="form-label">Date</label><input type="date" id="attDate" class="form-control" onchange="renderAttendanceView()"></div>
+            <div class="form-group"><label class="form-label">Shift</label><select id="attShift" class="form-control" onchange="renderAttendanceView()"><option value="All">All</option><option value="Day">Day</option><option value="Night">Night</option></select></div>
+            <div class="form-group"><label class="form-label">Section</label><select id="attSection" class="form-control" onchange="renderAttendanceView()"><option value="All">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option></select></div>
+            <div class="form-group"><label class="form-label">Status</label><select id="attStatus" class="form-control" onchange="renderAttendanceView()"><option value="All">All</option><option value="Present">Present</option><option value="Absent">Absent</option></select></div>
           </div>
         </div>
-        <div class="att-summary-row" id="attSummary">
+        <div class="att-summary-row">
           <div class="att-sum-card"><span class="att-sum-num" id="attSumTotal">0</span><span>Total</span></div>
           <div class="att-sum-card att-sum-present"><span class="att-sum-num" id="attSumPresent">0</span><span>Present</span></div>
           <div class="att-sum-card att-sum-absent"><span class="att-sum-num" id="attSumAbsent">0</span><span>Absent</span></div>
         </div>
         <div class="card" id="attPresentCard">
-          <div class="card-header">
-            <span class="material-symbols-outlined">check_circle</span>
-            <h3>Present Workers</h3>
-            <span class="badge badge-success" id="attPresentCount">0</span>
-          </div>
-          <div class="card-body"><div class="table-responsive"><table class="data-table"><thead><tr>
-            <th>#</th><th>Worker</th><th>Section</th><th>Shift</th><th>Check In</th><th>Check Out</th>
-            <th>Hours</th><th>Regular</th><th>OT</th><th>Status</th><th>Actions</th>
-          </tr></thead><tbody id="attPresentBody">
-            <tr><td colspan="11" class="text-center text-muted">No records</td></tr>
-          </tbody></table></div></div>
+          <div class="card-header"><span class="material-symbols-outlined">check_circle</span><h3>Present Workers</h3><span class="badge badge-success" id="attPresentCount">0</span></div>
+          <div class="card-body"><div class="table-responsive"><table class="data-table"><thead><tr><th>#</th><th>Worker</th><th>Section</th><th>Shift</th><th>In</th><th>Out</th><th>Hours</th><th>Regular</th><th>OT</th><th>Status</th><th>Actions</th></tr></thead><tbody id="attPresentBody"><tr><td colspan="11" class="text-center text-muted">No records</td></tr></tbody></table></div></div>
         </div>
         <div class="card" id="attAbsentCard" style="margin-top:20px">
-          <div class="card-header">
-            <span class="material-symbols-outlined">cancel</span>
-            <h3>Absent Workers</h3>
-            <span class="badge badge-danger" id="attAbsentCount">0</span>
-          </div>
-          <div class="card-body"><div class="absent-grid" id="attAbsentGrid">
-            <div class="text-muted text-center">No absent workers</div>
-          </div></div>
+          <div class="card-header"><span class="material-symbols-outlined">cancel</span><h3>Absent Workers</h3><span class="badge badge-danger" id="attAbsentCount">0</span></div>
+          <div class="card-body"><div class="absent-grid" id="attAbsentGrid"><div class="text-muted text-center">No absent</div></div></div>
         </div>
       </section>
 
@@ -718,9 +513,7 @@
       <section class="admin-section" id="secWorkers" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">group</span> Workers</h2>
-          <button class="btn btn-primary btn-sm" onclick="showAddWorker()">
-            <span class="material-symbols-outlined">person_add</span> Add Worker
-          </button>
+          <button class="btn btn-primary btn-sm" onclick="showAddWorker()"><span class="material-symbols-outlined">person_add</span> Add Worker</button>
         </div>
         <div class="card filter-card">
           <div class="filter-row">
@@ -730,47 +523,24 @@
                 <input type="text" id="workerSearch" class="form-control" placeholder="Search..." onkeyup="renderAdminWorkers()">
               </div>
             </div>
-            <div class="form-group">
-              <select id="workerSecFilter" class="form-control" onchange="renderAdminWorkers()">
-                <option value="All">All Sections</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <select id="workerStatusFilter" class="form-control" onchange="renderAdminWorkers()">
-                <option value="All">All Status</option><option value="Active">Active</option><option value="Inactive">Inactive</option>
-              </select>
-            </div>
+            <div class="form-group"><select id="workerStatusFilter" class="form-control" onchange="renderAdminWorkers()"><option value="All">All Status</option><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
           </div>
         </div>
         <div class="worker-tabs">
-          <button class="wtab active" id="wtabIndian" onclick="setWorkerTab('Indian')">
-            <span class="material-symbols-outlined">flag</span> Indian (<span id="wtabIndCount">37</span>)
-          </button>
-          <button class="wtab" id="wtabPakistani" onclick="setWorkerTab('Pakistani')">
-            <span class="material-symbols-outlined">flag</span> Pakistani (<span id="wtabPakCount">19</span>)
-          </button>
+          <button class="wtab active" id="wtabIndian" onclick="setWorkerTab('Indian')"><span class="material-symbols-outlined">flag</span> Indian (<span id="wtabIndCount">37</span>)</button>
+          <button class="wtab" id="wtabPakistani" onclick="setWorkerTab('Pakistani')"><span class="material-symbols-outlined">flag</span> Pakistani (<span id="wtabPakCount">19</span>)</button>
         </div>
         <div class="card"><div class="card-body"><div class="table-responsive">
-          <table class="data-table" id="workersTable"><thead><tr>
-            <th>#</th><th>ID</th><th>Name</th><th>Profession</th><th>Section</th><th>Shift</th><th>Status</th><th>Actions</th>
-          </tr></thead><tbody id="workersTableBody">
-            <tr><td colspan="8" class="text-center text-muted">Loading...</td></tr>
-          </tbody></table>
+          <table class="data-table"><thead><tr><th>#</th><th>ID</th><th>Name</th><th>Profession</th><th>Section</th><th>Shift</th><th>Status</th><th>Actions</th></tr></thead><tbody id="workersTableBody"><tr><td colspan="8" class="text-center text-muted">Loading...</td></tr></tbody></table>
         </div></div></div>
       </section>
 
-      <!-- MANUAL ENTRY -->
+      <!-- MANUAL -->
       <section class="admin-section" id="secManual" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">edit_calendar</span> Manual Entry</h2>
-        </div>
+        <div class="section-header"><h2><span class="material-symbols-outlined">edit_calendar</span> Manual Entry</h2></div>
         <div class="card">
-          <div class="card-header">
-            <span class="material-symbols-outlined">today</span>
-            <h3>Today's Overview</h3>
-            <button class="btn btn-sm btn-secondary" onclick="renderManualEntry()">
-              <span class="material-symbols-outlined">refresh</span>
-            </button>
+          <div class="card-header"><span class="material-symbols-outlined">today</span><h3>Today's Overview</h3>
+            <button class="btn btn-sm btn-secondary" onclick="renderManualEntry()"><span class="material-symbols-outlined">refresh</span></button>
           </div>
           <div class="card-body" id="manualOverview"><div class="text-muted text-center">Loading...</div></div>
         </div>
@@ -778,25 +548,18 @@
           <div class="card">
             <div class="card-header"><span class="material-symbols-outlined">login</span><h3>Quick Check In</h3></div>
             <div class="card-body">
-              <div class="form-group"><label class="form-label">Worker</label>
-                <select id="qcInWorker" class="form-control" data-worker-dropdown data-include-all="false"><option value="">-- Select --</option></select></div>
-              <div class="form-group"><label class="form-label">Shift</label>
-                <select id="qcInShift" class="form-control"><option value="Day">Day (8AM-8PM)</option><option value="Night">Night (8PM-8AM)</option></select></div>
-              <div class="form-group"><label class="form-label">Time</label>
-                <input type="time" id="qcInTime" class="form-control"></div>
-              <button class="btn btn-success btn-block" onclick="doQuickCheckin()" style="margin-top:12px">
-                <span class="material-symbols-outlined">login</span> Check In Now</button>
+              <div class="form-group"><label class="form-label">Worker</label><select id="qcInWorker" class="form-control" data-worker-dropdown data-include-all="false"><option value="">-- Select --</option></select></div>
+              <div class="form-group"><label class="form-label">Shift</label><select id="qcInShift" class="form-control"><option value="Day">Day (8AM-8PM)</option><option value="Night">Night (8PM-8AM)</option></select></div>
+              <div class="form-group"><label class="form-label">Time</label><input type="time" id="qcInTime" class="form-control"></div>
+              <button class="btn btn-success btn-block" onclick="doQuickCheckin()" style="margin-top:12px"><span class="material-symbols-outlined">login</span> Check In Now</button>
             </div>
           </div>
           <div class="card">
             <div class="card-header"><span class="material-symbols-outlined">logout</span><h3>Quick Check Out</h3></div>
             <div class="card-body">
-              <div class="form-group"><label class="form-label">Worker</label>
-                <select id="qcOutWorker" class="form-control" data-worker-dropdown data-include-all="false"><option value="">-- Select --</option></select></div>
-              <div class="form-group"><label class="form-label">Time</label>
-                <input type="time" id="qcOutTime" class="form-control"></div>
-              <button class="btn btn-danger btn-block" onclick="doQuickCheckout()" style="margin-top:12px">
-                <span class="material-symbols-outlined">logout</span> Check Out Now</button>
+              <div class="form-group"><label class="form-label">Worker</label><select id="qcOutWorker" class="form-control" data-worker-dropdown data-include-all="false"><option value="">-- Select --</option></select></div>
+              <div class="form-group"><label class="form-label">Time</label><input type="time" id="qcOutTime" class="form-control"></div>
+              <button class="btn btn-danger btn-block" onclick="doQuickCheckout()" style="margin-top:12px"><span class="material-symbols-outlined">logout</span> Check Out Now</button>
             </div>
           </div>
         </div>
@@ -804,19 +567,14 @@
           <div class="card-header"><span class="material-symbols-outlined">calendar_clock</span><h3>Custom Date & Time Entry</h3></div>
           <div class="card-body">
             <div class="form-grid">
-              <div class="form-group"><label class="form-label">Worker</label>
-                <select id="customWorker" class="form-control" data-worker-dropdown data-include-all="false"><option value="">-- Select --</option></select></div>
-              <div class="form-group"><label class="form-label">Action</label>
-                <select id="customType" class="form-control">
-                  <option value="both">In + Out</option><option value="in">In Only</option><option value="out">Out Only</option></select></div>
-              <div class="form-group"><label class="form-label">Shift</label>
-                <select id="customShift" class="form-control"><option value="Day">Day</option><option value="Night">Night</option></select></div>
+              <div class="form-group"><label class="form-label">Worker</label><select id="customWorker" class="form-control" data-worker-dropdown data-include-all="false"><option value="">-- Select --</option></select></div>
+              <div class="form-group"><label class="form-label">Action</label><select id="customType" class="form-control"><option value="both">In + Out</option><option value="in">In Only</option><option value="out">Out Only</option></select></div>
+              <div class="form-group"><label class="form-label">Shift</label><select id="customShift" class="form-control"><option value="Day">Day</option><option value="Night">Night</option></select></div>
               <div class="form-group"><label class="form-label">Date</label><input type="date" id="customDate" class="form-control"></div>
               <div class="form-group"><label class="form-label">In Time</label><input type="time" id="customIn" class="form-control" value="08:00"></div>
               <div class="form-group"><label class="form-label">Out Time</label><input type="time" id="customOut" class="form-control" value="20:00"></div>
             </div>
-            <button class="btn btn-primary" onclick="submitCustomEntry()" style="margin-top:12px">
-              <span class="material-symbols-outlined">save</span> Save Entry</button>
+            <button class="btn btn-primary" onclick="submitCustomEntry()" style="margin-top:12px"><span class="material-symbols-outlined">save</span> Save Entry</button>
           </div>
         </div>
         <div class="card" style="margin-top:20px">
@@ -824,10 +582,8 @@
           <div class="card-body">
             <div class="form-grid">
               <div class="form-group"><label class="form-label">Date</label><input type="date" id="bulkDate" class="form-control"></div>
-              <div class="form-group"><label class="form-label">Shift</label>
-                <select id="bulkShift" class="form-control" onchange="renderBulkWorkerList()"><option value="All">All</option><option value="Day">Day</option><option value="Night">Night</option></select></div>
-              <div class="form-group"><label class="form-label">Section</label>
-                <select id="bulkSection" class="form-control" onchange="renderBulkWorkerList()"><option value="All">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option></select></div>
+              <div class="form-group"><label class="form-label">Shift</label><select id="bulkShift" class="form-control" onchange="renderBulkWorkerList()"><option value="All">All</option><option value="Day">Day</option><option value="Night">Night</option></select></div>
+              <div class="form-group"><label class="form-label">Section</label><select id="bulkSection" class="form-control" onchange="renderBulkWorkerList()"><option value="All">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option></select></div>
               <div class="form-group"><label class="form-label">In Time</label><input type="time" id="bulkInTime" class="form-control" value="08:00"></div>
               <div class="form-group"><label class="form-label">Out Time</label><input type="time" id="bulkOutTime" class="form-control" value="20:00"></div>
             </div>
@@ -842,18 +598,13 @@
 
       <!-- HISTORY -->
       <section class="admin-section" id="secHistory" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">history</span> History & Backdated</h2>
-        </div>
+        <div class="section-header"><h2><span class="material-symbols-outlined">history</span> History & Backdated</h2></div>
         <div class="card filter-card">
           <div class="filter-row">
             <div class="form-group"><label class="form-label">Date</label><input type="date" id="histDate" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Shift</label>
-              <select id="histShift" class="form-control"><option value="All">All</option><option value="Day">Day</option><option value="Night">Night</option></select></div>
-            <div class="form-group"><label class="form-label">Section</label>
-              <select id="histSection" class="form-control"><option value="All">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option></select></div>
-            <div class="form-group"><label class="form-label">Worker</label>
-              <select id="histWorkerSel" class="form-control"><option value="all">-- All --</option></select></div>
+            <div class="form-group"><label class="form-label">Shift</label><select id="histShift" class="form-control"><option value="All">All</option><option value="Day">Day</option><option value="Night">Night</option></select></div>
+            <div class="form-group"><label class="form-label">Section</label><select id="histSection" class="form-control"><option value="All">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option></select></div>
+            <div class="form-group"><label class="form-label">Worker</label><select id="histWorkerSel" class="form-control"><option value="all">-- All --</option></select></div>
           </div>
           <div class="filter-export-row">
             <button class="btn btn-danger btn-sm" onclick="exportHistoryPDF()"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</button>
@@ -891,28 +642,23 @@
           <div class="card-header"><span class="material-symbols-outlined">calendar_view_day</span><h3>Day-wise Summary</h3></div>
           <div class="card-body">
             <div class="form-group" style="max-width:220px;margin-bottom:16px"><input type="date" id="dwDate" class="form-control" onchange="renderDayWiseView()"></div>
-            <div id="dayWiseContainer"><div class="text-muted">Select a date</div></div>
+            <div id="dayWiseContainer"><div class="text-muted">Select date</div></div>
           </div>
         </div>
       </section>
 
       <!-- MONTHLY -->
       <section class="admin-section" id="secMonthly" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">calendar_month</span> Monthly Report</h2>
-        </div>
+        <div class="section-header"><h2><span class="material-symbols-outlined">calendar_month</span> Monthly Report</h2></div>
         <div class="card"><div class="card-body">
           <div class="form-grid">
-            <div class="form-group"><label class="form-label">Worker</label>
-              <select id="monthlyWorker" class="form-control" data-worker-dropdown data-include-all="true"><option value="all">-- All --</option></select></div>
-            <div class="form-group"><label class="form-label">Year</label>
-              <select id="monthlyYear" class="form-control"><option value="2026">2026</option><option value="2025">2025</option></select></div>
-            <div class="form-group"><label class="form-label">Month</label>
-              <select id="monthlyMonth" class="form-control">
-                <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option>
-                <option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option>
-                <option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
-              </select></div>
+            <div class="form-group"><label class="form-label">Worker</label><select id="monthlyWorker" class="form-control" data-worker-dropdown data-include-all="true"><option value="all">-- All --</option></select></div>
+            <div class="form-group"><label class="form-label">Year</label><select id="monthlyYear" class="form-control"><option value="2026">2026</option><option value="2025">2025</option></select></div>
+            <div class="form-group"><label class="form-label">Month</label><select id="monthlyMonth" class="form-control">
+              <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option>
+              <option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option>
+              <option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select></div>
           </div>
           <div class="btn-group-row">
             <button class="btn btn-primary" onclick="generateMonthlyReport()"><span class="material-symbols-outlined">bar_chart</span> Generate</button>
@@ -925,50 +671,35 @@
 
       <!-- END DAY -->
       <section class="admin-section" id="secEndDay" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">bedtime</span> End Day</h2>
-        </div>
+        <div class="section-header"><h2><span class="material-symbols-outlined">bedtime</span> End Day</h2></div>
         <div class="card">
           <div class="card-header"><span class="material-symbols-outlined">logout</span><h3>Bulk Checkout All Active Workers</h3></div>
           <div class="card-body">
-            <div class="info-box info-blue"><span class="material-symbols-outlined">info</span>
-              <p>This will checkout all currently working workers. Use at end of each shift.</p></div>
-            <div class="end-day-stats" id="endDayStats">
+            <div class="info-box info-blue"><span class="material-symbols-outlined">info</span><p>This will checkout all currently working workers.</p></div>
+            <div class="end-day-stats">
               <div class="eds-item"><div class="eds-num" id="edsWorking">0</div><div class="eds-label">Working</div></div>
               <div class="eds-item"><div class="eds-num" id="edsPending">0</div><div class="eds-label">Pending Out</div></div>
             </div>
-            <div class="form-group" style="max-width:300px">
-              <label class="form-label">Checkout Time</label>
-              <input type="time" id="endDayTime" class="form-control" value="20:00">
-            </div>
-            <button class="btn btn-danger btn-lg" onclick="doEndDay()" style="margin-top:16px">
-              <span class="material-symbols-outlined">bedtime</span> End Day - Checkout All</button>
+            <div class="form-group" style="max-width:300px"><label class="form-label">Checkout Time</label><input type="time" id="endDayTime" class="form-control" value="20:00"></div>
+            <button class="btn btn-danger btn-lg" onclick="doEndDay()" style="margin-top:16px"><span class="material-symbols-outlined">bedtime</span> End Day - Checkout All</button>
           </div>
         </div>
       </section>
 
       <!-- EXPORT -->
       <section class="admin-section" id="secExport" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">download</span> Export Data</h2>
-        </div>
+        <div class="section-header"><h2><span class="material-symbols-outlined">download</span> Export Data</h2></div>
         <div class="card"><div class="card-header"><span class="material-symbols-outlined">filter_alt</span><h3>Export Filters</h3></div>
           <div class="card-body">
             <div class="form-grid">
               <div class="form-group"><label class="form-label">From</label><input type="date" id="expFrom" class="form-control"></div>
               <div class="form-group"><label class="form-label">To</label><input type="date" id="expTo" class="form-control"></div>
-              <div class="form-group"><label class="form-label">Filter</label>
-                <select id="expFilter" class="form-control">
-                  <option value="All">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option>
-                  <option value="Day">Day Shift</option><option value="Night">Night Shift</option></select></div>
+              <div class="form-group"><label class="form-label">Filter</label><select id="expFilter" class="form-control"><option value="All">All</option><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select></div>
             </div>
             <div class="export-btn-grid">
-              <button class="export-btn export-pdf" onclick="exportRangePDF()">
-                <span class="material-symbols-outlined">picture_as_pdf</span><span>PDF</span><small>Company branding</small></button>
-              <button class="export-btn export-excel" onclick="exportRangeExcel()">
-                <span class="material-symbols-outlined">table_view</span><span>Excel</span><small>CSV format</small></button>
-              <button class="export-btn export-csv" onclick="exportRangeCSV()">
-                <span class="material-symbols-outlined">code</span><span>CSV</span><small>Raw data</small></button>
+              <button class="export-btn export-pdf" onclick="exportRangePDF()"><span class="material-symbols-outlined">picture_as_pdf</span><span>PDF</span><small>Company branding</small></button>
+              <button class="export-btn export-excel" onclick="exportRangeExcel()"><span class="material-symbols-outlined">table_view</span><span>Excel</span><small>CSV format</small></button>
+              <button class="export-btn export-csv" onclick="exportRangeCSV()"><span class="material-symbols-outlined">code</span><span>CSV</span><small>Raw data</small></button>
             </div>
           </div>
         </div>
@@ -976,13 +707,10 @@
 
       <!-- SETTINGS -->
       <section class="admin-section" id="secSettings" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">settings</span> Settings</h2>
-        </div>
+        <div class="section-header"><h2><span class="material-symbols-outlined">settings</span> Settings</h2></div>
         <div class="card company-info-card">
           <div class="company-info-header">
-            <img src="logo.png?v=3" alt="AL BOWRY" class="company-logo-lg"
-                 onerror="this.outerHTML='<div class=\'logo-box-xl\' style=\'background:rgba(255,255,255,0.2);color:white\'>A</div>'">
+            <img src="logo.png?v=3" alt="AL BOWRY" class="company-logo-lg" onerror="this.outerHTML='<div class=\'logo-box-xl\' style=\'background:rgba(255,255,255,0.2);color:white\'>A</div>'">
             <div>
               <div class="company-info-name">AL BOWRY CARPENTRY LLC</div>
               <div class="company-info-sub">Registered: Sharjah, UAE · Project: COP31, Antalya, Turkey</div>
@@ -1031,830 +759,53 @@
           </div></div>
         </div>
       </section>
-
     </main>
   </div>
 </div>
 
-<!-- ====== FIREBASE ====== -->
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-  import {
-    getFirestore, collection, doc,
-    setDoc, updateDoc, deleteDoc,
-    getDoc, getDocs, onSnapshot
-  } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  var firebaseConfig = {
-    apiKey: "AIzaSyCrFHbw0-YRuo_LddyFXOUwdgCT9C6fJX4",
-    authDomain: "albowry-attendance.firebaseapp.com",
-    projectId: "albowry-attendance",
-    storageBucket: "albowry-attendance.firebasestorage.app",
-    messagingSenderId: "498788768411",
-    appId: "1:498788768411:web:f5b0c2f1b09c7eefa2c43e"
-  };
+var firebaseConfig = {
+  apiKey: "AIzaSyCrFHbw0-YRuo_LddyFXOUwdgCT9C6fJX4",
+  authDomain: "albowry-attendance.firebaseapp.com",
+  projectId: "albowry-attendance",
+  storageBucket: "albowry-attendance.firebasestorage.app",
+  messagingSenderId: "498788768411",
+  appId: "1:498788768411:web:f5b0c2f1b09c7eefa2c43e"
+};
+var app = initializeApp(firebaseConfig);
+var db = getFirestore(app);
 
-  var app = initializeApp(firebaseConfig);
-  var db = getFirestore(app);
+window.firestoreCol = function(d, n) { return collection(d, n); };
+window.firestoreDoc = function(d, c, i) { return doc(d, c, i); };
+window.firestoreSet = function(d, c, i, data) { return setDoc(doc(d, c, i), data); };
+window.firestoreUpdate = function(d, c, i, data) { return updateDoc(doc(d, c, i), data); };
+window.firestoreDelete = function(d, c, i) { return deleteDoc(doc(d, c, i)); };
+window.firestoreGetAll = function(d, c) {
+  return getDocs(collection(d, c)).then(function(s) { var r=[]; s.forEach(function(x){r.push(x.data());}); return r; });
+};
+window.firestoreGetDoc = function(d, c, i) {
+  return getDoc(doc(d, c, i)).then(function(x) { return x.exists() ? x.data() : null; });
+};
+window.firestoreListen = function(d, c, cb) {
+  return onSnapshot(collection(d, c), function(s) { var r=[]; s.forEach(function(x){r.push(x.data());}); cb(r); });
+};
+window.firestoreListenDoc = function(d, c, i, cb) {
+  return onSnapshot(doc(d, c, i), function(x) { cb(x.exists() ? x.data() : null); });
+};
 
-  window.firestoreCol = function(database, name) { return collection(database, name); };
-  window.firestoreDoc = function(database, col, id) { return doc(database, col, id); };
-  window.firestoreSet = function(database, col, id, data) { return setDoc(doc(database, col, id), data); };
-  window.firestoreUpdate = function(database, col, id, data) { return updateDoc(doc(database, col, id), data); };
-  window.firestoreDelete = function(database, col, id) { return deleteDoc(doc(database, col, id)); };
-  window.firestoreGetAll = function(database, col) {
-    return getDocs(collection(database, col)).then(function(snap) {
-      var docs = []; snap.forEach(function(d) { docs.push(d.data()); }); return docs;
-    });
-  };
-  window.firestoreGetDoc = function(database, col, id) {
-    return getDoc(doc(database, col, id)).then(function(d) { return d.exists() ? d.data() : null; });
-  };
-  window.firestoreListen = function(database, col, cb) {
-    return onSnapshot(collection(database, col), function(snap) {
-      var docs = []; snap.forEach(function(d) { docs.push(d.data()); }); cb(docs);
-    });
-  };
-  window.firestoreListenDoc = function(database, col, id, cb) {
-    return onSnapshot(doc(database, col, id), function(d) { cb(d.exists() ? d.data() : null); });
-  };
-
-  window.FB.init(db);
-  window._firebaseReady = true;
-  if (window._onFirebaseReady) window._onFirebaseReady();
+window.FB.init(db);
+window._firebaseReady = true;
+if (window._onFirebaseReady) window._onFirebaseReady();
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
-
-<script src="app.js?v=8"></script>
-<script src="manual.js?v=8"></script>
-<script src="history.js?v=8"></script>
-
-<script>
-var _workerTab = 'Indian';
-var _clockInterval = null;
-var _workerTabActive = 'Indian';
-var _loginClockInt = null;
-
-function bootstrap() {
-  setLoadingText('Connecting to Firebase...');
-  function startApp() {
-    setLoadingText('Loading data...');
-    startRealtimeSync();
-    var waitCount = 0;
-    var waitInterval = setInterval(function() {
-      waitCount++;
-      if ((_syncStatus.workers && _syncStatus.attendance && _syncStatus.admin) || waitCount > 30) {
-        clearInterval(waitInterval);
-        setLoadingText('Initializing workers...');
-        initWorkers().then(function() {
-          setLoadingText('Ready!');
-          setTimeout(function() { hideLoading(); checkSession(); }, 500);
-        });
-      }
-    }, 200);
-  }
-  if (window._firebaseReady) startApp();
-  else window._onFirebaseReady = startApp;
-}
-
-function setLoadingText(txt) { var el = document.getElementById('loadingText'); if (el) el.textContent = txt; }
-
-function hideLoading() {
-  var el = document.getElementById('loadingScreen');
-  if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s ease'; setTimeout(function() { el.style.display = 'none'; }, 500); }
-}
-
-function checkSession() {
-  var session = getSession();
-  if (!session) { showLoginPage(); return; }
-  if (session.role === 'admin') showAdminPanel(session);
-  else if (session.role === 'worker') showWorkerDashboard(session);
-  else showLoginPage();
-}
-
-function showLoginPage() {
-  document.getElementById('loginPage').style.display = 'flex';
-  document.getElementById('workerDashboard').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'none';
-  populateWorkerDropdown();
-  setCurrentTimeOnLogin();
-  startLoginClock();
-}
-
-function startLoginClock() {
-  if (_loginClockInt) clearInterval(_loginClockInt);
-  function tick() {
-    var el = document.getElementById('loginClock');
-    if (!el) return;
-    var t = new Date().toLocaleTimeString('en-US', {
-      timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-    });
-    el.textContent = t;
-  }
-  tick();
-  _loginClockInt = setInterval(tick, 1000);
-}
-
-function populateWorkerDropdown() {
-  var sel = document.getElementById('workerNameSel');
-  if (!sel) return;
-  var val = sel.value;
-  sel.innerHTML = '<option value="">— Choose your name —</option>';
-  var ws = gW();
-  var sections = ['Indian', 'Pakistani'];
-  for (var s = 0; s < sections.length; s++) {
-    var grp = document.createElement('optgroup');
-    grp.label = '— ' + sections[s].toUpperCase() + ' —';
-    var cnt = 0;
-    for (var i = 0; i < ws.length; i++) {
-      if (!ws[i].on || ws[i].sec !== sections[s]) continue;
-      var opt = document.createElement('option');
-      opt.value = ws[i].wid;
-      opt.text = ws[i].name + ' (' + ws[i].prof + ')';
-      grp.appendChild(opt); cnt++;
-    }
-    if (cnt > 0) sel.appendChild(grp);
-  }
-  if (val) sel.value = val;
-}
-
-function setCurrentTimeOnLogin() {
-  var hr = new Date().getHours();
-  var shiftInputs = document.querySelectorAll('input[name="loginShift"]');
-  for (var i = 0; i < shiftInputs.length; i++) {
-    shiftInputs[i].checked = (hr >= 8 && hr < 20) ? (shiftInputs[i].value === 'Day') : (shiftInputs[i].value === 'Night');
-  }
-}
-
-function switchLoginTab(tab) {
-  document.getElementById('tabWorker').classList.toggle('active', tab === 'worker');
-  document.getElementById('tabAdmin').classList.toggle('active', tab === 'admin');
-  document.getElementById('workerLoginForm').style.display = tab === 'worker' ? 'block' : 'none';
-  document.getElementById('adminLoginForm').style.display = tab === 'admin' ? 'block' : 'none';
-}
-
-function doWorkerLogin() {
-  var wid = document.getElementById('workerNameSel').value;
-  var pw = document.getElementById('workerPw').value;
-  var shiftInputs = document.querySelectorAll('input[name="loginShift"]');
-  var shift = 'Day';
-  for (var i = 0; i < shiftInputs.length; i++) { if (shiftInputs[i].checked) { shift = shiftInputs[i].value; break; } }
-  if (!wid) { showToast('Please select your name', 'error'); return; }
-  if (!pw) { showToast('Please enter password', 'error'); return; }
-  var result = workerLogin(wid, pw, shift);
-  if (result.ok) { document.getElementById('workerPw').value = ''; showWorkerDashboard(result.session); }
-  else showToast(result.msg, 'error');
-}
-
-function doAdminLogin() {
-  var id = document.getElementById('adminIdInp').value.trim();
-  var pw = document.getElementById('adminPwInp').value;
-  if (!id || !pw) { showToast('Enter Admin ID and Password', 'error'); return; }
-  var result = adminLogin(id, pw);
-  if (result.ok) {
-    document.getElementById('adminPwInp').value = '';
-    var session = getSession();
-    speakWelcome(session.name || 'Admin');
-    showAdminPanel(session);
-  }
-  else showToast(result.msg, 'error');
-}
-
-function showWorkerDashboard(session) {
-  if (_loginClockInt) { clearInterval(_loginClockInt); _loginClockInt = null; }
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('workerDashboard').style.display = 'block';
-  document.getElementById('adminPanel').style.display = 'none';
-  renderWorkerUI();
-  if (_clockInterval) clearInterval(_clockInterval);
-  _clockInterval = startClock('workerClock');
-}
-
-function renderWorkerUI() {
-  var session = getSession();
-  if (!session || session.role !== 'worker') return;
-  var w = findWorker(session.wid);
-  if (!w) return;
-
-  document.getElementById('workerAvatar').textContent = getInitials(w.name);
-  document.getElementById('workerHeroName').textContent = w.name;
-  document.getElementById('workerHeroProfession').textContent = w.prof;
-  document.getElementById('workerHeroSection').textContent = w.sec;
-  var shiftBadge = document.getElementById('workerHeroShift');
-  shiftBadge.textContent = (session.shift || w.shift) + ' Shift';
-  shiftBadge.className = 'shift-badge shift-' + (session.shift || w.shift).toLowerCase();
-
-  var today = tD();
-  var allAtt = gA();
-  var todayAtt = null;
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].wid === w.wid && allAtt[i].date === today) { todayAtt = allAtt[i]; break; }
-  }
-  updateWorkerAttStatus(todayAtt);
-
-  var stats = getWorkerStats(w.wid);
-  document.getElementById('wstatDays').textContent = stats.totalDays;
-  document.getElementById('wstatHours').textContent = stats.totalHrs + 'h';
-  document.getElementById('wstatOT').textContent = stats.totalOT + 'h';
-  renderWorkerHistory(stats.records);
-}
-
-function updateWorkerAttStatus(att) {
-  var icon = document.getElementById('workerStatusIcon');
-  var text = document.getElementById('workerStatusText');
-  var detail = document.getElementById('workerStatusDetail');
-  var pendingMsg = document.getElementById('pendingMsg');
-  var completedMsg = document.getElementById('completedMsg');
-  var completedDetail = document.getElementById('completedDetail');
-  var btnIn = document.getElementById('btnCheckin');
-  var btnOut = document.getElementById('btnCheckout');
-  var statusCard = document.getElementById('workerStatusCard');
-
-  pendingMsg.style.display = 'none';
-  completedMsg.style.display = 'none';
-  btnIn.style.display = 'none';
-  btnOut.style.display = 'none';
-  statusCard.className = 'worker-status-display';
-
-  if (!att) {
-    icon.textContent = 'schedule'; icon.style.color = '#94a3b8';
-    text.textContent = 'Not checked in today';
-    detail.textContent = 'Tap below to request check-in';
-    btnIn.style.display = 'flex';
-    statusCard.className = 'worker-status-display status-idle';
-  } else if (att.status === 'pending_checkin') {
-    icon.textContent = 'hourglass_top'; icon.style.color = '#d97706';
-    text.textContent = 'Check-in Pending';
-    detail.textContent = 'Requested at ' + fmtTime(att.checkinReqTime);
-    pendingMsg.style.display = 'flex';
-    statusCard.className = 'worker-status-display status-pending';
-  } else if (att.status === 'checked_in') {
-    icon.textContent = 'engineering'; icon.style.color = '#059669';
-    text.textContent = 'Currently Working';
-    detail.textContent = 'Checked in at ' + fmtTime(att.checkinTime);
-    btnOut.style.display = 'flex';
-    statusCard.className = 'worker-status-display status-working';
-  } else if (att.status === 'pending_checkout') {
-    icon.textContent = 'hourglass_bottom'; icon.style.color = '#d97706';
-    text.textContent = 'Checkout Pending';
-    detail.textContent = 'Checked in at ' + fmtTime(att.checkinTime);
-    pendingMsg.style.display = 'flex';
-    statusCard.className = 'worker-status-display status-pending';
-  } else if (att.status === 'completed') {
-    icon.textContent = 'verified'; icon.style.color = '#059669';
-    text.textContent = 'Completed';
-    detail.textContent = '';
-    completedMsg.style.display = 'flex';
-    completedDetail.textContent = fmtTime(att.checkinTime) + ' → ' + fmtTime(att.checkoutTime) + ' · ' + (att.total || 0) + 'h · OT: ' + (att.ot || 0) + 'h';
-    statusCard.className = 'worker-status-display status-completed';
-  }
-}
-
-function renderWorkerHistory(records) {
-  var tbody = document.getElementById('workerHistBody');
-  var countEl = document.getElementById('workerHistCount');
-  if (!tbody) return;
-  var completed = [];
-  for (var i = 0; i < records.length; i++) { if (records[i].status === 'completed') completed.push(records[i]); }
-  if (countEl) countEl.textContent = completed.length + ' records';
-  if (completed.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No records</td></tr>'; return; }
-  var html = '';
-  for (var j = 0; j < completed.length && j < 15; j++) {
-    var a = completed[j];
-    html += '<tr><td>' + (j+1) + '</td><td>' + fmtDate(a.date+'T00:00:00') + '</td>' +
-      '<td><span class="shift-badge shift-' + (a.shift||'day').toLowerCase() + '">' + (a.shift||'Day') + '</span></td>' +
-      '<td>' + fmtTime(a.checkinTime) + '</td><td>' + fmtTime(a.checkoutTime) + '</td>' +
-      '<td><strong>' + (a.total||0) + 'h</strong></td><td>' + (a.ot||0) + 'h</td>' +
-      '<td><span class="badge badge-success">Done</span>' + (a.backdated ? ' <span class="tag-manual">M</span>' : '') + '</td></tr>';
-  }
-  tbody.innerHTML = html;
-}
-
-function requestCheckin() {
-  var session = getSession();
-  if (!session) return;
-  workerCheckinReq(session.wid, session.shift).then(function(res) {
-    if (res.ok) showToast(res.msg, 'success'); else showToast(res.msg, 'error');
-  });
-}
-
-function requestCheckout() {
-  var session = getSession();
-  if (!session) return;
-  workerCheckoutReq(session.wid).then(function(res) {
-    if (res.ok) showToast(res.msg, 'success'); else showToast(res.msg, 'error');
-  });
-}
-
-function doChangeWorkerPw() {
-  var session = getSession();
-  if (!session) return;
-  var oldPw = document.getElementById('wpOld').value;
-  var newPw = document.getElementById('wpNew').value;
-  var confPw = document.getElementById('wpConf').value;
-  if (!oldPw || !newPw || !confPw) { showToast('Fill all fields', 'error'); return; }
-  if (newPw !== confPw) { showToast('Passwords do not match', 'error'); return; }
-  changeWorkerPassword(session.wid, oldPw, newPw).then(function(res) {
-    if (res.ok) { showToast(res.msg, 'success'); document.getElementById('wpOld').value=''; document.getElementById('wpNew').value=''; document.getElementById('wpConf').value=''; }
-    else showToast(res.msg, 'error');
-  });
-}
-
-function showAdminPanel(session) {
-  if (_loginClockInt) { clearInterval(_loginClockInt); _loginClockInt = null; }
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('workerDashboard').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'block';
-
-  var nameEl = document.getElementById('adminDisplayName');
-  if (nameEl) nameEl.textContent = session.name || 'Admin';
-
-  if (_clockInterval) clearInterval(_clockInterval);
-  _clockInterval = startClock('adminClock');
-
-  var today = tD();
-  var dateInputs = ['attDate','histDate','dwDate','customDate','bulkDate','histBdDate','histBulkDate','expFrom','expTo'];
-  for (var i = 0; i < dateInputs.length; i++) { var el = document.getElementById(dateInputs[i]); if (el && el.type === 'date') el.value = today; }
-
-  var nowTime = new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-  var timeInputs = ['qcInTime','qcOutTime'];
-  for (var j = 0; j < timeInputs.length; j++) { var tel = document.getElementById(timeInputs[j]); if (tel) tel.value = nowTime; }
-
-  var monthSel = document.getElementById('monthlyMonth');
-  if (monthSel) monthSel.value = new Date().getMonth() + 1;
-
-  var setName = document.getElementById('setAdminName');
-  if (setName && _adminData.name) setName.value = _adminData.name;
-
-  if (typeof initHistory === 'function') initHistory();
-  renderWorkerDropdowns();
-  populateWorkerDropdown();
-  showSection('secDashboard');
-  renderDashboard(); renderApprovals(); renderLiveStatus(); renderAttendanceView(); renderAdminWorkers(); renderManualEntry(); updateEndDayStats(); updateSettingsInfo();
-}
-
-function renderDashboard() {
-  var today = tD(); var allAtt = gA(); var allWorkers = gW();
-  var activeWorkers = [];
-  for (var i = 0; i < allWorkers.length; i++) { if (allWorkers[i].on) activeWorkers.push(allWorkers[i]); }
-  var presentWids = getPresentWorkerIds(today, allAtt, 'All');
-  var working = 0, done = 0, pending = 0;
-  for (var j = 0; j < allAtt.length; j++) {
-    var a = allAtt[j]; var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
-    if (aDate !== today) continue;
-    if (a.status === 'checked_in') working++;
-    else if (a.status === 'completed') done++;
-    else if (a.status === 'pending_checkin' || a.status === 'pending_checkout') pending++;
-  }
-  setEl('dTotalWorkers', activeWorkers.length); setEl('dPresent', presentWids.length);
-  setEl('dAbsent', activeWorkers.length - presentWids.length); setEl('dWorking', working);
-  setEl('dDone', done); setEl('dPending', pending); setEl('approvalCount', pending);
-  var dayW=0,nightW=0,dayP=0,nightP=0,indT=0,pakT=0,indP=0,pakP=0;
-  for (var k = 0; k < activeWorkers.length; k++) { if (activeWorkers[k].shift==='Day') dayW++; else nightW++; if (activeWorkers[k].sec==='Indian') indT++; else pakT++; }
-  for (var l = 0; l < presentWids.length; l++) {
-    var pw = findWorker(presentWids[l]); if (!pw) continue;
-    if (pw.shift==='Day') dayP++; else nightP++; if (pw.sec==='Indian') indP++; else pakP++;
-  }
-  setEl('dDayPresent',dayP); setEl('dDayTotal',dayW); setEl('dNightPresent',nightP); setEl('dNightTotal',nightW);
-  setEl('dIndPresent',indP); setEl('dIndTotal',indT); setEl('dPakPresent',pakP); setEl('dPakTotal',pakT);
-  var absentWorkers = getAbsentWorkers(today, allAtt, activeWorkers, 'All', 'All');
-  setEl('dashAbsentCount', absentWorkers.length);
-  var abC = document.getElementById('dashAbsentList');
-  if (abC) {
-    if (absentWorkers.length === 0) {
-      abC.innerHTML = '<div class="all-present-msg"><span class="material-symbols-outlined">celebration</span> All workers present!</div>';
-    } else {
-      var html = '';
-      for (var ab = 0; ab < absentWorkers.length; ab++) {
-        var abW = absentWorkers[ab];
-        html += '<div class="absent-tag"><div class="absent-tag-init">' + getInitials(abW.name) + '</div>' +
-          '<div class="absent-tag-info"><div class="absent-tag-name">' + abW.name + '</div>' +
-          '<div class="absent-tag-meta">' + abW.wid + ' · ' + abW.shift + '</div></div></div>';
-      }
-      abC.innerHTML = html;
-    }
-  }
-}
-
-function renderApprovals() {
-  var allAtt = gA(); var pending = []; var recentApproved = [];
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i];
-    if (a.status === 'pending_checkin' || a.status === 'pending_checkout') pending.push(a);
-    if (a.status === 'checked_in' && a.checkinTime) { if ((Date.now()-new Date(a.checkinTime).getTime())/3600000 < 2) recentApproved.push(a); }
-    if (a.status === 'completed' && a.checkoutTime) { if ((Date.now()-new Date(a.checkoutTime).getTime())/3600000 < 2) recentApproved.push(a); }
-  }
-  setEl('pendingCount', pending.length); setEl('approvalCount', pending.length);
-  var container = document.getElementById('pendingApprovalsContainer');
-  if (container) {
-    if (pending.length === 0) { container.innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">check_circle</span><p>No pending requests</p></div>'; }
-    else {
-      var html = '<div class="approval-list">';
-      for (var j = 0; j < pending.length; j++) {
-        var p = pending[j]; var isIn = p.status === 'pending_checkin';
-        html += '<div class="approval-item"><div class="approval-info"><div class="approval-name">' + p.name + '</div>' +
-          '<div class="approval-meta">' + p.wid + ' · ' + p.sec + ' · ' + (p.shift||'Day') + '</div>' +
-          '<div class="approval-time">' + (isIn ? 'In: '+fmtTime(p.checkinReqTime) : 'Out: '+fmtTime(p.checkoutReqTime)) + '</div></div>' +
-          '<div class="approval-type"><span class="badge ' + (isIn?'badge-success':'badge-warn') + '">' + (isIn?'CHECK IN':'CHECK OUT') + '</span></div>' +
-          '<div class="approval-actions">' +
-            '<button class="btn btn-success btn-sm" onclick="approveRecord(\''+p.recId+'\','+isIn+')"><span class="material-symbols-outlined">check</span> Approve</button>' +
-            '<button class="btn btn-danger btn-sm" onclick="rejectRecord(\''+p.recId+'\')"><span class="material-symbols-outlined">close</span> Reject</button>' +
-          '</div></div>';
-      }
-      html += '</div>'; container.innerHTML = html;
-    }
-  }
-  var undoC = document.getElementById('undoContainer');
-  if (undoC) {
-    if (recentApproved.length === 0) { undoC.innerHTML = '<div class="text-muted text-center py-3">No recent approvals to undo</div>'; }
-    else {
-      var uH = '<div class="undo-list">';
-      for (var u = 0; u < recentApproved.length; u++) {
-        var ua = recentApproved[u];
-        uH += '<div class="undo-item"><div class="undo-info"><strong>' + ua.name + '</strong> · ' + ua.wid +
-          '<div class="undo-detail">' + (ua.status==='checked_in'?'In: '+fmtTime(ua.checkinTime):'Done · Out: '+fmtTime(ua.checkoutTime)) + '</div></div>' +
-          '<button class="btn btn-warning btn-sm" onclick="doUndoApproval(\''+ua.recId+'\')"><span class="material-symbols-outlined">undo</span> Undo</button></div>';
-      }
-      uH += '</div>'; undoC.innerHTML = uH;
-    }
-  }
-}
-
-function approveRecord(recId, isCheckin) {
-  if (isCheckin) adminApproveCheckin(recId).then(function(){refreshApprovals();renderDashboard();});
-  else adminApproveCheckout(recId).then(function(){refreshApprovals();renderDashboard();});
-}
-function rejectRecord(recId) { adminReject(recId).then(function(){refreshApprovals();renderDashboard();}); }
-function doUndoApproval(recId) { showConfirm('Undo this approval?', function(){ undoApproval(recId).then(function(){refreshApprovals();renderDashboard();}); }); }
-
-function renderLiveStatus() {
-  var today = tD(); var allAtt = gA(); var working = [], done = [];
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i]; var aDate = a.date || getTurkeyDate(a.checkinTime||a.checkinReqTime);
-    if (aDate !== today) continue;
-    if (a.status === 'checked_in' || a.status === 'pending_checkout') working.push(a);
-    else if (a.status === 'completed') done.push(a);
-  }
-  setEl('liveWorkingCount', working.length); setEl('liveDoneCount', done.length);
-  var wEl = document.getElementById('liveWorkingList');
-  if (wEl) {
-    if (working.length === 0) { wEl.innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">person_off</span><p>No one working</p></div>'; }
-    else {
-      var h = '<div class="live-worker-list">';
-      for (var j = 0; j < working.length; j++) {
-        var w = working[j]; var elapsed = w.checkinTime ? Math.round((Date.now()-new Date(w.checkinTime).getTime())/3600000*10)/10 : 0;
-        h += '<div class="live-worker-item"><div class="live-worker-avatar">'+getInitials(w.name)+'</div>' +
-          '<div class="live-worker-info"><div class="live-worker-name">'+w.name+'</div>' +
-          '<div class="live-worker-meta">'+w.wid+' · '+(w.shift||'Day')+'</div>' +
-          '<div class="live-worker-time">In: '+fmtTime(w.checkinTime)+' · '+elapsed+'h</div></div>' +
-          '<button class="btn btn-sm btn-danger" onclick="adminCheckoutLive(\''+w.recId+'\')"><span class="material-symbols-outlined">logout</span></button></div>';
-      }
-      h += '</div>'; wEl.innerHTML = h;
-    }
-  }
-  var dEl = document.getElementById('liveDoneList');
-  if (dEl) {
-    if (done.length === 0) { dEl.innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">hourglass_empty</span><p>No completions yet</p></div>'; }
-    else {
-      var dH = '<div class="live-worker-list">';
-      for (var k = 0; k < done.length; k++) {
-        var da = done[k];
-        dH += '<div class="live-worker-item"><div class="live-worker-avatar" style="background:linear-gradient(135deg,#059669,#10b981)">'+getInitials(da.name)+'</div>' +
-          '<div class="live-worker-info"><div class="live-worker-name">'+da.name+'</div>' +
-          '<div class="live-worker-time">'+fmtTime(da.checkinTime)+' → '+fmtTime(da.checkoutTime)+' · '+(da.total||0)+'h</div></div>' +
-          '<span class="badge badge-success">Done</span></div>';
-      }
-      dH += '</div>'; dEl.innerHTML = dH;
-    }
-  }
-}
-function adminCheckoutLive(recId) { showConfirm('Checkout now?', function(){ adminApproveCheckout(recId).then(function(){renderLiveStatus();renderDashboard();}); }); }
-
-function renderAttendanceView() {
-  var date = document.getElementById('attDate') ? document.getElementById('attDate').value : tD();
-  if (!date) date = tD();
-  var shift = document.getElementById('attShift') ? document.getElementById('attShift').value : 'All';
-  var section = document.getElementById('attSection') ? document.getElementById('attSection').value : 'All';
-  var statusFilter = document.getElementById('attStatus') ? document.getElementById('attStatus').value : 'All';
-  var allAtt = gA(); var allWorkers = gW();
-  var presentWids = []; var presentRecs = []; var processedWids = [];
-  for (var i = 0; i < allAtt.length; i++) {
-    var a = allAtt[i]; var aDate = a.date || getTurkeyDate(a.checkinTime||a.checkinReqTime);
-    if (aDate !== date) continue;
-    if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed') continue;
-    if (shift !== 'All' && a.shift !== shift) continue;
-    if (section !== 'All' && a.sec !== section) continue;
-    if (indexOf(processedWids, a.wid) !== -1) continue;
-    var w2 = findWorker(a.wid); if (!w2) continue;
-    processedWids.push(a.wid); presentWids.push(a.wid);
-    presentRecs.push({ worker: w2, att: a });
-  }
-  var absentWorkers = [];
-  for (var j = 0; j < allWorkers.length; j++) {
-    var w3 = allWorkers[j];
-    if (!w3.on) continue;
-    if (section !== 'All' && w3.sec !== section) continue;
-    if (shift !== 'All' && w3.shift !== shift) continue;
-    if (indexOf(presentWids, w3.wid) !== -1) continue;
-    absentWorkers.push(w3);
-  }
-  var totalF = presentRecs.length + absentWorkers.length;
-  setEl('attSumTotal', totalF); setEl('attSumPresent', presentRecs.length); setEl('attSumAbsent', absentWorkers.length);
-  setEl('attPresentCount', presentRecs.length); setEl('attAbsentCount', absentWorkers.length);
-  var presentBody = document.getElementById('attPresentBody');
-  if (presentBody) {
-    if (statusFilter === 'Absent') { document.getElementById('attPresentCard').style.display = 'none'; }
-    else {
-      document.getElementById('attPresentCard').style.display = 'block';
-      if (presentRecs.length === 0) { presentBody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">No present workers</td></tr>'; }
-      else {
-        var pH = '';
-        for (var p = 0; p < presentRecs.length; p++) {
-          var pr = presentRecs[p]; var sb = getStatusBadge(pr.att.status); var isM = pr.att.backdated ? '<span class="tag-manual">M</span>' : '';
-          pH += '<tr><td>'+(p+1)+'</td><td><strong>'+pr.worker.name+'</strong> '+isM+'<br><small class="text-muted">'+pr.worker.wid+'</small></td>' +
-            '<td>'+pr.worker.sec+'</td><td><span class="shift-badge shift-'+(pr.att.shift||'day').toLowerCase()+'">'+(pr.att.shift||'Day')+'</span></td>' +
-            '<td>'+fmtTime(pr.att.checkinTime||pr.att.checkinReqTime)+'</td><td>'+(pr.att.checkoutTime?fmtTime(pr.att.checkoutTime):'-')+'</td>' +
-            '<td>'+(pr.att.total?'<strong>'+pr.att.total+'h</strong>':'-')+'</td><td>'+(pr.att.regular||0)+'h</td>' +
-            '<td>'+(pr.att.ot?'<span class="ot-val">'+pr.att.ot+'h</span>':'-')+'</td><td>'+sb+'</td>' +
-            '<td><button class="btn-icon btn-edit" onclick="editAttRecord(\''+pr.att.recId+'\')"><span class="material-symbols-outlined">edit</span></button>' +
-            '<button class="btn-icon btn-delete" onclick="deleteAttRecord(\''+pr.att.recId+'\')"><span class="material-symbols-outlined">delete</span></button></td></tr>';
-        }
-        presentBody.innerHTML = pH;
-      }
-    }
-  }
-  var abG = document.getElementById('attAbsentGrid');
-  if (abG) {
-    if (statusFilter === 'Present') { document.getElementById('attAbsentCard').style.display = 'none'; }
-    else {
-      document.getElementById('attAbsentCard').style.display = 'block';
-      if (absentWorkers.length === 0) { abG.innerHTML = '<div class="all-present-msg"><span class="material-symbols-outlined">celebration</span> All present!</div>'; }
-      else {
-        var aH = '';
-        for (var ab = 0; ab < absentWorkers.length; ab++) {
-          var abW = absentWorkers[ab];
-          aH += '<div class="absent-card"><div class="absent-initials">'+getInitials(abW.name)+'</div>' +
-            '<div class="absent-info"><div class="absent-name">'+abW.name+'</div><div class="absent-meta">'+abW.wid+' · '+abW.prof+'</div>' +
-            '<div class="absent-meta">'+abW.sec+' · '+abW.shift+'</div></div>' +
-            '<button class="btn-absent-in" onclick="quickAttAbsent(\''+abW.wid+'\',\''+date+'\')">' +
-            '<span class="material-symbols-outlined">add_circle</span> Add</button></div>';
-        }
-        abG.innerHTML = aH;
-      }
-    }
-  }
-}
-
-function quickAttAbsent(wid, date) {
-  if (typeof quickAddAbsent === 'function') { quickAddAbsent(wid, date); return; }
-  var w = findWorker(wid); if (!w) return;
-  var shift = w.shift || 'Day';
-  var defIn = shift === 'Night' ? '20:00' : '08:00';
-  var defOut = shift === 'Night' ? '08:00' : '20:00';
-  manualCheckin(wid, shift, date, defIn).then(function(r1) {
-    if (!r1.ok) { showToast(r1.msg, 'error'); return; }
-    setTimeout(function() {
-      manualCheckout(wid, shift, date, defOut).then(function(r2) {
-        if (r2.ok) showToast(w.name + ' attendance added!', 'success');
-        renderAttendanceView();
-      });
-    }, 300);
-  });
-}
-function editAttRecord(recId) { if (typeof editHistRecord === 'function') editHistRecord(recId); }
-function deleteAttRecord(recId) {
-  if (typeof deleteHistRecord === 'function') { deleteHistRecord(recId); return; }
-  showConfirm('Delete this record?', function(){ FB.delete('attendance', recId).then(function(){ showToast('Deleted!','info'); renderAttendanceView(); }); });
-}
-
-function setWorkerTab(tab) {
-  _workerTabActive = tab;
-  document.getElementById('wtabIndian').classList.toggle('active', tab === 'Indian');
-  document.getElementById('wtabPakistani').classList.toggle('active', tab === 'Pakistani');
-  renderAdminWorkers();
-}
-
-function renderAdminWorkers() {
-  var search = document.getElementById('workerSearch') ? document.getElementById('workerSearch').value.toLowerCase() : '';
-  var secFilter = document.getElementById('workerSecFilter') ? document.getElementById('workerSecFilter').value : 'All';
-  var statusFilter = document.getElementById('workerStatusFilter') ? document.getElementById('workerStatusFilter').value : 'All';
-  var ws = gW(); var filtered = [];
-  var indCount = 0, pakCount = 0;
-  for (var x = 0; x < ws.length; x++) { if (ws[x].on && ws[x].sec === 'Indian') indCount++; if (ws[x].on && ws[x].sec === 'Pakistani') pakCount++; }
-  setEl('wtabIndCount', indCount); setEl('wtabPakCount', pakCount);
-  for (var i = 0; i < ws.length; i++) {
-    var w = ws[i];
-    if (w.sec !== _workerTabActive) continue;
-    if (secFilter !== 'All' && w.sec !== secFilter) continue;
-    if (statusFilter === 'Active' && !w.on) continue;
-    if (statusFilter === 'Inactive' && w.on) continue;
-    if (search) { if ((w.name+w.wid+w.prof+w.sec).toLowerCase().indexOf(search) === -1) continue; }
-    filtered.push(w);
-  }
-  var tbody = document.getElementById('workersTableBody'); if (!tbody) return;
-  if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No workers found</td></tr>'; return; }
-  var html = '';
-  for (var j = 0; j < filtered.length; j++) {
-    var fw = filtered[j];
-    html += '<tr class="'+ (!fw.on?'row-inactive':'') +'"><td>'+(j+1)+'</td>' +
-      '<td><span class="worker-id-badge">'+fw.wid+'</span></td><td><strong>'+fw.name+'</strong></td>' +
-      '<td>'+fw.prof+'</td><td>'+fw.sec+'</td>' +
-      '<td><span class="shift-badge shift-'+(fw.shift||'day').toLowerCase()+' shift-clickable" onclick="doToggleShift(\''+fw.wid+'\')">'+(fw.shift||'Day')+'</span></td>' +
-      '<td><span class="status-dot '+(fw.on?'status-active':'status-inactive')+'"></span>'+(fw.on?'Active':'Inactive')+'</td>' +
-      '<td class="action-cell">' +
-        '<button class="btn-icon btn-edit" onclick="showEditWorker(\''+fw.wid+'\')"><span class="material-symbols-outlined">edit</span></button>' +
-        '<button class="btn-icon '+(fw.on?'btn-warn':'btn-success')+'" onclick="doToggleActive(\''+fw.wid+'\')"><span class="material-symbols-outlined">'+(fw.on?'person_off':'person')+'</span></button>' +
-        '<button class="btn-icon btn-info" onclick="doResetWorkerPw(\''+fw.wid+'\')"><span class="material-symbols-outlined">lock_reset</span></button>' +
-        '<button class="btn-icon btn-delete" onclick="doDeleteWorker(\''+fw.wid+'\')"><span class="material-symbols-outlined">delete</span></button>' +
-      '</td></tr>';
-  }
-  tbody.innerHTML = html;
-}
-
-function showAddWorker() {
-  var html = '<div class="form-grid">'+
-    '<div class="form-group"><label class="form-label">Worker ID</label><input type="text" id="awId" class="form-control" placeholder="e.g. IND0038"></div>'+
-    '<div class="form-group"><label class="form-label">Full Name</label><input type="text" id="awName" class="form-control"></div>'+
-    '<div class="form-group"><label class="form-label">Profession</label><input type="text" id="awProf" class="form-control"></div>'+
-    '<div class="form-group"><label class="form-label">Section</label><select id="awSec" class="form-control"><option value="Indian">Indian</option><option value="Pakistani">Pakistani</option></select></div>'+
-    '<div class="form-group"><label class="form-label">Shift</label><select id="awShift" class="form-control"><option value="Day">Day</option><option value="Night">Night</option></select></div>'+
-    '</div><div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">'+
-    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>'+
-    '<button class="btn btn-primary" onclick="doAddWorker()">Add Worker</button></div>';
-  showModal(html, 'Add New Worker');
-}
-function doAddWorker() {
-  var id=document.getElementById('awId').value.trim().toUpperCase(), name=document.getElementById('awName').value.trim(),
-    prof=document.getElementById('awProf').value.trim(), sec=document.getElementById('awSec').value, shift=document.getElementById('awShift').value;
-  if (!id||!name) { showToast('ID and Name required','error'); return; }
-  addWorker(id, name, prof, sec, shift).then(function(res){ if(res.ok){closeModal();renderAdminWorkers();} else showToast(res.msg,'error'); });
-}
-function showEditWorker(wid) {
-  var w = findWorker(wid); if (!w) return;
-  var html = '<div class="form-grid">'+
-    '<div class="form-group"><label class="form-label">ID</label><input type="text" value="'+w.wid+'" readonly class="form-control"></div>'+
-    '<div class="form-group"><label class="form-label">Name</label><input type="text" id="ewName" value="'+w.name+'" class="form-control"></div>'+
-    '<div class="form-group"><label class="form-label">Profession</label><input type="text" id="ewProf" value="'+w.prof+'" class="form-control"></div>'+
-    '<div class="form-group"><label class="form-label">Section</label><select id="ewSec" class="form-control"><option value="Indian"'+(w.sec==='Indian'?' selected':'')+'>Indian</option><option value="Pakistani"'+(w.sec==='Pakistani'?' selected':'')+'>Pakistani</option></select></div>'+
-    '<div class="form-group"><label class="form-label">Shift</label><select id="ewShift" class="form-control"><option value="Day"'+(w.shift==='Day'?' selected':'')+'>Day</option><option value="Night"'+(w.shift==='Night'?' selected':'')+'>Night</option></select></div>'+
-    '</div><div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">'+
-    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>'+
-    '<button class="btn btn-primary" onclick="doEditWorker(\''+wid+'\')">Save</button></div>';
-  showModal(html, 'Edit Worker - ' + w.name);
-}
-function doEditWorker(wid) {
-  editWorker(wid, { name:document.getElementById('ewName').value.trim(), prof:document.getElementById('ewProf').value.trim(),
-    sec:document.getElementById('ewSec').value, shift:document.getElementById('ewShift').value
-  }).then(function(res){ if(res.ok){closeModal();renderAdminWorkers();} else showToast(res.msg,'error'); });
-}
-function doToggleShift(wid) { toggleWorkerShift(wid).then(function(){renderAdminWorkers();}); }
-function doToggleActive(wid) { var w=findWorker(wid); if(!w) return; showConfirm((w.on?'Deactivate':'Activate')+' '+w.name+'?', function(){toggleWorkerActive(wid).then(function(){renderAdminWorkers();}); }); }
-function doResetWorkerPw(wid) { var w=findWorker(wid); if(!w) return; showConfirm('Reset password for '+w.name+'?', function(){ FB.update('workers',wid,{pw:'Worker@123'}).then(function(){showToast('Reset to Worker@123','success');}); }); }
-function doDeleteWorker(wid) { var w=findWorker(wid); if(!w) return; showConfirm('Delete '+w.name+'? Attendance records remain.', function(){ deleteWorker(wid).then(function(){renderAdminWorkers();}); }); }
-
-function doQuickCheckin() {
-  var wid=document.getElementById('qcInWorker').value, shift=document.getElementById('qcInShift').value, time=document.getElementById('qcInTime').value;
-  if (!wid){showToast('Select worker','error');return;} if(!time){showToast('Enter time','error');return;}
-  manualCheckin(wid,shift,tD(),time).then(function(res){ if(res.ok) showToast(res.msg,'success'); else showToast(res.msg,'error'); renderManualEntry(); });
-}
-function doQuickCheckout() {
-  var wid=document.getElementById('qcOutWorker').value, time=document.getElementById('qcOutTime').value;
-  if (!wid){showToast('Select worker','error');return;} if(!time){showToast('Enter time','error');return;}
-  manualCheckout(wid,null,tD(),time).then(function(res){ if(res.ok) showToast(res.msg,'success'); else showToast(res.msg,'error'); renderManualEntry(); });
-}
-
-function updateEndDayStats() {
-  var today=tD(),allAtt=gA(),working=0,pending=0;
-  for(var i=0;i<allAtt.length;i++){var a=allAtt[i],aD=a.date||getTurkeyDate(a.checkinTime||a.checkinReqTime);
-    if(aD!==today)continue; if(a.status==='checked_in')working++; else if(a.status==='pending_checkout')pending++;}
-  setEl('edsWorking',working); setEl('edsPending',pending);
-}
-function doEndDay() {
-  var time=document.getElementById('endDayTime').value;
-  if(!time){showToast('Enter time','error');return;}
-  showConfirm('Checkout ALL active workers at '+time+'?', function(){endDay(time).then(function(res){showToast(res.msg,'success');updateEndDayStats();renderDashboard();});});
-}
-
-function generateMonthlyReport() {
-  var wid=document.getElementById('monthlyWorker').value, year=parseInt(document.getElementById('monthlyYear').value),
-    month=parseInt(document.getElementById('monthlyMonth').value);
-  var reports = getMonthlyReport(wid,year,month);
-  var container = document.getElementById('monthlyReportContainer'); if(!container) return;
-  if(!reports||reports.length===0){container.innerHTML='<div class="empty-state"><p>No data found</p></div>';return;}
-  var html='';
-  for(var i=0;i<reports.length;i++){
-    var r=reports[i];
-    html+='<div class="card monthly-report-card"><div class="card-header"><span class="material-symbols-outlined">person</span><h3>'+r.worker.name+'</h3><span class="text-muted">'+r.worker.wid+'</span></div><div class="card-body">';
-    html+='<div class="monthly-stats-row"><div class="mstat"><span class="mstat-num">'+r.totalDays+'</span><span>Days</span></div>';
-    html+='<div class="mstat"><span class="mstat-num">'+r.totalHrs+'h</span><span>Hours</span></div>';
-    html+='<div class="mstat"><span class="mstat-num">'+r.totalOT+'h</span><span>OT</span></div>';
-    html+='<div class="mstat"><span class="mstat-num">'+r.dayShift+'</span><span>Day</span></div>';
-    html+='<div class="mstat"><span class="mstat-num">'+r.nightShift+'</span><span>Night</span></div></div>';
-    if(r.records.length>0){
-      html+='<div class="table-responsive"><table class="data-table"><thead><tr><th>Date</th><th>Shift</th><th>In</th><th>Out</th><th>Hours</th><th>OT</th></tr></thead><tbody>';
-      for(var j=0;j<r.records.length;j++){
-        var rec=r.records[j];
-        html+='<tr><td>'+fmtDate(rec.date+'T00:00:00')+'</td><td><span class="shift-badge shift-'+(rec.shift||'day').toLowerCase()+'">'+(rec.shift||'Day')+'</span></td>';
-        html+='<td>'+fmtTime(rec.checkinTime)+'</td><td>'+fmtTime(rec.checkoutTime)+'</td><td>'+(rec.total||0)+'h</td><td>'+(rec.ot||0)+'h</td></tr>';
-      }
-      html+='</tbody></table></div>';
-    }
-    html+='</div></div>';
-  }
-  container.innerHTML = html;
-}
-
-function exportMonthlyPDF() {
-  var wid=document.getElementById('monthlyWorker').value,year=parseInt(document.getElementById('monthlyYear').value),
-    month=parseInt(document.getElementById('monthlyMonth').value);
-  var reports=getMonthlyReport(wid,year,month);
-  if(!reports||reports.length===0){showToast('No data','warn');return;}
-  var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var doc=new jspdf.jsPDF();var startY=addPDFHeader(doc,'Monthly - '+mn[month-1]+' '+year,'Workers: '+reports.length);
-  for(var i=0;i<reports.length;i++){
-    var r=reports[i];
-    if(i>0){doc.addPage();startY=addPDFHeader(doc,'Monthly - '+mn[month-1]+' '+year,r.worker.name);}
-    doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,64,175);
-    doc.text(r.worker.name+' | '+r.worker.wid,14,startY+8);
-    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(71,85,105);
-    doc.text('Days:'+r.totalDays+' | Hrs:'+r.totalHrs+'h | OT:'+r.totalOT+'h | Day:'+r.dayShift+' | Night:'+r.nightShift,14,startY+16);
-    if(r.records.length>0){
-      var rows=[];
-      for(var j=0;j<r.records.length;j++){var rec=r.records[j];rows.push([fmtDate(rec.date+'T00:00:00'),rec.shift||'Day',fmtTime(rec.checkinTime),fmtTime(rec.checkoutTime),(rec.total||0)+'h',(rec.ot||0)+'h']);}
-      doc.autoTable({startY:startY+22,head:[['Date','Shift','In','Out','Total','OT']],body:rows,theme:'grid',styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[30,64,175],textColor:255},alternateRowStyles:{fillColor:[240,245,255]}});
-      startY=doc.lastAutoTable.finalY+10;
-    }
-  }
-  addPDFFooter(doc);doc.save('albowry_monthly_'+year+'_'+month+'.pdf');showToast('PDF downloaded!','success');
-}
-
-function exportMonthlyCSV() {
-  var wid=document.getElementById('monthlyWorker').value,year=parseInt(document.getElementById('monthlyYear').value),
-    month=parseInt(document.getElementById('monthlyMonth').value);
-  var reports=getMonthlyReport(wid,year,month);
-  if(!reports||reports.length===0){showToast('No data','warn');return;}
-  var csv=COMPANY.full+'\nMonthly: '+year+'-'+month+'\n\nWorker,ID,Section,Date,Shift,In,Out,Total,OT\n';
-  for(var i=0;i<reports.length;i++){var r=reports[i];
-    for(var j=0;j<r.records.length;j++){var rec=r.records[j];
-      csv+='"'+r.worker.name+'",'+r.worker.wid+','+r.worker.sec+','+rec.date+','+(rec.shift||'Day')+','+fmtTime(rec.checkinTime)+','+fmtTime(rec.checkoutTime)+','+(rec.total||0)+','+(rec.ot||0)+'\n';}}
-  var blob=new Blob([csv],{type:'text/csv'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='albowry_monthly_'+year+'_'+month+'.csv';a.click();URL.revokeObjectURL(url);showToast('CSV downloaded!','success');
-}
-
-function exportRangePDF() {
-  var from=document.getElementById('expFrom').value,to=document.getElementById('expTo').value,filter=document.getElementById('expFilter').value;
-  if(!from||!to){showToast('Select dates','error');return;}
-  var data=getExportData(from,to,filter);
-  if(data.length===0){showToast('No data','warn');return;}
-  var doc=new jspdf.jsPDF('landscape');var startY=addPDFHeader(doc,'Export: '+from+' to '+to,filter+' | '+data.length+' records');
-  var rows=[];for(var i=0;i<data.length;i++){var a=data[i];rows.push([a.date||'',a.name||'',a.wid||'',a.sec||'',a.shift||'Day',fmtTime(a.checkinTime),fmtTime(a.checkoutTime),(a.total||0)+'h',(a.ot||0)+'h']);}
-  doc.autoTable({startY:startY,head:[['Date','Name','ID','Sec','Shift','In','Out','Total','OT']],body:rows,theme:'grid',styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[30,64,175],textColor:255}});
-  addPDFFooter(doc);doc.save('albowry_export_'+from+'_'+to+'.pdf');showToast('PDF exported!','success');
-}
-function exportRangeExcel() {
-  var from=document.getElementById('expFrom').value,to=document.getElementById('expTo').value,filter=document.getElementById('expFilter').value;
-  if(!from||!to){showToast('Select dates','error');return;}
-  var data=getExportData(from,to,filter);exportCSV(data,'albowry_export_'+from+'_'+to+'.csv');
-}
-function exportRangeCSV() { exportRangeExcel(); }
-
-function doUpdateAdminName() {var name=document.getElementById('setAdminName').value.trim();updateAdmin('name',name).then(function(res){if(res.ok){var el=document.getElementById('adminDisplayName');if(el)el.textContent=name;}});}
-function doUpdateAdminId() {var id=document.getElementById('setAdminId').value.trim(),pw=document.getElementById('setAdminIdPw').value;updateAdmin('id',id,pw).then(function(res){if(res.ok){document.getElementById('setAdminId').value='';document.getElementById('setAdminIdPw').value='';}});}
-function doUpdateAdminPw() {var old=document.getElementById('setOldPw').value,nw=document.getElementById('setNewPw').value;updateAdmin('pw',nw,old).then(function(res){if(res.ok){document.getElementById('setOldPw').value='';document.getElementById('setNewPw').value='';}});}
-function doResetPasswords() {showConfirm('Reset ALL passwords to Worker@123?', function(){resetAllPasswords();});}
-function doClearAttendance() {showConfirm('DANGER: Clear ALL attendance?', function(){showConfirm('Absolutely sure? Cannot undo!', function(){clearAllAttendance();updateSettingsInfo();});});}
-function updateSettingsInfo() {setEl('sysWorkerCount',gW().length);setEl('sysAttCount',gA().length);if(_lastSyncTime)setEl('sysLastSync',fmtDT(_lastSyncTime.toISOString()));}
-
-function setEl(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
-function togglePw(inputId, btn) {
-  var inp = document.getElementById(inputId); if (!inp) return;
-  if (inp.type === 'password') { inp.type = 'text'; btn.innerHTML = '<span class="material-symbols-outlined">visibility_off</span>'; }
-  else { inp.type = 'password'; btn.innerHTML = '<span class="material-symbols-outlined">visibility</span>'; }
-}
-function toggleSidebar() {
-  var sb = document.getElementById('adminSidebar'), ov = document.getElementById('sidebarOverlay');
-  if (sb) sb.classList.toggle('open'); if (ov) ov.classList.toggle('show');
-}
-
-var _originalShowSection = showSection;
-showSection = function(id) {
-  _originalShowSection(id);
-  if (window.innerWidth < 768) { var sb=document.getElementById('adminSidebar'),ov=document.getElementById('sidebarOverlay');if(sb)sb.classList.remove('open');if(ov)ov.classList.remove('show');}
-  if(id==='secDashboard')renderDashboard();if(id==='secApprovals')renderApprovals();if(id==='secLive')renderLiveStatus();
-  if(id==='secAttendance')renderAttendanceView();if(id==='secWorkers')renderAdminWorkers();if(id==='secManual')renderManualEntry();
-  if(id==='secHistory'){if(typeof initHistory==='function')initHistory();}if(id==='secEndDay')updateEndDayStats();if(id==='secSettings')updateSettingsInfo();
-};
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    var wF = document.getElementById('workerLoginForm'), aF = document.getElementById('adminLoginForm');
-    if (wF && wF.style.display !== 'none') doWorkerLogin();
-    else if (aF && aF.style.display !== 'none') doAdminLogin();
-  }
-});
-
-window.addEventListener('DOMContentLoaded', function() { bootstrap(); });
-</script>
+<script src="app.js?v=10"></script>
+<script src="manual.js?v=10"></script>
+<script src="history.js?v=10"></script>
+<script src="ui.js?v=10"></script>
 </body>
 </html>
