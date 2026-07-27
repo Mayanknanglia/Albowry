@@ -1,13 +1,9 @@
-// ================================================
-// AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT
-// app.js v17 - Complete Professional Sync
-// COP31 Project | Antalya, Turkey
-// ================================================
+// AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
+// app.js v17 - PDF logo + Check In/Out approval flow
 
 var APP_VERSION = 'v17';
 var CACHE_KEY = 'alb_v17';
 
-// ====== COMPANY INFO ======
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
   project: 'PROJECT COP31',
@@ -17,7 +13,6 @@ var COMPANY = {
   full: 'AL BOWRY CARPENTRY LLC | Registered: Sharjah, UAE | Project: COP31, Antalya, Turkey'
 };
 
-// ====== CONSTANTS ======
 var REG_HOURS = 9;
 var COMP_OT = 3;
 var TOTAL_SHIFT = 12;
@@ -25,7 +20,6 @@ var TZ = 'Europe/Istanbul';
 var SESSION_KEY = 'alb_session';
 var ADMIN_DOC = 'main';
 
-// ====== GLOBAL STATE ======
 var _workers = [];
 var _attendance = [];
 var _adminData = {};
@@ -33,8 +27,8 @@ var _listeners = [];
 var _syncStatus = { workers: false, attendance: false, admin: false };
 var _pendingInstall = null;
 var _lastSyncTime = null;
+var _cachedLogoDataUrl = null;
 
-// ====== FIREBASE WRAPPER ======
 var FB = {
   db: null,
   init: function(db) { FB.db = db; },
@@ -49,26 +43,18 @@ var FB = {
   listenDoc: function(col, id, cb) { return window.firestoreListenDoc(FB.db, col, id, cb); }
 };
 
-// ====== DATA GETTERS ======
 function gW() { return _workers || []; }
 function gA() { return _attendance || []; }
 function gAd() { return _adminData || {}; }
 
-// ====== TIME UTILITIES ======
-function tD() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: TZ });
-}
-
-function tNow() {
-  return new Date().toISOString();
-}
+function tD() { return new Date().toLocaleDateString('en-CA', { timeZone: TZ }); }
+function tNow() { return new Date().toISOString(); }
 
 function fmtDT(iso) {
   if (!iso) return '-';
   try {
     return new Date(iso).toLocaleString('en-GB', {
-      timeZone: TZ,
-      day: '2-digit', month: 'short', year: 'numeric',
+      timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
     });
   } catch(e) { return iso; }
@@ -78,8 +64,7 @@ function fmtDate(iso) {
   if (!iso) return '-';
   try {
     return new Date(iso).toLocaleDateString('en-GB', {
-      timeZone: TZ,
-      day: '2-digit', month: 'short', year: 'numeric'
+      timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric'
     });
   } catch(e) { return iso; }
 }
@@ -88,8 +73,7 @@ function fmtTime(iso) {
   if (!iso) return '-';
   try {
     return new Date(iso).toLocaleTimeString('en-GB', {
-      timeZone: TZ,
-      hour: '2-digit', minute: '2-digit', hour12: true
+      timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true
     });
   } catch(e) { return iso; }
 }
@@ -103,14 +87,11 @@ function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
   var dt = new Date(dateStr + 'T' + timeStr + ':00');
   if (isNightCheckout && checkinISO) {
     var cin = new Date(checkinISO);
-    if (dt <= cin) {
-      dt.setDate(dt.getDate() + 1);
-    }
+    if (dt <= cin) { dt.setDate(dt.getDate() + 1); }
   }
   return dt.toISOString();
 }
 
-// ====== HOURS CALCULATION ======
 function calcHours(checkinISO, checkoutISO) {
   if (!checkinISO || !checkoutISO) return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0 };
   var cin = new Date(checkinISO).getTime();
@@ -132,7 +113,6 @@ function calcHours(checkinISO, checkoutISO) {
   };
 }
 
-// ====== PRESENT/ABSENT LOGIC ======
 function getPresentWorkerIds(date, attendanceList, shift) {
   var presentIds = [];
   var filtered = attendanceList || gA();
@@ -142,9 +122,7 @@ function getPresentWorkerIds(date, attendanceList, shift) {
     if (attDate !== date) continue;
     if (shift && shift !== 'All' && att.shift !== shift) continue;
     if (att.status === 'checked_in' || att.status === 'pending_checkout' || att.status === 'completed') {
-      if (indexOf(presentIds, att.wid) === -1) {
-        presentIds.push(att.wid);
-      }
+      if (indexOf(presentIds, att.wid) === -1) presentIds.push(att.wid);
     }
   }
   return presentIds;
@@ -159,9 +137,7 @@ function getAbsentWorkers(date, attendanceList, workers, shift, section) {
     if (!w.on) continue;
     if (section && section !== 'All' && w.sec !== section) continue;
     if (shift && shift !== 'All' && w.shift !== shift) continue;
-    if (indexOf(present, w.wid) === -1) {
-      absentWorkers.push(w);
-    }
+    if (indexOf(present, w.wid) === -1) absentWorkers.push(w);
   }
   return absentWorkers;
 }
@@ -182,48 +158,32 @@ function getPresentWorkers(date, attendanceList, workers, shift, section) {
       var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
       if (a.wid === w.wid && aDate === date) {
         if (a.status === 'checked_in' || a.status === 'pending_checkout' || a.status === 'completed') {
-          attRec = a;
-          break;
+          attRec = a; break;
         }
       }
     }
-    if (attRec) {
-      presentWorkers.push({ worker: w, att: attRec });
-    }
+    if (attRec) presentWorkers.push({ worker: w, att: attRec });
   }
   return presentWorkers;
 }
 
-// ====== HELPERS ======
 function indexOf(arr, val) {
   if (!arr) return -1;
-  for (var i = 0; i < arr.length; i++) {
-    if (arr[i] === val) return i;
-  }
+  for (var i = 0; i < arr.length; i++) if (arr[i] === val) return i;
   return -1;
 }
 
-// ====== SESSION ======
 function getSession() {
-  try {
-    var s = localStorage.getItem(SESSION_KEY);
-    return s ? JSON.parse(s) : null;
-  } catch(e) { return null; }
+  try { var s = localStorage.getItem(SESSION_KEY); return s ? JSON.parse(s) : null; }
+  catch(e) { return null; }
 }
-
 function setSession(data) {
-  try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
-  } catch(e) {}
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {}
 }
-
 function clearSession() {
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch(e) {}
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
 }
 
-// ====== SYNC STATUS ======
 function updateSyncUI() {
   var el = document.getElementById('syncStatus');
   if (!el) return;
@@ -238,52 +198,41 @@ function updateSyncUI() {
   }
 }
 
-// ====== REAL-TIME LISTENERS ======
 function startRealtimeSync() {
-  for (var i = 0; i < _listeners.length; i++) {
-    try { _listeners[i](); } catch(e) {}
-  }
+  for (var i = 0; i < _listeners.length; i++) { try { _listeners[i](); } catch(e) {} }
   _listeners = [];
 
-  var unsubW = FB.listen('workers', function(docs) {
-    _workers = docs;
-    _syncStatus.workers = true;
-    updateSyncUI();
-    onWorkersUpdated();
-  });
-  _listeners.push(unsubW);
+  _listeners.push(FB.listen('workers', function(docs) {
+    _workers = docs; _syncStatus.workers = true;
+    updateSyncUI(); onWorkersUpdated();
+  }));
 
-  var unsubA = FB.listen('attendance', function(docs) {
-    _attendance = docs;
-    _syncStatus.attendance = true;
-    updateSyncUI();
-    onAttendanceUpdated();
-  });
-  _listeners.push(unsubA);
+  _listeners.push(FB.listen('attendance', function(docs) {
+    _attendance = docs; _syncStatus.attendance = true;
+    updateSyncUI(); onAttendanceUpdated();
+  }));
 
-  var unsubAd = FB.listenDoc('admin', ADMIN_DOC, function(doc) {
+  _listeners.push(FB.listenDoc('admin', ADMIN_DOC, function(doc) {
     if (doc) {
-      _adminData = doc;
-      _syncStatus.admin = true;
-      updateSyncUI();
-      onAdminUpdated();
+      _adminData = doc; _syncStatus.admin = true;
+      updateSyncUI(); onAdminUpdated();
     }
-  });
-  _listeners.push(unsubAd);
+  }));
 }
 
 function onWorkersUpdated() {
   var session = getSession();
   if (!session) return;
   if (session.role === 'admin') {
-    refreshAdminWorkers();
-    refreshDashboard();
-    renderWorkerDropdowns();
+    refreshAdminWorkers(); refreshDashboard(); renderWorkerDropdowns();
   } else if (session.role === 'worker') {
     var w = findWorker(session.wid);
     if (w) {
       setSession({ role: 'worker', wid: w.wid, name: w.name, prof: w.prof, sec: w.sec, shift: w.shift });
       renderWorkerDashboard();
+    } else {
+      // Worker deleted - force logout
+      clearSession(); location.reload();
     }
   }
 }
@@ -292,11 +241,8 @@ function onAttendanceUpdated() {
   var session = getSession();
   if (!session) return;
   if (session.role === 'admin') {
-    refreshDashboard();
-    refreshApprovals();
-    refreshLiveStatus();
-    refreshAttendanceView();
-    refreshManualEntry();
+    refreshDashboard(); refreshApprovals(); refreshLiveStatus();
+    refreshAttendanceView(); refreshManualEntry();
     if (typeof renderHistoryView === 'function') renderHistoryView();
   } else if (session.role === 'worker') {
     renderWorkerDashboard();
@@ -310,50 +256,35 @@ function onAdminUpdated() {
   if (nameEl && _adminData.name) nameEl.textContent = _adminData.name;
 }
 
-// ====== WORKER LOOKUP ======
 function findWorker(wid) {
   var ws = gW();
-  for (var i = 0; i < ws.length; i++) {
-    if (ws[i].wid === wid) return ws[i];
-  }
+  for (var i = 0; i < ws.length; i++) if (ws[i].wid === wid) return ws[i];
   return null;
 }
 
 function findWorkerByName(name) {
   var ws = gW();
-  for (var i = 0; i < ws.length; i++) {
-    if (ws[i].name === name) return ws[i];
-  }
+  for (var i = 0; i < ws.length; i++) if (ws[i].name === name) return ws[i];
   return null;
 }
 
-// ====== ATTENDANCE LOOKUP ======
 function getTodayAtt(wid) {
-  var today = tD();
-  var att = gA();
+  var today = tD(); var att = gA();
   for (var i = 0; i < att.length; i++) {
-    if (att[i].wid === wid && att[i].date === today) {
-      return att[i];
-    }
+    if (att[i].wid === wid && att[i].date === today) return att[i];
   }
   return null;
 }
 
 function getWorkerAtt(wid) {
-  var result = [];
-  var att = gA();
-  for (var i = 0; i < att.length; i++) {
-    if (att[i].wid === wid) result.push(att[i]);
-  }
-  result.sort(function(a, b) {
-    return (b.date || '') > (a.date || '') ? 1 : -1;
-  });
+  var result = []; var att = gA();
+  for (var i = 0; i < att.length; i++) if (att[i].wid === wid) result.push(att[i]);
+  result.sort(function(a, b) { return (b.date || '') > (a.date || '') ? 1 : -1; });
   return result;
 }
 
 function getDateAtt(date) {
-  var result = [];
-  var att = gA();
+  var result = []; var att = gA();
   for (var i = 0; i < att.length; i++) {
     var attDate = att[i].date || getTurkeyDate(att[i].checkinTime || att[i].checkinReqTime);
     if (attDate === date) result.push(att[i]);
@@ -366,7 +297,6 @@ function genRecId(wid, backdated) {
   return prefix + Date.now() + '_' + wid;
 }
 
-// ====== WORKER LOGIN ======
 function workerLogin(wid, pw, shift) {
   var w = findWorker(wid);
   if (!w) return { ok: false, msg: 'Worker not found' };
@@ -377,7 +307,6 @@ function workerLogin(wid, pw, shift) {
   return { ok: true, worker: w, session: session };
 }
 
-// ====== ADMIN LOGIN ======
 function adminLogin(id, pw) {
   var ad = gAd();
   if (id === ad.adminId && pw === ad.pw) {
@@ -391,40 +320,28 @@ function adminLogin(id, pw) {
   return { ok: false, msg: 'Wrong Admin ID or Password' };
 }
 
-// ====== WORKER CHECK-IN REQUEST (TIME STARTS NOW) ======
+// ====== WORKER CHECK-IN REQUEST (Time starts NOW) ======
 function workerCheckinReq(wid, shift) {
   var today = tD();
   var existing = getTodayAtt(wid);
-
   if (existing) {
     if (existing.status === 'pending_checkin') return Promise.resolve({ ok: false, msg: 'Check-in already pending approval' });
     if (existing.status === 'checked_in') return Promise.resolve({ ok: false, msg: 'Already checked in' });
     if (existing.status === 'pending_checkout') return Promise.resolve({ ok: false, msg: 'Checkout pending approval' });
     if (existing.status === 'completed') return Promise.resolve({ ok: false, msg: 'Today\'s attendance already completed' });
   }
-
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
-
   var nowISO = tNow();
   var recId = genRecId(wid, false);
   var rec = {
-    recId: recId,
-    wid: wid,
-    name: w.name,
-    prof: w.prof,
-    sec: w.sec,
-    shift: shift || w.shift,
-    date: today,
-    checkinReqTime: nowISO,
-    checkinTime: nowISO,
-    checkoutReqTime: null,
-    checkoutTime: null,
+    recId: recId, wid: wid, name: w.name, prof: w.prof, sec: w.sec,
+    shift: shift || w.shift, date: today,
+    checkinReqTime: nowISO, checkinTime: nowISO,
+    checkoutReqTime: null, checkoutTime: null,
     total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
-    status: 'pending_checkin',
-    backdated: false
+    status: 'pending_checkin', backdated: false
   };
-
   return FB.save('attendance', recId, rec).then(function() {
     return { ok: true, msg: 'Check-in requested at ' + fmtTime(nowISO) + '. Waiting for admin approval.' };
   }).catch(function(e) {
@@ -432,26 +349,19 @@ function workerCheckinReq(wid, shift) {
   });
 }
 
-// ====== WORKER CHECKOUT REQUEST ======
 function workerCheckoutReq(wid) {
   var today = tD();
   var att = null;
   var allAtt = gA();
-
   for (var i = 0; i < allAtt.length; i++) {
     if (allAtt[i].wid === wid && allAtt[i].date === today && allAtt[i].status === 'checked_in') {
-      att = allAtt[i];
-      break;
+      att = allAtt[i]; break;
     }
   }
-
   if (!att) return Promise.resolve({ ok: false, msg: 'No active check-in found for today' });
-
   var nowISO = tNow();
-
   return FB.update('attendance', att.recId, {
-    checkoutReqTime: nowISO,
-    status: 'pending_checkout'
+    checkoutReqTime: nowISO, status: 'pending_checkout'
   }).then(function() {
     return { ok: true, msg: 'Checkout requested at ' + fmtTime(nowISO) + '. Waiting for admin approval.' };
   }).catch(function(e) {
@@ -459,23 +369,16 @@ function workerCheckoutReq(wid) {
   });
 }
 
-// ====== ADMIN APPROVE CHECK-IN (Uses worker's request time) ======
+// ====== ADMIN APPROVE - uses worker's request time ======
 function adminApproveCheckin(recId) {
-  var att = null;
-  var allAtt = gA();
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
-  }
-
+  var att = null; var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false });
-
   var checkinTime = att.checkinReqTime || att.checkinTime || tNow();
-
   return FB.update('attendance', recId, {
-    checkinTime: checkinTime,
-    status: 'checked_in'
+    checkinTime: checkinTime, status: 'checked_in'
   }).then(function() {
-    showToast(att.name + ' check-in approved! Time: ' + fmtTime(checkinTime), 'success');
+    showToast((att.name || 'Worker') + ' check-in approved!', 'success');
     return { ok: true };
   }).catch(function(e) {
     showToast('Error: ' + e.message, 'error');
@@ -483,38 +386,24 @@ function adminApproveCheckin(recId) {
   });
 }
 
-// ====== ADMIN APPROVE CHECKOUT (Uses worker's request time) ======
 function adminApproveCheckout(recId) {
-  var att = null;
-  var allAtt = gA();
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
-  }
+  var att = null; var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
-
   var checkoutTime = att.checkoutReqTime || tNow();
-
   if (att.shift === 'Night' && att.checkinTime) {
     var cin = new Date(att.checkinTime);
     var cout = new Date(checkoutTime);
-    if (cout <= cin) {
-      cout.setDate(cout.getDate() + 1);
-      checkoutTime = cout.toISOString();
-    }
+    if (cout <= cin) { cout.setDate(cout.getDate() + 1); checkoutTime = cout.toISOString(); }
   }
-
   var hrs = calcHours(att.checkinTime, checkoutTime);
-
   return FB.update('attendance', recId, {
     checkoutTime: checkoutTime,
-    total: hrs.total,
-    regular: hrs.regular,
-    compOT: hrs.compOT,
-    extraOT: hrs.extraOT,
-    ot: hrs.ot,
+    total: hrs.total, regular: hrs.regular,
+    compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
     status: 'completed'
   }).then(function() {
-    showToast(att.name + ' checkout approved! ' + hrs.total + 'h worked', 'success');
+    showToast((att.name || 'Worker') + ' checkout approved! ' + hrs.total + 'h worked', 'success');
     return { ok: true };
   }).catch(function(e) {
     showToast('Error: ' + e.message, 'error');
@@ -522,15 +411,10 @@ function adminApproveCheckout(recId) {
   });
 }
 
-// ====== ADMIN REJECT ======
 function adminReject(recId, reason) {
-  var att = null;
-  var allAtt = gA();
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
-  }
+  var att = null; var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false });
-
   if (att.status === 'pending_checkin') {
     return FB.delete('attendance', recId).then(function() {
       showToast('Check-in rejected and removed', 'info');
@@ -538,8 +422,7 @@ function adminReject(recId, reason) {
     });
   } else if (att.status === 'pending_checkout') {
     return FB.update('attendance', recId, {
-      checkoutReqTime: null,
-      status: 'checked_in'
+      checkoutReqTime: null, status: 'checked_in'
     }).then(function() {
       showToast('Checkout request rejected', 'info');
       return { ok: true };
@@ -548,38 +431,26 @@ function adminReject(recId, reason) {
   return Promise.resolve({ ok: false });
 }
 
-// ====== ADMIN APPROVE ALL ======
 function adminApproveAll(type) {
-  var allAtt = gA();
-  var promises = [];
+  var allAtt = gA(); var promises = [];
   var statusFilter = type === 'checkin' ? 'pending_checkin' : 'pending_checkout';
-
   for (var i = 0; i < allAtt.length; i++) {
     var att = allAtt[i];
     if (att.status === statusFilter) {
-      if (type === 'checkin') {
-        promises.push(adminApproveCheckin(att.recId));
-      } else {
-        promises.push(adminApproveCheckout(att.recId));
-      }
+      if (type === 'checkin') promises.push(adminApproveCheckin(att.recId));
+      else promises.push(adminApproveCheckout(att.recId));
     }
   }
-
   return Promise.all(promises).then(function() {
     showToast('All ' + type + ' approved!', 'success');
     return { ok: true, count: promises.length };
   });
 }
 
-// ====== UNDO APPROVAL ======
 function undoApproval(recId) {
-  var att = null;
-  var allAtt = gA();
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
-  }
+  var att = null; var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
-
   if (att.status === 'checked_in' && !att.checkoutTime) {
     return FB.delete('attendance', recId).then(function() {
       showToast('Check-in undone', 'info');
@@ -587,8 +458,7 @@ function undoApproval(recId) {
     });
   } else if (att.status === 'completed' && att.checkoutTime) {
     return FB.update('attendance', recId, {
-      checkoutTime: null,
-      checkoutReqTime: null,
+      checkoutTime: null, checkoutReqTime: null,
       total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
       status: 'checked_in'
     }).then(function() {
@@ -599,15 +469,12 @@ function undoApproval(recId) {
   return Promise.resolve({ ok: false, msg: 'Cannot undo this record' });
 }
 
-// ====== MANUAL CHECK-IN (Admin) ======
 function manualCheckin(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
-
   var date = dateStr || tD();
   var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   var checkinISO = buildISO(date, time, false, null);
-
   var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
@@ -618,25 +485,15 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
       }
     }
   }
-
   var recId = genRecId(wid, dateStr ? true : false);
   var rec = {
-    recId: recId,
-    wid: wid,
-    name: w.name,
-    prof: w.prof,
-    sec: w.sec,
-    shift: shift || w.shift,
-    date: date,
-    checkinReqTime: checkinISO,
-    checkinTime: checkinISO,
-    checkoutReqTime: null,
-    checkoutTime: null,
+    recId: recId, wid: wid, name: w.name, prof: w.prof, sec: w.sec,
+    shift: shift || w.shift, date: date,
+    checkinReqTime: checkinISO, checkinTime: checkinISO,
+    checkoutReqTime: null, checkoutTime: null,
     total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
-    status: 'checked_in',
-    backdated: dateStr ? true : false
+    status: 'checked_in', backdated: dateStr ? true : false
   };
-
   return FB.save('attendance', recId, rec).then(function() {
     return { ok: true, msg: w.name + ' checked in at ' + fmtTime(checkinISO) };
   }).catch(function(e) {
@@ -644,38 +501,26 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
   });
 }
 
-// ====== MANUAL CHECK-OUT (Admin) ======
 function manualCheckout(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
-
   var date = dateStr || tD();
-  var allAtt = gA();
-  var att = null;
-
+  var allAtt = gA(); var att = null;
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
     if (a.wid === wid && aDate === date && (a.status === 'checked_in' || a.status === 'pending_checkout')) {
-      att = a;
-      break;
+      att = a; break;
     }
   }
-
   if (!att) return Promise.resolve({ ok: false, msg: w.name + ' has no active check-in for ' + date });
-
   var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   var checkoutISO = buildISO(date, time, att.shift === 'Night', att.checkinTime);
   var hrs = calcHours(att.checkinTime, checkoutISO);
-
   return FB.update('attendance', att.recId, {
-    checkoutTime: checkoutISO,
-    checkoutReqTime: checkoutISO,
-    total: hrs.total,
-    regular: hrs.regular,
-    compOT: hrs.compOT,
-    extraOT: hrs.extraOT,
-    ot: hrs.ot,
+    checkoutTime: checkoutISO, checkoutReqTime: checkoutISO,
+    total: hrs.total, regular: hrs.regular,
+    compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
     status: 'completed'
   }).then(function() {
     return { ok: true, msg: w.name + ' checked out at ' + fmtTime(checkoutISO) + ' | ' + hrs.total + 'h worked' };
@@ -684,40 +529,28 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
   });
 }
 
-// ====== BULK OPERATIONS ======
 function bulkCheckin(wids, shift, dateStr, timeStr) {
   var promises = [];
-  for (var i = 0; i < wids.length; i++) {
-    promises.push(manualCheckin(wids[i], shift, dateStr, timeStr));
-  }
+  for (var i = 0; i < wids.length; i++) promises.push(manualCheckin(wids[i], shift, dateStr, timeStr));
   return Promise.all(promises).then(function(results) {
     var ok = 0, fail = 0;
-    for (var i = 0; i < results.length; i++) {
-      if (results[i].ok) ok++; else fail++;
-    }
+    for (var i = 0; i < results.length; i++) { if (results[i].ok) ok++; else fail++; }
     return { ok: true, success: ok, failed: fail };
   });
 }
 
 function bulkCheckout(wids, shift, dateStr, timeStr) {
   var promises = [];
-  for (var i = 0; i < wids.length; i++) {
-    promises.push(manualCheckout(wids[i], shift, dateStr, timeStr));
-  }
+  for (var i = 0; i < wids.length; i++) promises.push(manualCheckout(wids[i], shift, dateStr, timeStr));
   return Promise.all(promises).then(function(results) {
     var ok = 0, fail = 0;
-    for (var i = 0; i < results.length; i++) {
-      if (results[i].ok) ok++; else fail++;
-    }
+    for (var i = 0; i < results.length; i++) { if (results[i].ok) ok++; else fail++; }
     return { ok: true, success: ok, failed: fail };
   });
 }
 
 function endDay(timeStr) {
-  var today = tD();
-  var allAtt = gA();
-  var activeWids = [];
-
+  var today = tD(); var allAtt = gA(); var activeWids = [];
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
@@ -725,21 +558,17 @@ function endDay(timeStr) {
       activeWids.push(a.wid);
     }
   }
-
   if (activeWids.length === 0) return Promise.resolve({ ok: true, msg: 'No active workers to checkout', count: 0 });
-
   return bulkCheckout(activeWids, null, today, timeStr).then(function(res) {
     return { ok: true, msg: 'Checked out ' + res.success + ' workers', count: res.success };
   });
 }
 
-// ====== WORKER PASSWORD ======
 function changeWorkerPassword(wid, oldPw, newPw) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
   if (w.pw !== oldPw) return Promise.resolve({ ok: false, msg: 'Current password is wrong' });
   if (newPw.length < 6) return Promise.resolve({ ok: false, msg: 'New password must be at least 6 characters' });
-
   return FB.update('workers', wid, { pw: newPw }).then(function() {
     return { ok: true, msg: 'Password changed successfully' };
   }).catch(function(e) {
@@ -747,11 +576,8 @@ function changeWorkerPassword(wid, oldPw, newPw) {
   });
 }
 
-// ====== ADMIN SETTINGS ======
 function updateAdmin(field, value, confirmPw) {
-  var ad = gAd();
-  var update = {};
-
+  var ad = gAd(); var update = {};
   if (field === 'name') {
     if (!value) return Promise.resolve({ ok: false, msg: 'Name cannot be empty' });
     update.name = value;
@@ -764,7 +590,6 @@ function updateAdmin(field, value, confirmPw) {
     if (!value || value.length < 6) return Promise.resolve({ ok: false, msg: 'New password min 6 chars' });
     update.pw = value;
   }
-
   return FB.update('admin', ADMIN_DOC, update).then(function() {
     Object.assign(_adminData, update);
     showToast(field + ' updated!', 'success');
@@ -774,21 +599,14 @@ function updateAdmin(field, value, confirmPw) {
   });
 }
 
-// ====== WORKER CRUD ======
 function addWorker(wid, name, prof, sec, shift) {
   if (!wid || !name) return Promise.resolve({ ok: false, msg: 'ID and Name required' });
   if (findWorker(wid)) return Promise.resolve({ ok: false, msg: 'Worker ID already exists' });
-
   var w = {
-    wid: wid,
-    name: name.trim(),
-    prof: prof || 'Worker',
-    sec: sec || 'Indian',
-    shift: shift || 'Day',
-    pw: 'Worker@123',
-    on: true
+    wid: wid, name: name.trim(), prof: prof || 'Worker',
+    sec: sec || 'Indian', shift: shift || 'Day',
+    pw: 'Worker@123', on: true
   };
-
   return FB.save('workers', wid, w).then(function() {
     showToast(name + ' added!', 'success');
     return { ok: true };
@@ -835,11 +653,8 @@ function toggleWorkerShift(wid) {
 }
 
 function resetAllPasswords() {
-  var ws = gW();
-  var promises = [];
-  for (var i = 0; i < ws.length; i++) {
-    promises.push(FB.update('workers', ws[i].wid, { pw: 'Worker@123' }));
-  }
+  var ws = gW(); var promises = [];
+  for (var i = 0; i < ws.length; i++) promises.push(FB.update('workers', ws[i].wid, { pw: 'Worker@123' }));
   return Promise.all(promises).then(function() {
     showToast('All passwords reset to Worker@123', 'success');
     return { ok: true };
@@ -847,11 +662,8 @@ function resetAllPasswords() {
 }
 
 function clearAllAttendance() {
-  var allAtt = gA();
-  var promises = [];
-  for (var i = 0; i < allAtt.length; i++) {
-    promises.push(FB.delete('attendance', allAtt[i].recId));
-  }
+  var allAtt = gA(); var promises = [];
+  for (var i = 0; i < allAtt.length; i++) promises.push(FB.delete('attendance', allAtt[i].recId));
   return Promise.all(promises).then(function() {
     showToast('All attendance cleared', 'info');
     return { ok: true };
@@ -862,71 +674,53 @@ function backupData() {
   var data = {
     exportedAt: new Date().toISOString(),
     company: COMPANY,
-    workers: gW(),
-    attendance: gA(),
+    workers: gW(), attendance: gA(),
     admin: { adminId: gAd().adminId, name: gAd().name }
   };
   var json = JSON.stringify(data, null, 2);
   var blob = new Blob([json], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
-  a.href = url;
-  a.download = 'albowry_backup_' + tD() + '.json';
-  a.click();
+  a.href = url; a.download = 'albowry_backup_' + tD() + '.json'; a.click();
   URL.revokeObjectURL(url);
   showToast('Backup downloaded!', 'success');
 }
 
-// ====== MONTHLY REPORT ======
 function getMonthlyReport(wid, year, month) {
-  var allAtt = gA();
-  var result = [];
+  var allAtt = gA(); var result = [];
   var monthStr = year + '-' + (month < 10 ? '0' + month : '' + month);
-
   var workers = wid === 'all' ? gW() : [findWorker(wid)];
-
   for (var i = 0; i < workers.length; i++) {
     var w = workers[i];
     if (!w || !w.on) continue;
-
     var workerAtt = [];
     var totalDays = 0, totalHrs = 0, totalOT = 0, dayShift = 0, nightShift = 0;
-
     for (var j = 0; j < allAtt.length; j++) {
       var a = allAtt[j];
       if (a.wid !== w.wid) continue;
       var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
       if (attDate.indexOf(monthStr) !== 0) continue;
       if (a.status !== 'completed') continue;
-
       workerAtt.push(a);
       totalDays++;
       totalHrs += a.total || 0;
       totalOT += a.ot || 0;
       if (a.shift === 'Night') nightShift++; else dayShift++;
     }
-
     workerAtt.sort(function(a, b) { return a.date > b.date ? 1 : -1; });
-
     result.push({
-      worker: w,
-      records: workerAtt,
+      worker: w, records: workerAtt,
       totalDays: totalDays,
       totalHrs: Math.round(totalHrs * 100) / 100,
       totalOT: Math.round(totalOT * 100) / 100,
-      dayShift: dayShift,
-      nightShift: nightShift
+      dayShift: dayShift, nightShift: nightShift
     });
   }
-
   return result;
 }
 
-// ====== EXPORT DATA ======
 function getExportData(fromDate, toDate, filter) {
-  var allAtt = gA();
-  var result = [];
-
+  var allAtt = gA(); var result = [];
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     if (a.status !== 'completed') continue;
@@ -940,53 +734,65 @@ function getExportData(fromDate, toDate, filter) {
     }
     result.push(a);
   }
-
   result.sort(function(a, b) {
     if (a.date !== b.date) return a.date > b.date ? 1 : -1;
     return a.name > b.name ? 1 : -1;
   });
-
   return result;
+}
+
+// ====== PDF LOGO LOADER ======
+function loadLogoForPDF() {
+  return new Promise(function(resolve) {
+    if (_cachedLogoDataUrl) { resolve(_cachedLogoDataUrl); return; }
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      try {
+        var canvas = document.createElement('canvas');
+        var size = 200;
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, size, size);
+        var scale = Math.min(size / img.naturalWidth, size / img.naturalHeight);
+        var w = img.naturalWidth * scale;
+        var h = img.naturalHeight * scale;
+        var x = (size - w) / 2;
+        var y = (size - h) / 2;
+        ctx.drawImage(img, x, y, w, h);
+        _cachedLogoDataUrl = canvas.toDataURL('image/png');
+        resolve(_cachedLogoDataUrl);
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = function() { resolve(null); };
+    img.src = 'logo.png?v=3';
+  });
 }
 
 // ====== PDF HEADER WITH LOGO ======
 function addPDFHeader(doc, title, subtitle) {
   var pageW = doc.internal.pageSize.getWidth();
 
-  // Dark blue header background
+  // Dark header background
   doc.setFillColor(15, 30, 74);
   doc.rect(0, 0, pageW, 44, 'F');
 
-  // Lighter blue gradient effect
+  // Blue gradient
   doc.setFillColor(30, 64, 175);
   doc.rect(0, 22, pageW, 22, 'F');
 
-  // Try to load logo image
-  var logoLoaded = false;
-  try {
-    var img = document.querySelector('.nav-logo-img') ||
-              document.querySelector('.login-logo-img') ||
-              document.querySelector('.loading-logo-img') ||
-              document.querySelector('.company-logo-lg');
-
-    if (img && img.complete && img.naturalWidth > 0) {
-      var canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      var ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      var dataUrl = canvas.toDataURL('image/png');
-      doc.addImage(dataUrl, 'PNG', 8, 5, 32, 32);
-      logoLoaded = true;
-    }
-  } catch(e) {
-    logoLoaded = false;
+  // Try to add logo image
+  var logoAdded = false;
+  if (_cachedLogoDataUrl) {
+    try {
+      doc.addImage(_cachedLogoDataUrl, 'PNG', 8, 6, 32, 32);
+      logoAdded = true;
+    } catch(e) { logoAdded = false; }
   }
 
-  // Fallback logo box
-  if (!logoLoaded) {
+  // Fallback - White box with "A"
+  if (!logoAdded) {
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(8, 6, 32, 32, 4, 4, 'F');
     doc.setFontSize(20);
@@ -997,7 +803,7 @@ function addPDFHeader(doc, title, subtitle) {
 
   // Company name
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
+  doc.setFontSize(15);
   doc.setFont('helvetica', 'bold');
   doc.text('AL BOWRY CARPENTRY LLC', 46, 15);
 
@@ -1012,19 +818,17 @@ function addPDFHeader(doc, title, subtitle) {
   doc.setLineWidth(1.5);
   doc.line(46, 26, 140, 26);
 
-  // Report title
-  doc.setFontSize(11);
+  // Title
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
   doc.text(title || 'Attendance Report', 46, 35);
 
-  // Website - right side
+  // Right side info
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(220, 220, 240);
   doc.text('www.albowry.com', pageW - 10, 12, { align: 'right' });
-
-  // Date generated
   doc.setFontSize(7);
   doc.text('Generated: ' + fmtDate(tNow()), pageW - 10, 18, { align: 'right' });
 
@@ -1038,225 +842,139 @@ function addPDFHeader(doc, title, subtitle) {
   return 52;
 }
 
-// ====== PDF FOOTER ======
 function addPDFFooter(doc) {
   var pageCount = doc.internal.getNumberOfPages();
   var pageW = doc.internal.pageSize.getWidth();
   var pageH = doc.internal.pageSize.getHeight();
-
   for (var i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-
-    // Footer background
     doc.setFillColor(15, 30, 74);
     doc.rect(0, pageH - 16, pageW, 16, 'F');
-
-    // Gold accent line at top of footer
     doc.setDrawColor(245, 158, 11);
     doc.setLineWidth(0.8);
     doc.line(0, pageH - 16, pageW, pageH - 16);
-
     doc.setTextColor(200, 200, 220);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text(
-      'AL BOWRY CARPENTRY LLC | Sharjah, UAE | COP31, Antalya, Turkey | www.albowry.com',
-      pageW / 2, pageH - 9, { align: 'center' }
-    );
+    doc.text('AL BOWRY CARPENTRY LLC | Sharjah, UAE | COP31, Antalya, Turkey | www.albowry.com', pageW / 2, pageH - 9, { align: 'center' });
     doc.text('Generated: ' + fmtDT(tNow()), 10, pageH - 4);
-    doc.text('Page ' + i + ' of ' + pageCount, pageW - 10, pageH - 4, { align: 'right' });
+    doc.text('Page ' + i + ' / ' + pageCount, pageW - 10, pageH - 4, { align: 'right' });
   }
 }
 
-// ====== CSV EXPORT ======
 function exportCSV(data, filename) {
-  var header = [
-    '# ' + COMPANY.full,
-    '# Generated: ' + fmtDT(tNow()),
-    ''
-  ];
-
+  var header = ['# ' + COMPANY.full, '# Generated: ' + fmtDT(tNow()), ''];
   var cols = ['Date', 'Worker ID', 'Name', 'Profession', 'Section', 'Shift', 'Check In', 'Check Out', 'Total Hrs', 'Regular', 'CompOT', 'ExtraOT', 'OT', 'Status'];
-
   var rows = [header.join('\n'), cols.join(',')];
-
   for (var i = 0; i < data.length; i++) {
     var a = data[i];
-    var row = [
-      a.date || '',
-      a.wid || '',
-      '"' + (a.name || '') + '"',
-      '"' + (a.prof || '') + '"',
-      a.sec || '',
-      a.shift || '',
-      fmtTime(a.checkinTime),
-      fmtTime(a.checkoutTime),
-      a.total || 0,
-      a.regular || 0,
-      a.compOT || 0,
-      a.extraOT || 0,
-      a.ot || 0,
-      a.status || ''
-    ];
-    rows.push(row.join(','));
+    rows.push([
+      a.date || '', a.wid || '', '"' + (a.name || '') + '"', '"' + (a.prof || '') + '"',
+      a.sec || '', a.shift || '', fmtTime(a.checkinTime), fmtTime(a.checkoutTime),
+      a.total || 0, a.regular || 0, a.compOT || 0, a.extraOT || 0, a.ot || 0, a.status || ''
+    ].join(','));
   }
-
   var csv = rows.join('\n');
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var link = document.createElement('a');
-  link.href = url;
-  link.download = filename || ('albowry_' + tD() + '.csv');
-  link.click();
+  link.href = url; link.download = filename || ('albowry_' + tD() + '.csv'); link.click();
   URL.revokeObjectURL(url);
   showToast('CSV downloaded!', 'success');
 }
 
-// ====== TOAST ======
 function showToast(msg, type, duration) {
   var container = document.getElementById('toastContainer');
   if (!container) {
     container = document.createElement('div');
     container.id = 'toastContainer';
-    container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;';
+    container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;';
     document.body.appendChild(container);
   }
-
-  var colors = { success: '#059669', error: '#dc2626', info: '#2563eb', warn: '#d97706' };
+  var colors = { success: '#10b981', error: '#ef4444', info: '#3b82f6', warn: '#f59e0b' };
   var icons = { success: 'check_circle', error: 'error', info: 'info', warn: 'warning' };
-
   var toast = document.createElement('div');
-  toast.style.cssText = 'background:' + (colors[type] || colors.info) + ';color:#fff;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.15);min-width:240px;max-width:400px;animation:slideIn 0.3s ease;';
-  toast.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px">' + (icons[type] || icons.info) + '</span>' + msg;
+  toast.style.cssText = 'background:' + (colors[type] || colors.info) + ';color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:220px;max-width:380px;';
+  toast.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px">' + (icons[type] || icons.info) + '</span>' + msg;
   container.appendChild(toast);
-
   setTimeout(function() {
     toast.style.opacity = '0';
-    toast.style.transform = 'translateX(120%)';
+    toast.style.transform = 'translateX(100%)';
     toast.style.transition = 'all 0.3s ease';
-    setTimeout(function() {
-      if (toast.parentNode) toast.parentNode.removeChild(toast);
-    }, 300);
+    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
   }, duration || 3500);
 }
 
-// ====== CONFIRM DIALOG ======
 function showConfirm(msg, onYes, onNo) {
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
-
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
   var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:20px;padding:32px;max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);';
-  box.innerHTML =
-    '<div style="font-weight:800;font-size:19px;color:#0f172a;margin-bottom:14px">Confirm Action</div>' +
-    '<div style="color:#475569;font-size:14px;margin-bottom:26px;line-height:1.6;font-weight:500">' + msg + '</div>' +
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:28px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+  box.innerHTML = '<div style="font-weight:700;font-size:18px;color:#0f172a;margin-bottom:12px">Confirm Action</div>' +
+    '<div style="color:#475569;font-size:14px;margin-bottom:24px;line-height:1.6">' + msg + '</div>' +
     '<div style="display:flex;gap:12px;justify-content:flex-end">' +
-    '<button id="cfmNo" style="padding:11px 22px;border:2px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-weight:700;color:#475569;font-family:Inter,sans-serif">Cancel</button>' +
-    '<button id="cfmYes" style="padding:11px 22px;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(220,38,38,0.25)">Confirm</button>' +
+    '<button id="cfmNo" style="padding:10px 20px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;font-weight:600;color:#475569">Cancel</button>' +
+    '<button id="cfmYes" style="padding:10px 20px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Confirm</button>' +
     '</div>';
-
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-
-  document.getElementById('cfmYes').onclick = function() {
-    document.body.removeChild(overlay);
-    if (onYes) onYes();
-  };
-  document.getElementById('cfmNo').onclick = function() {
-    document.body.removeChild(overlay);
-    if (onNo) onNo();
-  };
-  overlay.onclick = function(e) {
-    if (e.target === overlay) {
-      document.body.removeChild(overlay);
-      if (onNo) onNo();
-    }
-  };
+  document.getElementById('cfmYes').onclick = function() { document.body.removeChild(overlay); if (onYes) onYes(); };
+  document.getElementById('cfmNo').onclick = function() { document.body.removeChild(overlay); if (onNo) onNo(); };
+  overlay.onclick = function(e) { if (e.target === overlay) { document.body.removeChild(overlay); if (onNo) onNo(); } };
 }
 
-// ====== MODAL ======
 function showModal(html, title) {
   var existing = document.getElementById('globalModal');
   if (existing) document.body.removeChild(existing);
-
   var overlay = document.createElement('div');
   overlay.id = 'globalModal';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
-
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;';
   var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:20px;padding:32px;max-width:640px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.3);';
-
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:28px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
   if (title) {
-    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid #e2e8f0"><h3 style="margin:0;color:#0f172a;font-size:19px;font-weight:800">' + title + '</h3><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:26px;color:#94a3b8;padding:0 4px;font-weight:400">&times;</button></div>' + html;
-  } else {
-    box.innerHTML = html;
-  }
-
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;color:#0f172a;font-size:18px">' + title + '</h3><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:22px;color:#94a3b8">&times;</button></div>' + html;
+  } else box.innerHTML = html;
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-
-  overlay.onclick = function(e) {
-    if (e.target === overlay) document.body.removeChild(overlay);
-  };
+  overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
 }
 
-function closeModal() {
-  var m = document.getElementById('globalModal');
-  if (m) document.body.removeChild(m);
-}
+function closeModal() { var m = document.getElementById('globalModal'); if (m) document.body.removeChild(m); }
 
-// ====== VOICE WELCOME ======
 function speakWelcome(name) {
   if (!window.speechSynthesis) return;
   var utter = new SpeechSynthesisUtterance('Welcome ' + (name || 'Admin'));
-  utter.rate = 0.9;
-  utter.pitch = 1;
-
+  utter.rate = 0.9; utter.pitch = 1;
   var voices = window.speechSynthesis.getVoices();
   for (var i = 0; i < voices.length; i++) {
-    if (voices[i].lang.indexOf('en') === 0) {
-      utter.voice = voices[i];
-      break;
-    }
+    if (voices[i].lang.indexOf('en') === 0) { utter.voice = voices[i]; break; }
   }
   window.speechSynthesis.speak(utter);
 }
 
-// ====== LIVE CLOCK ======
 function startClock(elementId) {
   function tick() {
     var el = document.getElementById(elementId);
     if (!el) return;
     el.textContent = new Date().toLocaleString('en-GB', {
-      timeZone: TZ,
-      weekday: 'short',
+      timeZone: TZ, weekday: 'short',
       day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-      hour12: true
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
     }) + ' (Turkey Time)';
   }
   tick();
   return setInterval(tick, 1000);
 }
 
-// ====== NAV/UI HELPERS ======
 function showSection(id) {
   var sections = document.querySelectorAll('.admin-section');
-  for (var i = 0; i < sections.length; i++) {
-    sections[i].style.display = 'none';
-  }
+  for (var i = 0; i < sections.length; i++) sections[i].style.display = 'none';
   var target = document.getElementById(id);
-  if (target) {
-    target.style.display = 'block';
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
+  if (target) { target.style.display = 'block'; target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   var navLinks = document.querySelectorAll('.nav-link');
   for (var j = 0; j < navLinks.length; j++) {
     navLinks[j].classList.remove('active');
-    if (navLinks[j].getAttribute('data-section') === id) {
-      navLinks[j].classList.add('active');
-    }
+    if (navLinks[j].getAttribute('data-section') === id) navLinks[j].classList.add('active');
   }
 }
 
@@ -1267,33 +985,26 @@ function logout() {
   });
 }
 
-// ====== WORKER DROPDOWN ======
 function buildWorkerDropdown(selectEl, includeAll, filter) {
   if (!selectEl) return;
   var val = selectEl.value;
   selectEl.innerHTML = '';
-
   if (includeAll) {
     var allOpt = document.createElement('option');
-    allOpt.value = 'all';
-    allOpt.text = '-- All Workers --';
+    allOpt.value = 'all'; allOpt.text = '-- All Workers --';
     selectEl.appendChild(allOpt);
   } else {
     var defOpt = document.createElement('option');
-    defOpt.value = '';
-    defOpt.text = '-- Select Worker --';
+    defOpt.value = ''; defOpt.text = '-- Select Worker --';
     selectEl.appendChild(defOpt);
   }
-
   var ws = gW();
   var sections = ['Indian', 'Pakistani'];
-
   for (var s = 0; s < sections.length; s++) {
     var sec = sections[s];
     var group = document.createElement('optgroup');
     group.label = '-- ' + sec.toUpperCase() + ' WORKERS --';
     var added = 0;
-
     for (var i = 0; i < ws.length; i++) {
       var w = ws[i];
       if (!w.on) continue;
@@ -1308,10 +1019,8 @@ function buildWorkerDropdown(selectEl, includeAll, filter) {
       group.appendChild(opt);
       added++;
     }
-
     if (added > 0) selectEl.appendChild(group);
   }
-
   if (val) selectEl.value = val;
 }
 
@@ -1324,21 +1033,16 @@ function renderWorkerDropdowns() {
   }
 }
 
-// ====== WORKER STATS ======
 function getWorkerStats(wid) {
   var att = getWorkerAtt(wid);
   var completed = [];
-  for (var i = 0; i < att.length; i++) {
-    if (att[i].status === 'completed') completed.push(att[i]);
-  }
-
+  for (var i = 0; i < att.length; i++) if (att[i].status === 'completed') completed.push(att[i]);
   var totalDays = completed.length;
   var totalHrs = 0, totalOT = 0;
   for (var j = 0; j < completed.length; j++) {
     totalHrs += completed[j].total || 0;
     totalOT += completed[j].ot || 0;
   }
-
   return {
     totalDays: totalDays,
     totalHrs: Math.round(totalHrs * 100) / 100,
@@ -1347,7 +1051,6 @@ function getWorkerStats(wid) {
   };
 }
 
-// ====== ALL 56 WORKERS ======
 var ALL_WORKERS = [
   {wid:'IND0001',name:'Hajari Lal',prof:'Foreman',sec:'Indian'},
   {wid:'IND0002',name:'Rajeev Punia',prof:'Supervisor',sec:'Indian'},
@@ -1410,39 +1113,21 @@ var ALL_WORKERS = [
 function initWorkers() {
   var existing = gW();
   if (existing.length >= 56) return Promise.resolve();
-
   var existingIds = [];
   for (var i = 0; i < existing.length; i++) existingIds.push(existing[i].wid);
-
   var promises = [];
   for (var j = 0; j < ALL_WORKERS.length; j++) {
     var aw = ALL_WORKERS[j];
     if (indexOf(existingIds, aw.wid) === -1) {
       promises.push(FB.save('workers', aw.wid, {
-        wid: aw.wid,
-        name: aw.name,
-        prof: aw.prof,
-        sec: aw.sec,
-        shift: 'Day',
-        pw: 'Worker@123',
-        on: true
+        wid: aw.wid, name: aw.name, prof: aw.prof, sec: aw.sec,
+        shift: 'Day', pw: 'Worker@123', on: true
       }));
     }
   }
-
-  // Also init admin if missing
-  if (!gAd().adminId) {
-    promises.push(FB.save('admin', ADMIN_DOC, {
-      adminId: 'ADMIN001',
-      pw: 'Admin@2026',
-      name: 'Pradeep Jangir'
-    }));
-  }
-
   return Promise.all(promises);
 }
 
-// ====== RENDER STUBS (implemented in index.html) ======
 function refreshDashboard() { if (typeof renderDashboard === 'function') renderDashboard(); }
 function refreshApprovals() { if (typeof renderApprovals === 'function') renderApprovals(); }
 function refreshLiveStatus() { if (typeof renderLiveStatus === 'function') renderLiveStatus(); }
@@ -1451,7 +1136,6 @@ function refreshAdminWorkers() { if (typeof renderAdminWorkers === 'function') r
 function refreshManualEntry() { if (typeof renderManualEntry === 'function') renderManualEntry(); }
 function renderWorkerDashboard() { if (typeof renderWorkerUI === 'function') renderWorkerUI(); }
 
-// ====== PWA INSTALL ======
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   _pendingInstall = e;
@@ -1469,23 +1153,24 @@ function installApp() {
   });
 }
 
-// ====== SERVICE WORKER ======
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+    navigator.serviceWorker.register('./sw.js').then(function() {
       console.log('[ALB] SW registered');
-    }).catch(function(e) {
-      console.log('[ALB] SW failed:', e);
-    });
+    }).catch(function(e) { console.log('[ALB] SW failed:', e); });
   });
 }
 
-// ====== SPEECH INIT ======
 if (window.speechSynthesis) {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = function() {
     window.speechSynthesis.getVoices();
   };
 }
+
+// Preload logo for PDF
+window.addEventListener('load', function() {
+  setTimeout(function() { loadLogoForPDF(); }, 1000);
+});
 
 console.log('[ALB] app.js v17 loaded - ' + COMPANY.full);
