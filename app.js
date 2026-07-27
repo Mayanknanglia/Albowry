@@ -105,16 +105,12 @@ async function initDB(){
   console.log('Existing workers:',ew.length);
   
   if(ew.length<56){
-    // Delete old workers first
     for(const w of ew)await FB.del(COL.W,w.wid||w.id);
     toast('Setting up 56 workers...','info');
-    
-    // Create Indian workers - default Day shift
     for(let i=0;i<IND.length;i++){
       const w=IND[i],id='IND'+String(i+1).padStart(4,'0');
       await FB.save(COL.W,id,{wid:id,name:w.n,prof:w.p,sec:'Indian',shift:'Day',pw:DEFAULT_PW,on:true});
     }
-    // Create Pakistani workers - default Day shift
     for(let i=0;i<PAK.length;i++){
       const w=PAK[i],id='PAK'+String(i+1).padStart(4,'0');
       await FB.save(COL.W,id,{wid:id,name:w.n,prof:w.p,sec:'Pakistani',shift:'Day',pw:DEFAULT_PW,on:true});
@@ -129,6 +125,7 @@ async function initDB(){
     WC=d;fillDD();popReportDD();
     if(typeof populateManualWorkerDD==='function')populateManualWorkerDD();
     if(typeof populateManualCustomDD==='function')populateManualCustomDD();
+    if(typeof populateHistoryWorkerDD==='function')populateHistoryWorkerDD();
     const u=gU();
     if(u&&u.role==='admin'){
       loadStats();
@@ -148,6 +145,7 @@ async function initDB(){
         if(a.id==='sec-endday')loadED();
         if(a.id==='sec-report')loadMR();
         if(a.id==='sec-manual'&&typeof loadManualToday==='function')loadManualToday();
+        if(a.id==='sec-history'&&typeof loadHistoryForDate==='function')loadHistoryForDate();
       }
     }
   });
@@ -198,7 +196,6 @@ function fillDD(){
   const s=$('workerSelect');if(s)s.innerHTML=h;
 }
 
-// ⭐ Worker Login WITH SHIFT SELECTION
 async function workerLogin(e){
   e.preventDefault();
   const id=$('workerSelect').value;
@@ -211,7 +208,6 @@ async function workerLogin(e){
   if(!w.on)return showErr('Deactivated');
   if(w.pw!==pw)return showErr('Wrong password');
   
-  // Update worker's shift in database
   if(w.shift!==shift){
     await FB.save(COL.W,w.wid,{...w,shift:shift});
   }
@@ -231,7 +227,8 @@ function adminLogin(e){
   toast('Welcome, '+ad.name+'!');
   loadAD();return false;
 }
-function logout(){confirmDlg('Logout?','Sure?',()=>{cU();showPage('loginPage');$('workerSelect').value='';$('workerPw').value='';$('workerShift').value='';$('adminId').value='';$('adminPw').value='';$('loginErr').classList.remove('show');});}
+
+function logout(){confirmDlg('Logout?','Sure?',()=>{cU();showPage('loginPage');$('workerSelect').value='';$('workerPw').value='';if($('workerShift'))$('workerShift').value='';$('adminId').value='';$('adminPw').value='';$('loginErr').classList.remove('show');});}
 
 function loadWD(){const u=gU();$('wGreet').textContent=greet();$('wName').textContent=u.name;$('wInfo').textContent=`${u.prof} • ${u.sec} • ${u.shift||'Day'} Shift`;$('wNavName').textContent=u.name;$('wAvatar').textContent=u.name.charAt(0);$('wDate').textContent=tDF();showPage('workerPage');upWS();loadWH();loadWQS();}
 
@@ -301,17 +298,21 @@ function goSection(s,b){
   document.querySelectorAll('.sec').forEach(x=>x.classList.remove('active'));
   $('sec-'+s).classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
-  if(s==='dash')loadStats();if(s==='approve')loadAppr();if(s==='live')loadLive();
-  if(s==='attend')loadAttend();if(s==='workers')loadWorkerTable();if(s==='endday')loadED();
+  if(s==='dash')loadStats();
+  if(s==='approve')loadAppr();
+  if(s==='live')loadLive();
+  if(s==='attend')loadAttend();
+  if(s==='workers')loadWorkerTable();
+  if(s==='endday')loadED();
   if(s==='report'){popReportDD();loadMR();}
   if(s==='manual'){if(typeof loadManualSection==='function')loadManualSection();if(typeof populateManualCustomDD==='function')populateManualCustomDD();setDefaultManualDate();}
+  if(s==='history'){if(typeof loadHistorySection==='function')loadHistorySection();}
 }
 
 function loadStats(){
   const ws=gW().filter(w=>w.on),today=tD(),att=gA().filter(a=>a.date===today);
   const present=att.filter(a=>['checked_in','completed','pending_checkout'].includes(a.status)).length;
   const pend=att.filter(a=>['pending_checkin','pending_checkout'].includes(a.status)).length;
-  // Day/Night from ATTENDANCE (worker selected)
   const dayAtt=att.filter(a=>a.shift==='Day'||!a.shift);
   const nightAtt=att.filter(a=>a.shift==='Night');
   const dayP=dayAtt.filter(a=>['checked_in','completed','pending_checkout'].includes(a.status)).length;
@@ -326,6 +327,28 @@ function loadStats(){
   const iB=$('dIndBar'),pB=$('dPakBar');if(iB)iB.style.width=iP+'%';if(pB)pB.style.width=pP+'%';
   st('dIndPct',iP+'%');st('dPakPct',pP+'%');
   const b=$('sBadge');if(b){if(pend>0){b.textContent=pend;b.classList.add('show');}else b.classList.remove('show');}
+  loadAbsentToday();
+}
+
+// ⭐ NEW: Absent Workers Today
+function loadAbsentToday(){
+  const today=tD();
+  const att=gA().filter(a=>a.date===today);
+  const allWorkers=gW().filter(w=>w.on);
+  const attWids=att.map(a=>a.wid);
+  const absentWorkers=allWorkers.filter(w=>!attWids.includes(w.wid));
+  
+  const el=$('absentWorkersToday');
+  const cntEl=$('absentCountToday');
+  if(cntEl)cntEl.textContent=absentWorkers.length+' Absent';
+  if(!el)return;
+  
+  if(!absentWorkers.length){
+    el.innerHTML='<div class="empty" style="padding:30px"><div class="em-icon">✅</div><h3>Great! All workers are present today!</h3></div>';
+    return;
+  }
+  
+  el.innerHTML=`<div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Default Shift</th></tr></thead><tbody>${absentWorkers.map((w,i)=>`<tr><td>${i+1}</td><td><b>${w.name}</b></td><td>${w.prof||'-'}</td><td><span class="tag tag-${w.sec==='Indian'?'ind':'pak'}">${w.sec==='Indian'?'🇮🇳':'🇵🇰'} ${w.sec}</span></td><td><span class="tag ${w.shift==='Night'?'tag-o':'tag-b'}">${w.shift==='Night'?'🌙 Night':'☀️ Day'}</span></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function loadAppr(){
@@ -352,7 +375,9 @@ async function doApprove(id){
   else if(r.status==='pending_checkout'){u.checkoutTime=r.checkoutReqTime;const c=calcHours(u.checkinTime,u.checkoutTime);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';toast('✅ '+u.total.toFixed(2)+'h');}
   await FB.save(COL.A,id,u);
 }
+
 function doReject(id){confirmDlg('Reject?','Sure?',async()=>{const r=gA().find(a=>a.id===id);if(r.status==='pending_checkin')await FB.del(COL.A,id);else await FB.save(COL.A,id,{...r,checkoutReqTime:null,status:'checked_in'});toast('Rejected','info');});}
+
 function approveAll(){const p=gA().filter(a=>['pending_checkin','pending_checkout'].includes(a.status));if(!p.length)return toast('None','info');confirmDlg('Approve All?',p.length+'?',async()=>{for(const r of p){const u={...r};if(r.status==='pending_checkin'){u.checkinTime=r.checkinReqTime;u.status='checked_in';}else{u.checkoutTime=r.checkoutReqTime;const c=calcHours(u.checkinTime,u.checkoutTime);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';}await FB.save(COL.A,r.id,u);}toast('✅ All!');});}
 
 function loadED(){
@@ -376,20 +401,62 @@ function loadLive(){
   if(dE){if(!d.length)dE.innerHTML='<div class="empty"><div class="em-icon">📋</div><h3>None</h3></div>';else dE.innerHTML=d.map(x=>`<div class="live-item"><div class="li-info"><h4>${x.name} ${x.shift==='Night'?'🌙':'☀️'}</h4><p>${x.total.toFixed(2)}h | OT: ${x.ot.toFixed(2)}h</p></div><div class="li-time">✅ ${fT(x.checkoutTime)}</div></div>`).join('');}
 }
 
+// ⭐ UPDATED: Attendance with Absent Workers
 function loadAttend(){
-  const date=$('fDate').value,sec=$('fSec').value;let att=gA().filter(a=>a.date===date);
+  const date=$('fDate').value,sec=$('fSec').value;
+  let att=gA().filter(a=>a.date===date);
+  const allWorkers=gW().filter(w=>w.on);
+  const el=$('attendTable');if(!el)return;
+  
+  // Handle "Absent" filter separately
+  if(sec==='Absent'){
+    const attWids=att.map(a=>a.wid);
+    const absentWorkers=allWorkers.filter(w=>!attWids.includes(w.wid));
+    if(!absentWorkers.length){el.innerHTML='<div class="empty"><div class="em-icon">✅</div><h3>All workers were present on '+date+'!</h3></div>';return;}
+    el.innerHTML=`<div style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;padding:20px;border-radius:12px;margin-bottom:20px"><h3>❌ Absent Workers on ${date}</h3><p style="opacity:.9">Total Absent: ${absentWorkers.length} / ${allWorkers.length}</p></div><div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Default Shift</th></tr></thead><tbody>${absentWorkers.map((w,i)=>`<tr><td>${i+1}</td><td><b>${w.name}</b></td><td>${w.prof||'-'}</td><td><span class="tag tag-${w.sec==='Indian'?'ind':'pak'}">${w.sec==='Indian'?'🇮🇳':'🇵🇰'} ${w.sec}</span></td><td><span class="tag ${w.shift==='Night'?'tag-o':'tag-b'}">${w.shift==='Night'?'🌙 Night':'☀️ Day'}</span></td></tr>`).join('')}</tbody></table></div>`;
+    return;
+  }
+  
+  // Apply filters
   if(sec==='Day')att=att.filter(a=>a.shift==='Day'||!a.shift);
   else if(sec==='Night')att=att.filter(a=>a.shift==='Night');
   else if(sec==='Indian')att=att.filter(a=>a.sec==='Indian');
   else if(sec==='Pakistani')att=att.filter(a=>a.sec==='Pakistani');
-  const el=$('attendTable');if(!el)return;
-  if(!att.length){el.innerHTML='<div class="empty"><div class="em-icon">📋</div><h3>No Records</h3></div>';return;}
+  else if(sec==='Present')att=att.filter(a=>a.status==='completed'||a.status==='checked_in');
+  
   const stg=s=>({completed:'<span class="tag tag-g">✓</span>',checked_in:'<span class="tag tag-b">🟢</span>',pending_checkin:'<span class="tag tag-o">⏳In</span>',pending_checkout:'<span class="tag tag-o">⏳Out</span>'}[s]||s);
-  el.innerHTML=`<div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th><th>St</th><th>Act</th></tr></thead><tbody>${att.map((a,i)=>`<tr><td>${i+1}</td><td><b>${a.name}</b></td><td>${a.prof||'-'}</td><td><span class="tag tag-${a.sec==='Indian'?'ind':'pak'}">${a.sec==='Indian'?'🇮🇳':'🇵🇰'}</span></td><td><span class="tag ${a.shift==='Night'?'tag-o':'tag-b'}">${a.shift==='Night'?'🌙 Night':'☀️ Day'}</span></td><td style="color:#059669">${fT(a.checkinTime)}</td><td style="color:#dc2626">${fT(a.checkoutTime)}</td><td style="color:var(--p);font-weight:700">${(a.total||0).toFixed(2)}h</td><td>${(a.regular||0).toFixed(2)}h</td><td style="color:#d97706">${(a.compOT||0).toFixed(2)}h</td><td style="color:#dc2626;font-weight:700">${(a.extraOT||0)>0?(a.extraOT).toFixed(2)+'h':'-'}</td><td>${stg(a.status)}</td><td><button class="btn btn-danger btn-sm" onclick="undoCI('${a.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+  
+  // Get absent workers
+  const attWids=att.map(a=>a.wid);
+  let absentWorkers=allWorkers.filter(w=>!attWids.includes(w.wid));
+  if(sec==='Indian')absentWorkers=absentWorkers.filter(w=>w.sec==='Indian');
+  else if(sec==='Pakistani')absentWorkers=absentWorkers.filter(w=>w.sec==='Pakistani');
+  else if(sec==='Day')absentWorkers=absentWorkers.filter(w=>w.shift==='Day'||!w.shift);
+  else if(sec==='Night')absentWorkers=absentWorkers.filter(w=>w.shift==='Night');
+  else if(sec==='Present')absentWorkers=[];
+  
+  let html='';
+  
+  if(att.length){
+    html+=`<div style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;padding:16px 20px;border-radius:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h3 style="font-size:16px;margin:0">✅ Present Workers (${att.length})</h3><p style="opacity:.9;font-size:12px;margin-top:4px">${date}</p></div></div>`;
+    html+=`<div class="t-wrap" style="margin-bottom:24px"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th><th>St</th><th>Act</th></tr></thead><tbody>${att.map((a,i)=>`<tr><td>${i+1}</td><td><b>${a.name}</b>${a.backdated?' <span class="tag tag-o" style="font-size:9px">📝</span>':''}</td><td>${a.prof||'-'}</td><td><span class="tag tag-${a.sec==='Indian'?'ind':'pak'}">${a.sec==='Indian'?'🇮🇳':'🇵🇰'}</span></td><td><span class="tag ${a.shift==='Night'?'tag-o':'tag-b'}">${a.shift==='Night'?'🌙':'☀️'}</span></td><td style="color:#059669">${fT(a.checkinTime)}</td><td style="color:#dc2626">${fT(a.checkoutTime)}</td><td style="color:var(--p);font-weight:700">${(a.total||0).toFixed(2)}h</td><td>${(a.regular||0).toFixed(2)}h</td><td style="color:#d97706">${(a.compOT||0).toFixed(2)}h</td><td style="color:#dc2626;font-weight:700">${(a.extraOT||0)>0?(a.extraOT).toFixed(2)+'h':'-'}</td><td>${stg(a.status)}</td><td><button class="btn btn-danger btn-sm" onclick="undoCI('${a.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+  }
+  
+  if(absentWorkers.length&&sec!=='Present'){
+    html+=`<div style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;padding:16px 20px;border-radius:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h3 style="font-size:16px;margin:0">❌ Absent Workers (${absentWorkers.length})</h3><p style="opacity:.9;font-size:12px;margin-top:4px">Not marked for ${date}</p></div></div>`;
+    html+=`<div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Default Shift</th><th>Action</th></tr></thead><tbody>${absentWorkers.map((w,i)=>`<tr><td>${i+1}</td><td><b>${w.name}</b></td><td>${w.prof||'-'}</td><td><span class="tag tag-${w.sec==='Indian'?'ind':'pak'}">${w.sec==='Indian'?'🇮🇳':'🇵🇰'}</span></td><td><span class="tag ${w.shift==='Night'?'tag-o':'tag-b'}">${w.shift==='Night'?'🌙 Night':'☀️ Day'}</span></td><td><span class="tag tag-r">❌ Absent</span></td></tr>`).join('')}</tbody></table></div>`;
+  }
+  
+  if(!att.length&&!absentWorkers.length){
+    html='<div class="empty"><div class="em-icon">📋</div><h3>No Records for '+date+'</h3></div>';
+  }
+  
+  el.innerHTML=html;
 }
 
 let curTab='Indian',editId=null;
 function swWorkerTab(s,b){curTab=s;document.querySelectorAll('#sec-workers .ltab').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadWorkerTable();}
+
 function loadWorkerTable(){
   const q=($('wSearch')?.value||'').toLowerCase();
   let ws;
@@ -418,6 +485,7 @@ function showPw(id){const w=gW().find(x=>x.wid===id),el=$('p-'+id);if(el.textCon
 function resetPw(id){confirmDlg('Reset?','Reset to '+DEFAULT_PW,async()=>{const w=gW().find(x=>x.wid===id);await FB.save(COL.W,id,{...w,pw:DEFAULT_PW});$('mPwBody').innerHTML=`<div class="pw-show"><div class="pw-lbl">Reset</div><div class="pw-name">${w.name}</div><div class="pw-val">${DEFAULT_PW}</div></div>`;openModal('mPw');});}
 function openAddWorker(){editId=null;$('mwTitle').textContent='➕ Add';$('mwName').value='';$('mwProf').value='';$('mwSec').value='Indian';$('mwShift').value='Day';$('mwPw').value=DEFAULT_PW;openModal('mWorker');}
 function editW(id){const w=gW().find(x=>x.wid===id);editId=id;$('mwTitle').textContent='✏️ Edit';$('mwName').value=w.name;$('mwProf').value=w.prof||'';$('mwSec').value=w.sec||'Indian';$('mwShift').value=w.shift||'Day';$('mwPw').value=w.pw;openModal('mWorker');}
+
 async function saveWorkerForm(e){
   e.preventDefault();const name=$('mwName').value.trim(),prof=$('mwProf').value||'Worker',sec=$('mwSec').value,shift=$('mwShift').value,pw=$('mwPw').value.trim();
   if(!name||!pw)return toast('Fill all','err');
@@ -425,6 +493,7 @@ async function saveWorkerForm(e){
   else{const pre=sec==='Indian'?'IND':'PAK';const nums=gW().filter(w=>w.wid.startsWith(pre)).map(w=>parseInt(w.wid.replace(pre,''))).filter(n=>!isNaN(n));const next=nums.length?Math.max(...nums)+1:1;const wid=pre+String(next).padStart(4,'0');await FB.save(COL.W,wid,{wid,name,prof,sec,shift,pw,on:true});$('mPwBody').innerHTML=`<div class="pw-show"><div class="pw-lbl">✅ Added</div><div class="pw-name">${name} (${wid})</div><div class="pw-val">${pw}</div></div>`;openModal('mPw');toast('✅ '+wid);}
   closeModal('mWorker');return false;
 }
+
 async function toggleW(id){const w=gW().find(x=>x.wid===id);await FB.save(COL.W,id,{...w,on:!w.on});toast(w.on?'Off':'On','info');}
 function delW(id){const w=gW().find(x=>x.wid===id);confirmDlg('Delete?',w.name+'?',async()=>{await FB.del(COL.W,id);for(const a of gA().filter(x=>x.wid===id))await FB.del(COL.A,a.id);toast('Deleted','info');});}
 
@@ -433,6 +502,7 @@ function popReportDD(){
   let h='<option value="">— Select —</option><option value="__ALL__">📋 All Workers</option>';
   w.forEach(x=>h+=`<option value="${x.wid}">${x.name} — ${x.sec}</option>`);s.innerHTML=h;if(cv)s.value=cv;
 }
+
 function loadMR(){
   const wid=$('reportWorker')?.value,month=$('reportMonth')?.value,el=$('reportContent');if(!el)return;
   if(!wid||!month){el.innerHTML='<div class="empty"><div class="em-icon">📊</div><h3>Select worker & month</h3></div>';return;}
@@ -484,7 +554,35 @@ function exportPDF(){
   doc.save(`AlBowry_${s}_to_${e}.pdf`);toast('✅ PDF!');
 }
 
-async function updateAdmin(){const nid=$('setNewId').value.trim(),npw=$('setNewPw').value,cpw=$('setConfPw').value;if(!nid||!npw)return toast('Fill all','err');if(npw!==cpw)return toast('Mismatch','err');if(npw.length<6)return toast('Min 6','err');await FB.save(COL.AD,'main',{adminId:nid,pw:npw,name:'Administrator'});const u=gU();u.id=nid;sU(u);$('setCurId').value=nid;$('setNewId').value='';$('setNewPw').value='';$('setConfPw').value='';toast('✅ Updated!');}
+// ⭐ UPDATED: Admin Settings with Name Update
+async function updateAdmin(){
+  const nid=$('setNewId').value.trim();
+  const nname=$('setNewName').value.trim();
+  const npw=$('setNewPw').value;
+  const cpw=$('setConfPw').value;
+  
+  const currentAd=gAD();
+  const finalId=nid||currentAd.adminId;
+  const finalName=nname||currentAd.name;
+  const finalPw=npw||currentAd.pw;
+  
+  if(npw&&npw!==cpw)return toast('Passwords don\'t match','err');
+  if(npw&&npw.length<6)return toast('Min 6 characters','err');
+  if(!nid&&!nname&&!npw)return toast('Enter at least one field to update','err');
+  
+  await FB.save(COL.AD,'main',{adminId:finalId,pw:finalPw,name:finalName});
+  const u=gU();u.id=finalId;u.name=finalName;u.pw=finalPw;sU(u);
+  
+  $('setCurId').value=finalId;
+  $('aNavName').textContent=finalName;
+  if($('setNewName'))$('setNewName').value='';
+  $('setNewId').value='';
+  $('setNewPw').value='';
+  $('setConfPw').value='';
+  toast('✅ Admin updated! Welcome '+finalName);
+  speakWelcome(finalName);
+}
+
 function backupAll(){const d={workers:gW(),attendance:gA(),admin:gAD(),date:new Date().toISOString()};const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='AlBowry_Backup_'+tD()+'.json';l.click();toast('✅ Backup!');}
 function resetAllPasswords(){confirmDlg('Reset All?','All to '+DEFAULT_PW,async()=>{for(const w of gW())await FB.save(COL.W,w.wid,{...w,pw:DEFAULT_PW});toast('✅ Reset!');});}
 function clearAttendanceData(){confirmDlg('Clear?','Delete ALL?',async()=>{for(const a of gA())await FB.del(COL.A,a.id);toast('Cleared','info');});}
