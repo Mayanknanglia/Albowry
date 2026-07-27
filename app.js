@@ -1,390 +1,1486 @@
-var REG_HOURS=9,COMP_OT=3,DEFAULT_PW='Worker@123',CURRENT_YEAR=2026;
-var COL={W:'workers',A:'attendance',AD:'admin'};
-var K={U:'alb_session'};
-var COMPANY={
-  name:'AL BOWRY CARPENTRY LLC',
-  project:'PROJECT COP31',
-  site:'Antalya, Turkey',
-  office:'Sharjah, UAE',
-  web:'www.albowry.com',
-  full:'AL BOWRY CARPENTRY LLC | Registered: Sharjah, UAE | Project: COP31, Antalya, Turkey'
+// AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
+// app.js v16 - Complete with sync fix, present/absent fix
+
+var APP_VERSION = 'v16';
+var CACHE_KEY = 'alb_v16';
+
+// ====== COMPANY INFO ======
+var COMPANY = {
+  name: 'AL BOWRY CARPENTRY LLC',
+  project: 'PROJECT COP31',
+  site: 'Antalya, Turkey',
+  office: 'Sharjah, UAE',
+  web: 'www.albowry.com',
+  full: 'AL BOWRY CARPENTRY LLC | Registered: Sharjah, UAE | Project: COP31, Antalya, Turkey'
 };
 
-var IND=[
-{n:"Hajari Lal",p:"Foreman"},{n:"Rajeev Punia",p:"Supervisor"},
-{n:"Om Prakash",p:"Supervisor"},{n:"Nitesh Bugalia",p:"Helper"},
-{n:"Govind Jangir",p:"Helper"},{n:"Lokesh Kumar Verma",p:"Helper"},
-{n:"Rajendra Kumar",p:"Helper"},{n:"Surendra Budania",p:"Helper"},
-{n:"Majid Abdul",p:"Helper"},{n:"Pradeep Singh",p:"Helper"},
-{n:"Akram Khan",p:"Helper"},{n:"Manoj Kumar Jakhar",p:"Helper"},
-{n:"Puneet Sewda",p:"Helper"},{n:"Surendra Kumar Mahala",p:"Helper"},
-{n:"Deepak Kumar Jangir",p:"Carpenter"},{n:"Jeth Mal Jangir",p:"Carpenter"},
-{n:"Rahul",p:"Carpenter"},{n:"Vijendra Kumar",p:"Carpenter"},
-{n:"Rakesh Kumar Jangir",p:"Carpenter"},{n:"Jitendra Kumar Jangid",p:"Carpenter"},
-{n:"Dharmendra Khyaliya",p:"Carpenter (Cutter Operator)"},{n:"Jitendra Jangid",p:"Carpenter"},
-{n:"Rahul Verma",p:"Carpenter"},{n:"Raj Pal",p:"Carpenter (Cutter Operator)"},
-{n:"Mukesh Saini",p:"Carpenter (Cutter Operator)"},{n:"Suresh Kumar Jangir",p:"Carpenter (Cutter Operator)"},
-{n:"Pradip Kumar",p:"Carpenter"},{n:"Ajay Jangir",p:"Carpenter (Cutter Operator)"},
-{n:"Rajesh Khyalia",p:"Carpenter (Cutter Operator)"},{n:"Ratan Lal",p:"Painter"},
-{n:"Rakesh Kumar",p:"Painter"},{n:"Chetan Kumar",p:"Painter"},
-{n:"Wajid Khan",p:"Painter"},{n:"Mohammad Arif",p:"Painter"},
-{n:"Sajid",p:"Painter"},{n:"Fariyad Khan",p:"Painter"},{n:"Sayad",p:"Painter"}
-];
+// ====== CONSTANTS ======
+var REG_HOURS = 9;
+var COMP_OT = 3;
+var TOTAL_SHIFT = 12;
+var TZ = 'Europe/Istanbul';
+var SESSION_KEY = 'alb_session';
+var ADMIN_DOC = 'main';
 
-var PAK=[
-{n:"Asad Raza",p:"Worker"},{n:"Muhammad Ramzan",p:"Worker"},
-{n:"Muhammad Rizwan",p:"Worker"},{n:"Sharafat Hussain",p:"Worker"},
-{n:"Ali Raza",p:"Worker"},{n:"Muhammad Amjad",p:"Worker"},
-{n:"Sher Bahadur",p:"Worker"},{n:"Muhammad Arshad",p:"Worker"},
-{n:"Taimoor Ahmad",p:"Worker"},{n:"Muhammad Imtiaz",p:"Worker"},
-{n:"Kashif Hussain",p:"Worker"},{n:"Muhammad Saleem",p:"Worker"},
-{n:"Mudasir Hussain",p:"Worker"},{n:"Sami Ullah",p:"Worker"},
-{n:"Muhammad Parvaiz",p:"Worker"},{n:"Muhammad Awais",p:"Worker"},
-{n:"Muhammad Naeem",p:"Worker"},{n:"Muhammad Faheem",p:"Worker"},
-{n:"Muhammad Mansoor",p:"Worker"}
-];
+// ====== GLOBAL STATE ======
+var _workers = [];
+var _attendance = [];
+var _adminData = {};
+var _listeners = [];
+var _syncStatus = { workers: false, attendance: false, admin: false };
+var _pendingInstall = null;
+var _lastSyncTime = null;
 
-var WC=[],AC=[],ADC=null,LOGO_BASE64=null;
-
-function speakWelcome(name){if(!('speechSynthesis' in window))return;try{var msg=new SpeechSynthesisUtterance('Welcome '+name);msg.rate=0.9;msg.pitch=1;msg.volume=0.8;msg.lang='en-US';speechSynthesis.speak(msg);}catch(e){}}
-
-function loadLogoBase64(){var img=new Image();img.crossOrigin='anonymous';img.onload=function(){var c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').drawImage(img,0,0);try{LOGO_BASE64=c.toDataURL('image/png');}catch(e){}};img.onerror=function(){var c=document.createElement('canvas');c.width=200;c.height=200;var ctx=c.getContext('2d');ctx.fillStyle='#1e40af';ctx.fillRect(0,0,200,200);ctx.fillStyle='#fff';ctx.font='bold 120px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('A',100,105);LOGO_BASE64=c.toDataURL('image/png');};img.src='logo.png';}
-
-// ===== FIXED: initDB - No more worker fluctuation =====
-async function initDB(){
-  console.log('Booting AL BOWRY...');
-  loadLogoBase64();
-  if('speechSynthesis' in window)speechSynthesis.getVoices();
-  
-  var ew=await FB.getAll(COL.W);
-  console.log('Existing workers:',ew.length);
-  
-  // ONLY create workers if ZERO exist (prevents fluctuation)
-  if(ew.length===0){
-    toast('Setting up 56 workers...','info');
-    for(var i=0;i<IND.length;i++){var w=IND[i],id='IND'+String(i+1).padStart(4,'0');await FB.save(COL.W,id,{wid:id,name:w.n,prof:w.p,sec:'Indian',shift:'Day',pw:DEFAULT_PW,on:true});}
-    for(var j=0;j<PAK.length;j++){var w2=PAK[j],id2='PAK'+String(j+1).padStart(4,'0');await FB.save(COL.W,id2,{wid:id2,name:w2.n,prof:w2.p,sec:'Pakistani',shift:'Day',pw:DEFAULT_PW,on:true});}
-    toast('56 workers created!');
+// ====== FIREBASE WRAPPER ======
+var FB = {
+  db: null,
+  init: function(db) {
+    FB.db = db;
+  },
+  col: function(name) {
+    return window.firestoreCol(FB.db, name);
+  },
+  doc: function(col, id) {
+    return window.firestoreDoc(FB.db, col, id);
+  },
+  save: function(col, id, data) {
+    return window.firestoreSet(FB.db, col, id, data);
+  },
+  update: function(col, id, data) {
+    return window.firestoreUpdate(FB.db, col, id, data);
+  },
+  delete: function(col, id) {
+    return window.firestoreDelete(FB.db, col, id);
+  },
+  getAll: function(col) {
+    return window.firestoreGetAll(FB.db, col);
+  },
+  getDoc: function(col, id) {
+    return window.firestoreGetDoc(FB.db, col, id);
+  },
+  listen: function(col, cb) {
+    return window.firestoreListen(FB.db, col, cb);
+  },
+  listenDoc: function(col, id, cb) {
+    return window.firestoreListenDoc(FB.db, col, id, cb);
   }
-  
-  var ad=await FB.get(COL.AD,'main');
-  if(!ad)await FB.save(COL.AD,'main',{adminId:'ADMIN001',pw:'Admin@2026',name:'Pradeep Jangir'});
-  
-  // Real-time listeners
-  FB.listen(COL.W,function(d){
-    WC=d;
-    fillDD();popReportDD();
-    if(typeof populateManualWorkerDD==='function')populateManualWorkerDD();
-    if(typeof populateManualCustomDD==='function')populateManualCustomDD();
-    if(typeof loadHistoryWorkers==='function')loadHistoryWorkers();
-    var u=gU();
-    if(u&&u.role==='admin'){
-      loadStats();
-      if($('sec-workers')&&$('sec-workers').classList.contains('active'))loadWorkerTable();
-      if($('sec-manual')&&$('sec-manual').classList.contains('active')&&typeof loadManualToday==='function')loadManualToday();
-      if($('sec-history')&&$('sec-history').classList.contains('active')&&typeof loadHistoryForDate==='function')loadHistoryForDate();
+};
+
+// ====== DATA GETTERS (always fresh from memory) ======
+function gW() { return _workers || []; }
+function gA() { return _attendance || []; }
+function gAd() { return _adminData || {}; }
+
+// ====== TIME UTILITIES ======
+function tD() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+}
+
+function tNow() {
+  return new Date().toISOString();
+}
+
+function fmtDT(iso) {
+  if (!iso) return '-';
+  try {
+    return new Date(iso).toLocaleString('en-GB', {
+      timeZone: TZ,
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  } catch(e) { return iso; }
+}
+
+function fmtDate(iso) {
+  if (!iso) return '-';
+  try {
+    return new Date(iso).toLocaleDateString('en-GB', {
+      timeZone: TZ,
+      day: '2-digit', month: 'short', year: 'numeric'
+    });
+  } catch(e) { return iso; }
+}
+
+function fmtTime(iso) {
+  if (!iso) return '-';
+  try {
+    return new Date(iso).toLocaleTimeString('en-GB', {
+      timeZone: TZ,
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  } catch(e) { return iso; }
+}
+
+function getTurkeyDate(iso) {
+  if (!iso) return tD();
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
+}
+
+function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
+  // Build ISO from date string (YYYY-MM-DD) and time string (HH:MM)
+  var dt = new Date(dateStr + 'T' + timeStr + ':00');
+  // If night checkout and time < checkin time, add 1 day
+  if (isNightCheckout && checkinISO) {
+    var cin = new Date(checkinISO);
+    if (dt <= cin) {
+      dt.setDate(dt.getDate() + 1);
     }
-  });
+  }
+  return dt.toISOString();
+}
+
+// ====== HOURS CALCULATION ======
+function calcHours(checkinISO, checkoutISO) {
+  if (!checkinISO || !checkoutISO) return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0 };
+  var cin = new Date(checkinISO).getTime();
+  var cout = new Date(checkoutISO).getTime();
+  var totalMs = cout - cin;
+  if (totalMs <= 0) return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0 };
+  var total = Math.round((totalMs / 3600000) * 100) / 100;
+  var regular = Math.min(total, REG_HOURS);
+  var remaining = Math.max(0, total - REG_HOURS);
+  var compOT = Math.min(remaining, COMP_OT);
+  var extraOT = Math.max(0, remaining - COMP_OT);
+  var ot = compOT + extraOT;
+  return {
+    total: Math.round(total * 100) / 100,
+    regular: Math.round(regular * 100) / 100,
+    compOT: Math.round(compOT * 100) / 100,
+    extraOT: Math.round(extraOT * 100) / 100,
+    ot: Math.round(ot * 100) / 100
+  };
+}
+
+// ====== PRESENT/ABSENT LOGIC (CORE FIX) ======
+// A worker is PRESENT on a date if they have ANY attendance record for that date
+// with status: checked_in, pending_checkout, or completed
+// A worker is ABSENT only if they have NO such record
+// pending_checkin is NOT counted as present (not yet approved)
+
+function getPresentWorkerIds(date, attendanceList, shift) {
+  var presentIds = [];
+  var filtered = attendanceList || gA();
   
-  FB.listen(COL.A,function(d){
-    AC=d;var u=gU();
-    if(u&&u.role==='worker'){upWS();loadWH();loadWQS();}
-    if(u&&u.role==='admin'){
-      loadStats();var a=document.querySelector('.sec.active');
-      if(a){
-        if(a.id==='sec-approve')loadAppr();
-        if(a.id==='sec-live')loadLive();
-        if(a.id==='sec-attend')loadAttend();
-        if(a.id==='sec-endday')loadED();
-        if(a.id==='sec-report')loadMR();
-        if(a.id==='sec-manual'&&typeof loadManualToday==='function')loadManualToday();
-        if(a.id==='sec-history'&&typeof loadHistoryForDate==='function')loadHistoryForDate();
+  for (var i = 0; i < filtered.length; i++) {
+    var att = filtered[i];
+    // Check date match
+    var attDate = att.date || getTurkeyDate(att.checkinTime || att.checkinReqTime);
+    if (attDate !== date) continue;
+    // Check shift filter
+    if (shift && shift !== 'All' && att.shift !== shift) continue;
+    // Status must be present (not pending_checkin)
+    if (att.status === 'checked_in' || att.status === 'pending_checkout' || att.status === 'completed') {
+      if (indexOf(presentIds, att.wid) === -1) {
+        presentIds.push(att.wid);
       }
     }
+  }
+  return presentIds;
+}
+
+function getAbsentWorkers(date, attendanceList, workers, shift, section) {
+  var present = getPresentWorkerIds(date, attendanceList, shift);
+  var absentWorkers = [];
+  var allWorkers = workers || gW();
+  
+  for (var i = 0; i < allWorkers.length; i++) {
+    var w = allWorkers[i];
+    if (!w.on) continue; // skip inactive
+    if (section && section !== 'All' && w.sec !== section) continue;
+    if (shift && shift !== 'All' && w.shift !== shift) continue;
+    if (indexOf(present, w.wid) === -1) {
+      absentWorkers.push(w);
+    }
+  }
+  return absentWorkers;
+}
+
+function getPresentWorkers(date, attendanceList, workers, shift, section) {
+  var present = getPresentWorkerIds(date, attendanceList, shift);
+  var presentWorkers = [];
+  var allWorkers = workers || gW();
+  
+  for (var i = 0; i < allWorkers.length; i++) {
+    var w = allWorkers[i];
+    if (!w.on) continue;
+    if (section && section !== 'All' && w.sec !== section) continue;
+    if (indexOf(present, w.wid) === -1) continue;
+    // Find their attendance record for this date
+    var attRec = null;
+    var allAtt = attendanceList || gA();
+    for (var j = 0; j < allAtt.length; j++) {
+      var a = allAtt[j];
+      var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+      if (a.wid === w.wid && aDate === date) {
+        if (a.status === 'checked_in' || a.status === 'pending_checkout' || a.status === 'completed') {
+          attRec = a;
+          break;
+        }
+      }
+    }
+    if (attRec) {
+      presentWorkers.push({ worker: w, att: attRec });
+    }
+  }
+  return presentWorkers;
+}
+
+// ====== indexOf helper (IE compatibility) ======
+function indexOf(arr, val) {
+  if (!arr) return -1;
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] === val) return i;
+  }
+  return -1;
+}
+
+// ====== SESSION ======
+function getSession() {
+  try {
+    var s = localStorage.getItem(SESSION_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+
+function setSession(data) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function clearSession() {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch(e) {}
+}
+
+// ====== SYNC STATUS INDICATOR ======
+function updateSyncUI() {
+  var el = document.getElementById('syncStatus');
+  if (!el) return;
+  var allOk = _syncStatus.workers && _syncStatus.attendance && _syncStatus.admin;
+  if (allOk) {
+    el.innerHTML = '<span class="sync-dot sync-ok"></span> Synced';
+    el.className = 'sync-badge sync-good';
+    _lastSyncTime = new Date();
+  } else {
+    el.innerHTML = '<span class="sync-dot sync-warn"></span> Syncing...';
+    el.className = 'sync-badge sync-warn';
+  }
+}
+
+// ====== REAL-TIME LISTENERS ======
+function startRealtimeSync() {
+  // Clear old listeners
+  for (var i = 0; i < _listeners.length; i++) {
+    try { _listeners[i](); } catch(e) {}
+  }
+  _listeners = [];
+
+  // Listen to workers collection
+  var unsubW = FB.listen('workers', function(docs) {
+    _workers = docs;
+    _syncStatus.workers = true;
+    updateSyncUI();
+    onWorkersUpdated();
+  });
+  _listeners.push(unsubW);
+
+  // Listen to attendance collection
+  var unsubA = FB.listen('attendance', function(docs) {
+    _attendance = docs;
+    _syncStatus.attendance = true;
+    updateSyncUI();
+    onAttendanceUpdated();
+  });
+  _listeners.push(unsubA);
+
+  // Listen to admin doc
+  var unsubAd = FB.listenDoc('admin', ADMIN_DOC, function(doc) {
+    if (doc) {
+      _adminData = doc;
+      _syncStatus.admin = true;
+      updateSyncUI();
+      onAdminUpdated();
+    }
+  });
+  _listeners.push(unsubAd);
+}
+
+function onWorkersUpdated() {
+  var session = getSession();
+  if (!session) return;
+  
+  if (session.role === 'admin') {
+    refreshAdminWorkers();
+    refreshDashboard();
+    renderWorkerDropdowns();
+  } else if (session.role === 'worker') {
+    // Update worker info if their record changed
+    var w = findWorker(session.wid);
+    if (w) {
+      setSession({ role: 'worker', wid: w.wid, name: w.name, prof: w.prof, sec: w.sec, shift: w.shift });
+      renderWorkerDashboard();
+    }
+  }
+}
+
+function onAttendanceUpdated() {
+  var session = getSession();
+  if (!session) return;
+  
+  if (session.role === 'admin') {
+    refreshDashboard();
+    refreshApprovals();
+    refreshLiveStatus();
+    refreshAttendanceView();
+    refreshManualEntry();
+    if (typeof renderHistoryView === 'function') renderHistoryView();
+  } else if (session.role === 'worker') {
+    renderWorkerDashboard();
+  }
+}
+
+function onAdminUpdated() {
+  var session = getSession();
+  if (!session || session.role !== 'admin') return;
+  // Update admin display name if changed
+  var nameEl = document.getElementById('adminDisplayName');
+  if (nameEl && _adminData.name) nameEl.textContent = _adminData.name;
+}
+
+// ====== WORKER LOOKUP ======
+function findWorker(wid) {
+  var ws = gW();
+  for (var i = 0; i < ws.length; i++) {
+    if (ws[i].wid === wid) return ws[i];
+  }
+  return null;
+}
+
+function findWorkerByName(name) {
+  var ws = gW();
+  for (var i = 0; i < ws.length; i++) {
+    if (ws[i].name === name) return ws[i];
+  }
+  return null;
+}
+
+// ====== ATTENDANCE LOOKUP ======
+function getTodayAtt(wid) {
+  var today = tD();
+  var att = gA();
+  for (var i = 0; i < att.length; i++) {
+    if (att[i].wid === wid && att[i].date === today) {
+      return att[i];
+    }
+  }
+  return null;
+}
+
+function getWorkerAtt(wid) {
+  var result = [];
+  var att = gA();
+  for (var i = 0; i < att.length; i++) {
+    if (att[i].wid === wid) result.push(att[i]);
+  }
+  // Sort by date desc
+  result.sort(function(a, b) {
+    return (b.date || '') > (a.date || '') ? 1 : -1;
+  });
+  return result;
+}
+
+function getDateAtt(date) {
+  var result = [];
+  var att = gA();
+  for (var i = 0; i < att.length; i++) {
+    var attDate = att[i].date || getTurkeyDate(att[i].checkinTime || att[i].checkinReqTime);
+    if (attDate === date) result.push(att[i]);
+  }
+  return result;
+}
+
+// ====== GENERATE RECORD ID ======
+function genRecId(wid, backdated) {
+  var prefix = backdated ? 'att_bd_' : 'att_';
+  return prefix + Date.now() + '_' + wid;
+}
+
+// ====== WORKER LOGIN ======
+function workerLogin(wid, pw, shift) {
+  var w = findWorker(wid);
+  if (!w) return { ok: false, msg: 'Worker not found' };
+  if (!w.on) return { ok: false, msg: 'Account deactivated. Contact admin.' };
+  if (w.pw !== pw) return { ok: false, msg: 'Wrong password' };
+  
+  var session = { role: 'worker', wid: w.wid, name: w.name, prof: w.prof, sec: w.sec, shift: shift || w.shift };
+  setSession(session);
+  return { ok: true, worker: w, session: session };
+}
+
+// ====== ADMIN LOGIN ======
+function adminLogin(id, pw) {
+  var ad = gAd();
+  if (id === ad.adminId && pw === ad.pw) {
+    setSession({ role: 'admin', name: ad.name || 'Admin' });
+    return { ok: true };
+  }
+  // Fallback hardcoded
+  if (id === 'ADMIN001' && pw === 'Admin@2026') {
+    setSession({ role: 'admin', name: 'Pradeep Jangir' });
+    return { ok: true };
+  }
+  return { ok: false, msg: 'Wrong Admin ID or Password' };
+}
+
+// ====== WORKER CHECK-IN REQUEST ======
+function workerCheckinReq(wid, shift) {
+  var today = tD();
+  var existing = getTodayAtt(wid);
+  
+  if (existing) {
+    if (existing.status === 'pending_checkin') return { ok: false, msg: 'Check-in already pending approval' };
+    if (existing.status === 'checked_in') return { ok: false, msg: 'Already checked in' };
+    if (existing.status === 'pending_checkout') return { ok: false, msg: 'Checkout pending approval' };
+    if (existing.status === 'completed') return { ok: false, msg: 'Today\'s attendance already completed' };
+  }
+  
+  var w = findWorker(wid);
+  if (!w) return { ok: false, msg: 'Worker not found' };
+  
+  var recId = genRecId(wid, false);
+  var rec = {
+    recId: recId,
+    wid: wid,
+    name: w.name,
+    prof: w.prof,
+    sec: w.sec,
+    shift: shift || w.shift,
+    date: today,
+    checkinReqTime: tNow(),
+    checkinTime: null,
+    checkoutReqTime: null,
+    checkoutTime: null,
+    total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
+    status: 'pending_checkin',
+    backdated: false
+  };
+  
+  return FB.save('attendance', recId, rec).then(function() {
+    return { ok: true, msg: 'Check-in request sent. Waiting for admin approval.' };
+  }).catch(function(e) {
+    return { ok: false, msg: 'Error: ' + e.message };
+  });
+}
+
+// ====== WORKER CHECKOUT REQUEST ======
+function workerCheckoutReq(wid) {
+  var today = tD();
+  var att = null;
+  var allAtt = gA();
+  
+  for (var i = 0; i < allAtt.length; i++) {
+    if (allAtt[i].wid === wid && allAtt[i].date === today && allAtt[i].status === 'checked_in') {
+      att = allAtt[i];
+      break;
+    }
+  }
+  
+  if (!att) return Promise.resolve({ ok: false, msg: 'No active check-in found for today' });
+  
+  return FB.update('attendance', att.recId, {
+    checkoutReqTime: tNow(),
+    status: 'pending_checkout'
+  }).then(function() {
+    return { ok: true, msg: 'Checkout request sent. Waiting for admin approval.' };
+  }).catch(function(e) {
+    return { ok: false, msg: 'Error: ' + e.message };
+  });
+}
+
+// ====== ADMIN APPROVE CHECK-IN ======
+function adminApproveCheckin(recId) {
+  return FB.update('attendance', recId, {
+    checkinTime: tNow(),
+    status: 'checked_in'
+  }).then(function() {
+    showToast('Check-in approved!', 'success');
+    return { ok: true };
+  }).catch(function(e) {
+    showToast('Error: ' + e.message, 'error');
+    return { ok: false };
+  });
+}
+
+// ====== ADMIN APPROVE CHECKOUT ======
+function adminApproveCheckout(recId) {
+  var att = null;
+  var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) {
+    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
+  }
+  if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
+  
+  var checkoutTime = tNow();
+  
+  // Night shift: if checkout time < checkin time, add 1 day
+  if (att.shift === 'Night' && att.checkinTime) {
+    var cin = new Date(att.checkinTime);
+    var cout = new Date(checkoutTime);
+    if (cout <= cin) {
+      cout.setDate(cout.getDate() + 1);
+      checkoutTime = cout.toISOString();
+    }
+  }
+  
+  var hrs = calcHours(att.checkinTime, checkoutTime);
+  
+  return FB.update('attendance', recId, {
+    checkoutTime: checkoutTime,
+    total: hrs.total,
+    regular: hrs.regular,
+    compOT: hrs.compOT,
+    extraOT: hrs.extraOT,
+    ot: hrs.ot,
+    status: 'completed'
+  }).then(function() {
+    showToast('Checkout approved!', 'success');
+    return { ok: true };
+  }).catch(function(e) {
+    showToast('Error: ' + e.message, 'error');
+    return { ok: false };
+  });
+}
+
+// ====== ADMIN REJECT ======
+function adminReject(recId, reason) {
+  var att = null;
+  var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) {
+    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
+  }
+  if (!att) return Promise.resolve({ ok: false });
+  
+  if (att.status === 'pending_checkin') {
+    return FB.delete('attendance', recId).then(function() {
+      showToast('Check-in rejected and removed', 'info');
+      return { ok: true };
+    });
+  } else if (att.status === 'pending_checkout') {
+    return FB.update('attendance', recId, {
+      checkoutReqTime: null,
+      status: 'checked_in'
+    }).then(function() {
+      showToast('Checkout request rejected', 'info');
+      return { ok: true };
+    });
+  }
+  return Promise.resolve({ ok: false });
+}
+
+// ====== ADMIN APPROVE ALL ======
+function adminApproveAll(type) {
+  var allAtt = gA();
+  var promises = [];
+  var statusFilter = type === 'checkin' ? 'pending_checkin' : 'pending_checkout';
+  
+  for (var i = 0; i < allAtt.length; i++) {
+    var att = allAtt[i];
+    if (att.status === statusFilter) {
+      if (type === 'checkin') {
+        promises.push(adminApproveCheckin(att.recId));
+      } else {
+        promises.push(adminApproveCheckout(att.recId));
+      }
+    }
+  }
+  
+  return Promise.all(promises).then(function() {
+    showToast('All ' + type + ' approved!', 'success');
+    return { ok: true, count: promises.length };
+  });
+}
+
+// ====== UNDO APPROVAL ======
+function undoApproval(recId) {
+  var att = null;
+  var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) {
+    if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
+  }
+  if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
+  
+  if (att.status === 'checked_in' && !att.checkoutTime) {
+    // Undo check-in: delete record
+    return FB.delete('attendance', recId).then(function() {
+      showToast('Check-in undone', 'info');
+      return { ok: true };
+    });
+  } else if (att.status === 'completed' && att.checkoutTime) {
+    // Undo checkout: revert to checked_in
+    return FB.update('attendance', recId, {
+      checkoutTime: null,
+      checkoutReqTime: null,
+      total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
+      status: 'checked_in'
+    }).then(function() {
+      showToast('Checkout undone', 'info');
+      return { ok: true };
+    });
+  }
+  return Promise.resolve({ ok: false, msg: 'Cannot undo this record' });
+}
+
+// ====== MANUAL CHECK-IN (Admin) ======
+function manualCheckin(wid, shift, dateStr, timeStr) {
+  var w = findWorker(wid);
+  if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
+  
+  var date = dateStr || tD();
+  var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  var checkinISO = buildISO(date, time, false, null);
+  
+  // Check if already has record for this date
+  var allAtt = gA();
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (a.wid === wid && aDate === date) {
+      if (a.status !== 'completed') {
+        return Promise.resolve({ ok: false, msg: w.name + ' already has an active record for ' + date });
+      }
+    }
+  }
+  
+  var recId = genRecId(wid, dateStr ? true : false);
+  var rec = {
+    recId: recId,
+    wid: wid,
+    name: w.name,
+    prof: w.prof,
+    sec: w.sec,
+    shift: shift || w.shift,
+    date: date,
+    checkinReqTime: checkinISO,
+    checkinTime: checkinISO,
+    checkoutReqTime: null,
+    checkoutTime: null,
+    total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
+    status: 'checked_in',
+    backdated: dateStr ? true : false
+  };
+  
+  return FB.save('attendance', recId, rec).then(function() {
+    return { ok: true, msg: w.name + ' checked in at ' + fmtTime(checkinISO) };
+  }).catch(function(e) {
+    return { ok: false, msg: 'Error: ' + e.message };
+  });
+}
+
+// ====== MANUAL CHECK-OUT (Admin) ======
+function manualCheckout(wid, shift, dateStr, timeStr) {
+  var w = findWorker(wid);
+  if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
+  
+  var date = dateStr || tD();
+  var allAtt = gA();
+  var att = null;
+  
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (a.wid === wid && aDate === date && (a.status === 'checked_in' || a.status === 'pending_checkout')) {
+      att = a;
+      break;
+    }
+  }
+  
+  if (!att) return Promise.resolve({ ok: false, msg: w.name + ' has no active check-in for ' + date });
+  
+  var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  var checkoutISO = buildISO(date, time, att.shift === 'Night', att.checkinTime);
+  var hrs = calcHours(att.checkinTime, checkoutISO);
+  
+  return FB.update('attendance', att.recId, {
+    checkoutTime: checkoutISO,
+    checkoutReqTime: checkoutISO,
+    total: hrs.total,
+    regular: hrs.regular,
+    compOT: hrs.compOT,
+    extraOT: hrs.extraOT,
+    ot: hrs.ot,
+    status: 'completed'
+  }).then(function() {
+    return { ok: true, msg: w.name + ' checked out at ' + fmtTime(checkoutISO) + ' | ' + hrs.total + 'h worked' };
+  }).catch(function(e) {
+    return { ok: false, msg: 'Error: ' + e.message };
+  });
+}
+
+// ====== BULK CHECK-IN (Admin) ======
+function bulkCheckin(wids, shift, dateStr, timeStr) {
+  var promises = [];
+  for (var i = 0; i < wids.length; i++) {
+    promises.push(manualCheckin(wids[i], shift, dateStr, timeStr));
+  }
+  return Promise.all(promises).then(function(results) {
+    var ok = 0, fail = 0;
+    for (var i = 0; i < results.length; i++) {
+      if (results[i].ok) ok++; else fail++;
+    }
+    return { ok: true, success: ok, failed: fail };
+  });
+}
+
+// ====== BULK CHECK-OUT (Admin) ======
+function bulkCheckout(wids, shift, dateStr, timeStr) {
+  var promises = [];
+  for (var i = 0; i < wids.length; i++) {
+    promises.push(manualCheckout(wids[i], shift, dateStr, timeStr));
+  }
+  return Promise.all(promises).then(function(results) {
+    var ok = 0, fail = 0;
+    for (var i = 0; i < results.length; i++) {
+      if (results[i].ok) ok++; else fail++;
+    }
+    return { ok: true, success: ok, failed: fail };
+  });
+}
+
+// ====== END DAY (Admin bulk checkout) ======
+function endDay(timeStr) {
+  var today = tD();
+  var allAtt = gA();
+  var activeWids = [];
+  
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (aDate === today && (a.status === 'checked_in' || a.status === 'pending_checkout')) {
+      activeWids.push(a.wid);
+    }
+  }
+  
+  if (activeWids.length === 0) return Promise.resolve({ ok: true, msg: 'No active workers to checkout', count: 0 });
+  
+  return bulkCheckout(activeWids, null, today, timeStr).then(function(res) {
+    return { ok: true, msg: 'Checked out ' + res.success + ' workers', count: res.success };
+  });
+}
+
+// ====== WORKER PASSWORD CHANGE ======
+function changeWorkerPassword(wid, oldPw, newPw) {
+  var w = findWorker(wid);
+  if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
+  if (w.pw !== oldPw) return Promise.resolve({ ok: false, msg: 'Current password is wrong' });
+  if (newPw.length < 6) return Promise.resolve({ ok: false, msg: 'New password must be at least 6 characters' });
+  
+  return FB.update('workers', wid, { pw: newPw }).then(function() {
+    return { ok: true, msg: 'Password changed successfully' };
+  }).catch(function(e) {
+    return { ok: false, msg: 'Error: ' + e.message };
+  });
+}
+
+// ====== ADMIN SETTINGS ======
+function updateAdmin(field, value, confirmPw) {
+  var ad = gAd();
+  var update = {};
+  
+  if (field === 'name') {
+    if (!value) return Promise.resolve({ ok: false, msg: 'Name cannot be empty' });
+    update.name = value;
+  } else if (field === 'id') {
+    if (!value) return Promise.resolve({ ok: false, msg: 'Admin ID cannot be empty' });
+    if (ad.pw !== confirmPw) return Promise.resolve({ ok: false, msg: 'Current password wrong' });
+    update.adminId = value;
+  } else if (field === 'pw') {
+    if (ad.pw !== confirmPw) return Promise.resolve({ ok: false, msg: 'Current password wrong' });
+    if (!value || value.length < 6) return Promise.resolve({ ok: false, msg: 'New password min 6 chars' });
+    update.pw = value;
+  }
+  
+  return FB.update('admin', ADMIN_DOC, update).then(function() {
+    Object.assign(_adminData, update);
+    showToast(field + ' updated!', 'success');
+    return { ok: true };
+  }).catch(function(e) {
+    return { ok: false, msg: e.message };
+  });
+}
+
+// ====== ADD WORKER ======
+function addWorker(wid, name, prof, sec, shift) {
+  if (!wid || !name) return Promise.resolve({ ok: false, msg: 'ID and Name required' });
+  if (findWorker(wid)) return Promise.resolve({ ok: false, msg: 'Worker ID already exists' });
+  
+  var w = {
+    wid: wid,
+    name: name.trim(),
+    prof: prof || 'Worker',
+    sec: sec || 'Indian',
+    shift: shift || 'Day',
+    pw: 'Worker@123',
+    on: true
+  };
+  
+  return FB.save('workers', wid, w).then(function() {
+    showToast(name + ' added!', 'success');
+    return { ok: true };
+  }).catch(function(e) {
+    return { ok: false, msg: e.message };
+  });
+}
+
+// ====== EDIT WORKER ======
+function editWorker(wid, updates) {
+  return FB.update('workers', wid, updates).then(function() {
+    showToast('Worker updated!', 'success');
+    return { ok: true };
+  }).catch(function(e) {
+    return { ok: false, msg: e.message };
+  });
+}
+
+// ====== DELETE WORKER ======
+function deleteWorker(wid) {
+  return FB.delete('workers', wid).then(function() {
+    showToast('Worker deleted', 'info');
+    return { ok: true };
+  }).catch(function(e) {
+    return { ok: false, msg: e.message };
+  });
+}
+
+// ====== TOGGLE WORKER ACTIVE ======
+function toggleWorkerActive(wid) {
+  var w = findWorker(wid);
+  if (!w) return Promise.resolve({ ok: false });
+  return FB.update('workers', wid, { on: !w.on }).then(function() {
+    showToast(w.name + (w.on ? ' deactivated' : ' activated'), 'info');
+    return { ok: true };
+  });
+}
+
+// ====== TOGGLE WORKER SHIFT ======
+function toggleWorkerShift(wid) {
+  var w = findWorker(wid);
+  if (!w) return Promise.resolve({ ok: false });
+  var newShift = w.shift === 'Day' ? 'Night' : 'Day';
+  return FB.update('workers', wid, { shift: newShift }).then(function() {
+    showToast(w.name + ' shift changed to ' + newShift, 'info');
+    return { ok: true };
+  });
+}
+
+// ====== RESET ALL PASSWORDS ======
+function resetAllPasswords() {
+  var ws = gW();
+  var promises = [];
+  for (var i = 0; i < ws.length; i++) {
+    promises.push(FB.update('workers', ws[i].wid, { pw: 'Worker@123' }));
+  }
+  return Promise.all(promises).then(function() {
+    showToast('All passwords reset to Worker@123', 'success');
+    return { ok: true };
+  });
+}
+
+// ====== CLEAR ALL ATTENDANCE ======
+function clearAllAttendance() {
+  var allAtt = gA();
+  var promises = [];
+  for (var i = 0; i < allAtt.length; i++) {
+    promises.push(FB.delete('attendance', allAtt[i].recId));
+  }
+  return Promise.all(promises).then(function() {
+    showToast('All attendance cleared', 'info');
+    return { ok: true };
+  });
+}
+
+// ====== BACKUP DATA ======
+function backupData() {
+  var data = {
+    exportedAt: new Date().toISOString(),
+    company: COMPANY,
+    workers: gW(),
+    attendance: gA(),
+    admin: { adminId: gAd().adminId, name: gAd().name }
+  };
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'albowry_backup_' + tD() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded!', 'success');
+}
+
+// ====== MONTHLY REPORT DATA ======
+function getMonthlyReport(wid, year, month) {
+  var allAtt = gA();
+  var result = [];
+  var monthStr = year + '-' + (month < 10 ? '0' + month : '' + month);
+  
+  var workers = wid === 'all' ? gW() : [findWorker(wid)];
+  
+  for (var i = 0; i < workers.length; i++) {
+    var w = workers[i];
+    if (!w || !w.on) continue;
+    
+    var workerAtt = [];
+    var totalDays = 0, totalHrs = 0, totalOT = 0, dayShift = 0, nightShift = 0;
+    
+    for (var j = 0; j < allAtt.length; j++) {
+      var a = allAtt[j];
+      if (a.wid !== w.wid) continue;
+      var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+      if (attDate.indexOf(monthStr) !== 0) continue;
+      if (a.status !== 'completed') continue;
+      
+      workerAtt.push(a);
+      totalDays++;
+      totalHrs += a.total || 0;
+      totalOT += a.ot || 0;
+      if (a.shift === 'Night') nightShift++; else dayShift++;
+    }
+    
+    workerAtt.sort(function(a, b) { return a.date > b.date ? 1 : -1; });
+    
+    result.push({
+      worker: w,
+      records: workerAtt,
+      totalDays: totalDays,
+      totalHrs: Math.round(totalHrs * 100) / 100,
+      totalOT: Math.round(totalOT * 100) / 100,
+      dayShift: dayShift,
+      nightShift: nightShift
+    });
+  }
+  
+  return result;
+}
+
+// ====== EXPORT HELPERS ======
+function getExportData(fromDate, toDate, filter) {
+  var allAtt = gA();
+  var result = [];
+  
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    if (a.status !== 'completed') continue;
+    var attDate = a.date || getTurkeyDate(a.checkinTime);
+    if (attDate < fromDate || attDate > toDate) continue;
+    if (filter && filter !== 'All') {
+      if (filter === 'Day' && a.shift !== 'Day') continue;
+      if (filter === 'Night' && a.shift !== 'Night') continue;
+      if (filter === 'Indian' && a.sec !== 'Indian') continue;
+      if (filter === 'Pakistani' && a.sec !== 'Pakistani') continue;
+    }
+    result.push(a);
+  }
+  
+  result.sort(function(a, b) {
+    if (a.date !== b.date) return a.date > b.date ? 1 : -1;
+    return a.name > b.name ? 1 : -1;
   });
   
-  FB.listen(COL.AD,function(d){if(d.length)ADC=d[0];});
-  setTimeout(function(){var l=$('loadingScreen');if(l)l.style.display='none';},2000);
+  return result;
 }
 
-var $=function(id){return document.getElementById(id);};
-var gW=function(){return WC;};
-var gA=function(){return AC;};
-var gAD=function(){return ADC||{adminId:'ADMIN001',pw:'Admin@2026',name:'Pradeep Jangir'};};
-var gU=function(){try{return JSON.parse(localStorage.getItem(K.U));}catch(e){return null;}};
-var sU=function(d){localStorage.setItem(K.U,JSON.stringify(d));};
-var cU=function(){localStorage.removeItem(K.U);};
-var tT=function(){return new Date().toLocaleString('en-US',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});};
-var tD=function(){return new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Istanbul'});};
-var tDF=function(){return new Date().toLocaleDateString('en-US',{timeZone:'Europe/Istanbul',weekday:'long',year:'numeric',month:'long',day:'numeric'});};
-function fT(iso){if(!iso)return'-';try{return new Date(iso).toLocaleString('en-US',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});}catch(e){return'-';}}
-function greet(){var h=parseInt(new Date().toLocaleString('en-US',{timeZone:'Europe/Istanbul',hour:'numeric',hour12:false}));return h<12?'Good Morning':'Good Afternoon';}
-function toast(m,t){var e=$('toast');if(!e)return;e.textContent=m;e.className='toast show '+(t||'ok');setTimeout(function(){e.classList.remove('show');},3500);}
-function togglePw(id,b){var e=$(id);e.type=e.type==='password'?'text':'password';b.textContent=e.type==='password'?'👁':'🙈';}
-function openModal(id){$(id).classList.add('open');}
-function closeModal(id){$(id).classList.remove('open');}
-function showPage(id){var pages=document.querySelectorAll('.page');for(var i=0;i<pages.length;i++)pages[i].classList.remove('active');$(id).classList.add('active');}
-function confirmDlg(t,m,cb){$('mcTitle').textContent=t;$('mcMsg').textContent=m;var y=$('mcYes'),n=y.cloneNode(true);y.parentNode.replaceChild(n,y);n.onclick=function(){closeModal('mConfirm');cb();};openModal('mConfirm');}
-function st(id,v){var e=$(id);if(e)e.textContent=v;}
-function setDefaultManualDate(){var md=$('manualDate');if(md&&!md.value)md.value=tD();}
-
-function calcHours(ci,co){var hrs=(new Date(co)-new Date(ci))/36e5;var total=Math.round(hrs*100)/100;var regular=Math.round(Math.min(hrs,REG_HOURS)*100)/100;var compOT=Math.round(Math.min(Math.max(hrs-REG_HOURS,0),COMP_OT)*100)/100;var extraOT=Math.max(0,Math.round((hrs-REG_HOURS-COMP_OT)*100)/100);return{total:total,regular:regular,compOT:compOT,extraOT:extraOT,ot:Math.round((compOT+extraOT)*100)/100};}
-
-// ===== Helper: Get unique present wids for a date =====
-function getPresentWidsForDate(date){
-  var allAtt=gA().filter(function(a){return a.date===date;});
-  var wids=[];
-  for(var i=0;i<allAtt.length;i++){
-    if(wids.indexOf(allAtt[i].wid)===-1)wids.push(allAtt[i].wid);
-  }
-  return wids;
-}
-
-// ===== Helper: Get absent workers for a date =====
-function getAbsentWorkersForDate(date){
-  var presentWids=getPresentWidsForDate(date);
-  var allW=gW().filter(function(w){return w.on;});
-  var absent=[];
-  for(var i=0;i<allW.length;i++){
-    if(presentWids.indexOf(allW[i].wid)===-1)absent.push(allW[i]);
-  }
-  return absent;
-}
-
-// ===== LOGIN =====
-function switchLogin(t,b){var tabs=document.querySelectorAll('.ltabs .ltab');for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');b.classList.add('active');var forms=document.querySelectorAll('.lform');for(var j=0;j<forms.length;j++)forms[j].classList.remove('active');$(t+'LoginForm').classList.add('active');$('loginErr').classList.remove('show');}
-function showErr(m){var e=$('loginErr');e.textContent=m;e.classList.add('show');}
-
-function fillDD(){
-  var w=gW().filter(function(x){return x.on;}).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
-  var ind=w.filter(function(x){return x.sec==='Indian';});
-  var pak=w.filter(function(x){return x.sec==='Pakistani';});
-  var h='<option value="">-- Choose your name --</option>';
-  if(ind.length){h+='<optgroup label="Indian Workers ('+ind.length+')">';for(var i=0;i<ind.length;i++)h+='<option value="'+ind[i].wid+'">'+ind[i].name+' ('+ind[i].prof+')</option>';h+='</optgroup>';}
-  if(pak.length){h+='<optgroup label="Pakistani Workers ('+pak.length+')">';for(var j=0;j<pak.length;j++)h+='<option value="'+pak[j].wid+'">'+pak[j].name+'</option>';h+='</optgroup>';}
-  var s=$('workerSelect');if(s)s.innerHTML=h;
-}
-
-function workerLogin(e){
-  e.preventDefault();var id=$('workerSelect').value,pw=$('workerPw').value,shift=$('workerShift')?$('workerShift').value:'Day';
-  if(!id)return showErr('Select your name');if(!shift)return showErr('Select shift');
-  var w=null;var workers=gW();for(var i=0;i<workers.length;i++){if(workers[i].wid===id){w=workers[i];break;}}
-  if(!w)return showErr('Not found');if(!w.on)return showErr('Deactivated');if(w.pw!==pw)return showErr('Wrong password');
-  if(w.shift!==shift)FB.save(COL.W,w.wid,Object.assign({},w,{shift:shift}));
-  sU(Object.assign({},w,{id:w.wid,shift:shift,role:'worker'}));toast('Welcome, '+w.name+'!');loadWD();return false;
-}
-
-function adminLogin(e){
-  e.preventDefault();var id=$('adminId').value.trim(),pw=$('adminPw').value;
-  if(!id||!pw)return showErr('Enter ID & password');
-  var ad=gAD();if(ad.adminId!==id||ad.pw!==pw)return showErr('Invalid credentials');
-  sU(Object.assign({},ad,{id:ad.adminId,role:'admin'}));speakWelcome(ad.name||'Admin');toast('Welcome, '+(ad.name||'Admin')+'!');loadAD();return false;
-}
-
-function logout(){confirmDlg('Logout?','Sure?',function(){cU();showPage('loginPage');$('workerSelect').value='';$('workerPw').value='';if($('workerShift'))$('workerShift').value='';$('adminId').value='';$('adminPw').value='';$('loginErr').classList.remove('show');});}
-
-// ===== WORKER DASHBOARD =====
-function loadWD(){var u=gU();$('wGreet').textContent=greet();$('wName').textContent=u.name;$('wInfo').textContent=(u.prof||'Worker')+' | '+(u.sec||'')+' | '+(u.shift||'Day')+' Shift';$('wNavName').textContent=u.name;$('wAvatar').textContent=(u.name||'W').charAt(0);$('wDate').textContent=tDF();showPage('workerPage');upWS();loadWH();loadWQS();}
-
-function doCheckIn(){
-  var u=gU(),today=tD();var att=gA();var ex=null;for(var i=0;i<att.length;i++){if(att[i].wid===u.id&&att[i].date===today){ex=att[i];break;}}
-  if(ex){if(ex.status==='pending_checkin')return toast('Already pending!','err');if(ex.status==='checked_in'||ex.status==='pending_checkout')return toast('Already checked in!','err');if(ex.status==='completed')return toast('Already done','err');}
-  confirmDlg('Check In?','Start work?',function(){var now=new Date().toISOString(),rid='att_'+Date.now()+'_'+u.id;FB.save(COL.A,rid,{recId:rid,wid:u.id,name:u.name,prof:u.prof,sec:u.sec,shift:u.shift||'Day',date:today,checkinReqTime:now,checkinTime:null,checkoutReqTime:null,checkoutTime:null,total:0,regular:0,compOT:0,extraOT:0,ot:0,status:'pending_checkin'});toast('Request sent!');});
-}
-
-function doCheckOut(){
-  var u=gU(),today=tD();var att=gA();var rec=null;for(var i=0;i<att.length;i++){if(att[i].wid===u.id&&att[i].date===today){rec=att[i];break;}}
-  if(!rec)return toast('Check-in first!','err');if(rec.status==='pending_checkin')return toast('Wait for approval','err');if(rec.status==='completed')return toast('Already done','err');if(rec.status==='pending_checkout')return toast('Already pending!','err');if(rec.status!=='checked_in')return toast('Cannot','err');
-  confirmDlg('Check Out?','End work?',function(){var now=new Date().toISOString();FB.save(COL.A,rec.id,Object.assign({},rec,{checkoutReqTime:now,status:'pending_checkout'}));toast('Request sent!');});
-}
-
-function upWS(){
-  var u=gU();if(!u||u.role!=='worker')return;var today=tD();var att=gA();var rec=null;for(var i=0;i<att.length;i++){if(att[i].wid===u.id&&att[i].date===today){rec=att[i];break;}}
-  var bI=$('btnCheckin'),bO=$('btnCheckout'),st2=$('wacStatus'),ic=$('wsIcon'),tx=$('wsText'),sb=$('wsSub'),tm=$('wsTimes');
-  if(!bI)return;tm.innerHTML='';
-  if(!rec){bI.disabled=false;bO.disabled=true;st2.className='wac-status';st2.innerHTML='<span>📋</span> Ready. Click CHECK IN.';ic.textContent='📋';tx.textContent='Not Started';sb.textContent='Waiting';return;}
-  if(rec.checkinReqTime)tm.innerHTML+='<div class="wsc-time-item"><small>Requested</small><b style="color:#f59e0b">'+fT(rec.checkinReqTime)+'</b></div>';
-  if(rec.checkinTime)tm.innerHTML+='<div class="wsc-time-item"><small>Check-in</small><b style="color:#059669">'+fT(rec.checkinTime)+'</b></div>';
-  if(rec.checkoutReqTime)tm.innerHTML+='<div class="wsc-time-item"><small>Out Req</small><b style="color:#f59e0b">'+fT(rec.checkoutReqTime)+'</b></div>';
-  if(rec.checkoutTime)tm.innerHTML+='<div class="wsc-time-item"><small>Check-out</small><b style="color:#dc2626">'+fT(rec.checkoutTime)+'</b></div>';
-  if(rec.total>0)tm.innerHTML+='<div class="wsc-time-item"><small>Total</small><b style="color:#1e40af">'+(rec.total).toFixed(2)+'h</b></div>';
-  if(rec.ot>0)tm.innerHTML+='<div class="wsc-time-item"><small>OT</small><b style="color:#d97706">'+(rec.ot).toFixed(2)+'h</b></div>';
-  var states={pending_checkin:['⏳','Pending','Waiting for admin',true,true,'pending'],checked_in:['🟢','Working','Since '+fT(rec.checkinTime),true,false,'active'],pending_checkout:['⏳','Pending Out','Waiting',true,true,'pending'],completed:['🎉','Done','Total: '+(rec.total||0).toFixed(2)+'h',true,true,'done']};
-  var s=states[rec.status];if(!s)return;ic.textContent=s[0];tx.textContent=s[1];sb.textContent=s[2];bI.disabled=s[3];bO.disabled=s[4];st2.className='wac-status '+s[5];st2.innerHTML='<span>'+s[0]+'</span> '+s[2];
-}
-
-function loadWQS(){var u=gU();if(!u)return;var my=gA().filter(function(a){return a.wid===u.id&&a.status==='completed';});st('wTotalDays',my.length);st('wTotalHrs',my.reduce(function(s,a){return s+(a.total||0);},0).toFixed(1)+'h');st('wTotalOT',my.reduce(function(s,a){return s+(a.ot||0);},0).toFixed(1)+'h');}
-
-function loadWH(){var u=gU();if(!u)return;var h=gA().filter(function(a){return a.wid===u.id&&a.status==='completed';}).sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,15);st('wHistCount',h.length+' records');var el=$('wHistory');if(!el)return;if(!h.length){el.innerHTML='<div class="empty"><h3>No History</h3></div>';return;}var html='';for(var i=0;i<h.length;i++){var r=h[i];html+='<div class="hist-item"><b>'+r.date+'</b><span style="color:#059669">'+fT(r.checkinTime)+'</span><span style="color:#dc2626">'+fT(r.checkoutTime)+'</span><b style="color:#1e40af">'+r.total.toFixed(2)+'h</b>'+(r.ot>0?'<span class="tag tag-o">OT '+r.ot.toFixed(2)+'h</span>':'<span></span>')+'</div>';}el.innerHTML=html;}
-
-function changeWorkerPw(e){e.preventDefault();var old=$('cwOld').value,nw=$('cwNew').value,cf=$('cwConf').value;if(nw!==cf)return toast('Mismatch','err');if(nw.length<4)return toast('Min 4','err');var u=gU();var w=null;var ws=gW();for(var i=0;i<ws.length;i++){if(ws[i].wid===u.id){w=ws[i];break;}}if(!w||w.pw!==old)return toast('Wrong pw','err');FB.save(COL.W,u.id,Object.assign({},w,{pw:nw}));sU(Object.assign({},u,{pw:nw}));$('cwOld').value='';$('cwNew').value='';$('cwConf').value='';toast('Updated!');return false;}
-
-// ===== ADMIN =====
-function loadAD(){var u=gU();$('aNavName').textContent=u.name||'Admin';showPage('adminPage');$('fDate').value=tD();$('expStart').value=tD();$('expEnd').value=tD();$('setCurId').value=u.id;$('reportMonth').value=tD().substring(0,7);popReportDD();loadStats();}
-
-function goSection(s,b){
-  var btns=document.querySelectorAll('.side-btn');for(var i=0;i<btns.length;i++)btns[i].classList.remove('active');if(b)b.classList.add('active');
-  var secs=document.querySelectorAll('.sec');for(var j=0;j<secs.length;j++)secs[j].classList.remove('active');
-  $('sec-'+s).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});
-  if(s==='dash')loadStats();if(s==='approve')loadAppr();if(s==='live')loadLive();if(s==='attend')loadAttend();if(s==='workers')loadWorkerTable();if(s==='endday')loadED();
-  if(s==='report'){popReportDD();loadMR();}
-  if(s==='manual'){if(typeof loadManualSection==='function')loadManualSection();if(typeof populateManualCustomDD==='function')populateManualCustomDD();setDefaultManualDate();}
-  if(s==='history'){setTimeout(function(){if(typeof loadHistorySection==='function')loadHistorySection();},500);}
-}
-
-function loadStats(){
-  var ws=gW().filter(function(w){return w.on;});var today=tD();var att=gA().filter(function(a){return a.date===today;});
-  var present=att.filter(function(a){return['checked_in','completed','pending_checkout'].indexOf(a.status)>-1;}).length;
-  var pend=att.filter(function(a){return['pending_checkin','pending_checkout'].indexOf(a.status)>-1;}).length;
-  var dayAtt=att.filter(function(a){return a.shift==='Day'||!a.shift;});var nightAtt=att.filter(function(a){return a.shift==='Night';});
-  var dayP=dayAtt.filter(function(a){return['checked_in','completed','pending_checkout'].indexOf(a.status)>-1;}).length;
-  var nightP=nightAtt.filter(function(a){return['checked_in','completed','pending_checkout'].indexOf(a.status)>-1;}).length;
-  var dayPe=dayAtt.filter(function(a){return['pending_checkin','pending_checkout'].indexOf(a.status)>-1;}).length;
-  var nightPe=nightAtt.filter(function(a){return['pending_checkin','pending_checkout'].indexOf(a.status)>-1;}).length;
-  st('sTotalW',ws.length);st('sPresent',present);st('sAbsent',ws.length-present);st('sPending',pend);st('dashDate',tDF());
-  st('dIndT',dayAtt.length);st('dIndP',dayP);st('dIndA',0);st('dIndPend',dayPe);
-  st('dPakT',nightAtt.length);st('dPakP',nightP);st('dPakA',0);st('dPakPend',nightPe);
-  var iP=dayAtt.length?Math.round(dayP/dayAtt.length*100):0,pP=nightAtt.length?Math.round(nightP/nightAtt.length*100):0;
-  var iB=$('dIndBar'),pB=$('dPakBar');if(iB)iB.style.width=iP+'%';if(pB)pB.style.width=pP+'%';
-  st('dIndPct',iP+'%');st('dPakPct',pP+'%');
-  var b=$('sBadge');if(b){if(pend>0){b.textContent=pend;b.classList.add('show');}else b.classList.remove('show');}
-  loadAbsentToday();
-}
-
-// ===== FIXED: Absent calculation uses helper function =====
-function loadAbsentToday(){
-  var today=tD();
-  var absent=getAbsentWorkersForDate(today);
-  var el=$('absentWorkersToday');var cnt=$('absentCountToday');
-  if(cnt)cnt.textContent=absent.length+' Absent';
-  if(!el)return;
-  if(!absent.length){el.innerHTML='<div class="empty" style="padding:30px"><h3>All present today!</h3></div>';return;}
-  var html='<div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th></tr></thead><tbody>';
-  for(var i=0;i<absent.length;i++){var w=absent[i];html+='<tr><td>'+(i+1)+'</td><td><b>'+w.name+'</b></td><td>'+(w.prof||'-')+'</td><td><span class="tag tag-'+(w.sec==='Indian'?'ind':'pak')+'">'+(w.sec==='Indian'?'IN':'PK')+'</span></td><td><span class="tag '+(w.shift==='Night'?'tag-o':'tag-b')+'">'+(w.shift==='Night'?'Night':'Day')+'</span></td></tr>';}
-  html+='</tbody></table></div>';el.innerHTML=html;
-}
-
-function loadAppr(){
-  var pend=gA().filter(function(a){return['pending_checkin','pending_checkout'].indexOf(a.status)>-1;});
-  var el=$('approveList');if(!el)return;
-  if(!pend.length){el.innerHTML='<div class="empty"><h3>All Clear!</h3></div>';}
-  else{var html='';for(var i=0;i<pend.length;i++){var p=pend[i],ic=p.status==='pending_checkin';html+='<div class="appr-item"><div class="appr-info"><h4>'+p.name+' <span class="tag '+(p.shift==='Night'?'tag-o':'tag-b')+'">'+(p.shift==='Night'?'Night':'Day')+'</span> <span class="tag tag-'+(p.sec==='Indian'?'ind':'pak')+'">'+(p.sec==='Indian'?'IN':'PK')+'</span> <span class="tag '+(ic?'tag-g':'tag-r')+'">'+(ic?'IN':'OUT')+'</span></h4><p>'+(p.prof||'-')+' | '+p.wid+' | '+fT(ic?p.checkinReqTime:p.checkoutReqTime)+'</p>'+((!ic&&p.checkinTime)?'<p>In: '+fT(p.checkinTime)+'</p>':'')+'</div><div class="appr-btns"><button class="btn btn-success btn-sm" onclick="doApprove(\''+p.id+'\')">Approve</button><button class="btn btn-danger btn-sm" onclick="doReject(\''+p.id+'\')">Reject</button></div></div>';}el.innerHTML=html;}
-  loadRecentAppr();
-}
-
-function loadRecentAppr(){
-  var today=tD();var rec=gA().filter(function(a){return a.date===today&&(a.status==='checked_in'||a.status==='completed');});
-  var el=$('recentApproved');if(!el)return;
-  if(!rec.length){el.innerHTML='<div class="empty" style="padding:20px"><h3>No recent</h3></div>';return;}
-  var html='';for(var i=0;i<rec.length;i++){var p=rec[i];html+='<div class="appr-item" style="border-left-color:'+(p.status==='completed'?'var(--g)':'var(--pl)')+'"><div class="appr-info"><h4>'+p.name+' <span class="tag '+(p.status==='checked_in'?'tag-b':'tag-g')+'">'+(p.status==='checked_in'?'Working':'Done')+'</span></h4><p>In: '+fT(p.checkinTime)+(p.checkoutTime?' | Out: '+fT(p.checkoutTime):'')+(p.total?' | '+p.total.toFixed(2)+'h':'')+'</p></div><div class="appr-btns">'+(p.status==='completed'?'<button class="btn btn-outline btn-sm" onclick="undoCO(\''+p.id+'\')">Undo</button>':'')+'<button class="btn btn-danger btn-sm" onclick="undoCI(\''+p.id+'\')">Del</button></div></div>';}el.innerHTML=html;
-}
-
-function undoCO(id){confirmDlg('Undo?','Revert?',function(){var r=null;var att=gA();for(var i=0;i<att.length;i++){if(att[i].id===id){r=att[i];break;}}if(!r)return;FB.save(COL.A,id,Object.assign({},r,{checkoutTime:null,checkoutReqTime:null,total:0,regular:0,compOT:0,extraOT:0,ot:0,status:'checked_in'}));toast('Undone','info');});}
-function undoCI(id){var att=gA();var r=null;for(var i=0;i<att.length;i++){if(att[i].id===id){r=att[i];break;}}if(!r)return;confirmDlg('Delete?',r.name+'?',function(){FB.del(COL.A,id);toast('Removed','info');});}
-
-function doApprove(id){var att=gA();var r=null;for(var i=0;i<att.length;i++){if(att[i].id===id){r=att[i];break;}}if(!r)return;var u=Object.assign({},r);if(r.status==='pending_checkin'){u.checkinTime=r.checkinReqTime;u.status='checked_in';toast(r.name+' in');}else if(r.status==='pending_checkout'){u.checkoutTime=r.checkoutReqTime;var c=calcHours(u.checkinTime,u.checkoutTime);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';toast(u.total.toFixed(2)+'h');}FB.save(COL.A,id,u);}
-function doReject(id){confirmDlg('Reject?','Sure?',function(){var att=gA();var r=null;for(var i=0;i<att.length;i++){if(att[i].id===id){r=att[i];break;}}if(!r)return;if(r.status==='pending_checkin')FB.del(COL.A,id);else FB.save(COL.A,id,Object.assign({},r,{checkoutReqTime:null,status:'checked_in'}));toast('Rejected','info');});}
-function approveAll(){var p=gA().filter(function(a){return['pending_checkin','pending_checkout'].indexOf(a.status)>-1;});if(!p.length)return toast('None','info');confirmDlg('Approve All?',p.length+'?',async function(){for(var i=0;i<p.length;i++){var r=p[i];var u=Object.assign({},r);if(r.status==='pending_checkin'){u.checkinTime=r.checkinReqTime;u.status='checked_in';}else{u.checkoutTime=r.checkoutReqTime;var c=calcHours(u.checkinTime,u.checkoutTime);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';}await FB.save(COL.A,r.id,u);}toast('All approved!');});}
-
-function loadED(){var today=tD();var w=gA().filter(function(a){return a.date===today&&(a.status==='checked_in'||a.status==='pending_checkout');});st('edWorkingCount',w.length);var el=$('edWorkingList');if(!el)return;if(!w.length){el.innerHTML='<div class="empty"><h3>All Clear!</h3></div>';return;}var html='';for(var i=0;i<w.length;i++){var x=w[i];html+='<div class="ed-worker-item"><div class="ed-info"><h4>'+x.name+'</h4><p>'+(x.prof||'-')+'</p></div><div class="ed-time">'+fT(x.checkinTime)+'</div></div>';}el.innerHTML=html;}
-
-function endDayForAll(){var today=tD();var w=gA().filter(function(a){return a.date===today&&(a.status==='checked_in'||a.status==='pending_checkout');});if(!w.length)return toast('None','info');var ti=$('edLogoutTime').value;if(!ti)return toast('Set time','err');confirmDlg('End Day?',w.length+' at '+ti+'?',async function(){var parts=ti.split(':');for(var i=0;i<w.length;i++){var r=w[i];var cd=new Date();cd.setHours(parseInt(parts[0]),parseInt(parts[1]),0,0);var u=Object.assign({},r);u.checkoutTime=cd.toISOString();u.checkoutReqTime=u.checkoutReqTime||u.checkoutTime;var c=calcHours(u.checkinTime,u.checkoutTime);u.total=c.total;u.regular=c.regular;u.compOT=c.compOT;u.extraOT=c.extraOT;u.ot=c.ot;u.status='completed';await FB.save(COL.A,r.id,u);}toast('Done for '+w.length+'!');});}
-
-function loadLive(){var today=tD();var att=gA().filter(function(a){return a.date===today;});var w=att.filter(function(a){return a.status==='checked_in';});var d=att.filter(function(a){return a.status==='completed';});st('liveCount',w.length);st('doneCount',d.length);var lE=$('liveList'),dE=$('doneList');if(lE){if(!w.length)lE.innerHTML='<div class="empty"><h3>No one working</h3></div>';else{var h='';for(var i=0;i<w.length;i++){var x=w[i];h+='<div class="live-item"><div class="li-info"><h4>'+x.name+' <span class="tag '+(x.shift==='Night'?'tag-o':'tag-b')+'">'+(x.shift==='Night'?'Night':'Day')+'</span></h4><p>'+(x.prof||'-')+'</p></div><div class="li-time">'+fT(x.checkinTime)+'</div></div>';}lE.innerHTML=h;}}if(dE){if(!d.length)dE.innerHTML='<div class="empty"><h3>None done</h3></div>';else{var h2='';for(var j=0;j<d.length;j++){var y=d[j];h2+='<div class="live-item"><div class="li-info"><h4>'+y.name+'</h4><p>'+y.total.toFixed(2)+'h | OT:'+y.ot.toFixed(2)+'h</p></div><div class="li-time">'+fT(y.checkoutTime)+'</div></div>';}dE.innerHTML=h2;}}}
-
-// ===== FIXED: Attendance with CORRECT absent =====
-function loadAttend(){
-  var date=$('fDate').value;var sec=$('fSec').value;
-  var allAtt=gA().filter(function(a){return a.date===date;});
-  var allW=gW().filter(function(w){return w.on;});
-  var el=$('attendTable');if(!el)return;
+// ====== PDF HELPERS ======
+function addPDFHeader(doc, title, subtitle) {
+  var pageW = doc.internal.pageSize.getWidth();
   
-  // FIXED: Use helper for truly absent workers
-  var absentW=getAbsentWorkersForDate(date);
+  // Background header
+  doc.setFillColor(30, 64, 175);
+  doc.rect(0, 0, pageW, 42, 'F');
   
-  if(sec==='Absent'){
-    if(!absentW.length){el.innerHTML='<div class="empty"><h3>All present on '+date+'!</h3></div>';return;}
-    el.innerHTML='<div style="background:#dc2626;color:#fff;padding:16px 20px;border-radius:12px;margin-bottom:16px"><h3>Absent Workers ('+absentW.length+')</h3></div><div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th></tr></thead><tbody>'+absentW.map(function(w,i){return'<tr><td>'+(i+1)+'</td><td><b>'+w.name+'</b></td><td>'+(w.prof||'-')+'</td><td>'+w.sec+'</td><td>'+(w.shift||'Day')+'</td></tr>';}).join('')+'</tbody></table></div>';
-    return;
+  // Logo box
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(8, 6, 28, 28, 3, 3, 'F');
+  doc.setFontSize(16);
+  doc.setTextColor(30, 64, 175);
+  doc.setFont('helvetica', 'bold');
+  doc.text('A', 22, 24, { align: 'center' });
+  
+  // Company name
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('AL BOWRY CARPENTRY LLC', 42, 14);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Attendance Report | PROJECT COP31 at Antalya, Turkey', 42, 21);
+  doc.text('Registered: Sharjah, UAE | www.albowry.com', 42, 27);
+  
+  // Title
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title || 'Attendance Report', 42, 35);
+  if (subtitle) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(subtitle, pageW - 10, 35, { align: 'right' });
   }
   
-  var att=allAtt.slice();
-  if(sec==='Day')att=att.filter(function(a){return a.shift==='Day'||!a.shift;});
-  else if(sec==='Night')att=att.filter(function(a){return a.shift==='Night';});
-  else if(sec==='Indian')att=att.filter(function(a){return a.sec==='Indian';});
-  else if(sec==='Pakistani')att=att.filter(function(a){return a.sec==='Pakistani';});
-  else if(sec==='Present')att=att.filter(function(a){return a.status==='completed'||a.status==='checked_in';});
-  
-  // Filter absent by same filter
-  if(sec==='Indian')absentW=absentW.filter(function(w){return w.sec==='Indian';});
-  else if(sec==='Pakistani')absentW=absentW.filter(function(w){return w.sec==='Pakistani';});
-  else if(sec==='Present')absentW=[];
-  
-  var stg=function(s){var m={'completed':'<span class="tag tag-g">Done</span>','checked_in':'<span class="tag tag-b">Working</span>','pending_checkin':'<span class="tag tag-o">Pending IN</span>','pending_checkout':'<span class="tag tag-o">Pending OUT</span>'};return m[s]||s;};
-  
-  var html='';
-  if(att.length){
-    html+='<div style="background:#059669;color:#fff;padding:14px 20px;border-radius:12px 12px 0 0"><h3 style="margin:0">Present ('+att.length+')</h3></div><div class="t-wrap" style="border-top-left-radius:0;border-top-right-radius:0;margin-bottom:24px"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th><th>St</th><th>Act</th></tr></thead><tbody>';
-    for(var i=0;i<att.length;i++){var a=att[i];html+='<tr><td>'+(i+1)+'</td><td><b>'+a.name+'</b></td><td>'+(a.prof||'-')+'</td><td><span class="tag tag-'+(a.sec==='Indian'?'ind':'pak')+'">'+(a.sec==='Indian'?'IN':'PK')+'</span></td><td><span class="tag '+(a.shift==='Night'?'tag-o':'tag-b')+'">'+(a.shift==='Night'?'Night':'Day')+'</span></td><td style="color:#059669">'+fT(a.checkinTime)+'</td><td style="color:#dc2626">'+fT(a.checkoutTime)+'</td><td style="color:var(--p);font-weight:700">'+(a.total||0).toFixed(2)+'h</td><td>'+(a.regular||0).toFixed(2)+'h</td><td style="color:#d97706">'+(a.compOT||0).toFixed(2)+'h</td><td style="color:#dc2626;font-weight:700">'+((a.extraOT||0)>0?(a.extraOT).toFixed(2)+'h':'-')+'</td><td>'+stg(a.status)+'</td><td><button class="btn btn-danger btn-sm" onclick="undoCI(\''+a.id+'\')">Del</button></td></tr>';}
-    html+='</tbody></table></div>';
-  }
-  if(absentW.length&&sec!=='Present'){
-    html+='<div style="background:#dc2626;color:#fff;padding:14px 20px;border-radius:12px 12px 0 0;margin-top:20px"><h3 style="margin:0">Absent ('+absentW.length+')</h3></div><div class="t-wrap" style="border-top-left-radius:0;border-top-right-radius:0"><table><thead><tr><th style="background:#dc2626">#</th><th style="background:#dc2626">Name</th><th style="background:#dc2626">Work</th><th style="background:#dc2626">Country</th><th style="background:#dc2626">Shift</th></tr></thead><tbody>';
-    for(var j=0;j<absentW.length;j++){var w=absentW[j];html+='<tr style="background:#fef2f2"><td>'+(j+1)+'</td><td><b style="color:#dc2626">'+w.name+'</b></td><td>'+(w.prof||'-')+'</td><td>'+w.sec+'</td><td>'+(w.shift||'Day')+'</td></tr>';}
-    html+='</tbody></table></div>';
-  }
-  if(!att.length&&!absentW.length)html='<div class="empty"><h3>No Records</h3></div>';
-  el.innerHTML=html;
+  return 48;
 }
 
-// ===== WORKERS =====
-var curTab='Indian',editId=null;
-function swWorkerTab(s,b){curTab=s;var tabs=document.querySelectorAll('#sec-workers .ltab');for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');b.classList.add('active');loadWorkerTable();}
-function loadWorkerTable(){var q=($('wSearch')?$('wSearch').value:'').toLowerCase();var ws=gW().filter(function(w){return curTab==='Indian'?w.sec==='Indian':w.sec==='Pakistani';}).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});st('indCount','('+gW().filter(function(w){return w.on&&w.sec==='Indian';}).length+')');st('pakCount','('+gW().filter(function(w){return w.on&&w.sec==='Pakistani';}).length+')');if(q)ws=ws.filter(function(w){return(w.name||'').toLowerCase().indexOf(q)>-1||(w.wid||'').toLowerCase().indexOf(q)>-1;});var el=$('workerTable');if(!el)return;if(!ws.length){el.innerHTML='<div class="empty"><h3>No Workers</h3></div>';return;}var html='<div class="t-wrap"><table><thead><tr><th>#</th><th>ID</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th><th>PW</th><th>St</th><th>Actions</th></tr></thead><tbody>';for(var i=0;i<ws.length;i++){var w=ws[i];html+='<tr style="'+(w.on?'':'opacity:.5')+'"><td>'+(i+1)+'</td><td><code>'+w.wid+'</code></td><td><b>'+w.name+'</b></td><td>'+(w.prof||'-')+'</td><td><span class="tag tag-'+(w.sec==='Indian'?'ind':'pak')+'">'+(w.sec==='Indian'?'IN':'PK')+'</span></td><td><button class="btn btn-outline btn-sm" onclick="toggleShift(\''+w.wid+'\')"><span class="tag '+(w.shift==='Night'?'tag-o':'tag-b')+'">'+(w.shift==='Night'?'Night':'Day')+'</span></button></td><td><code id="p-'+w.wid+'">****</code> <button class="btn btn-outline btn-sm" onclick="showPw(\''+w.wid+'\')" style="padding:2px 6px">Show</button></td><td>'+(w.on?'<span class="tag tag-g">On</span>':'<span class="tag tag-r">Off</span>')+'</td><td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="editW(\''+w.wid+'\')">Edit</button><button class="btn btn-outline btn-sm" onclick="resetPw(\''+w.wid+'\')">Reset</button><button class="btn btn-'+(w.on?'danger':'success')+' btn-sm" onclick="toggleW(\''+w.wid+'\')">'+(w.on?'Off':'On')+'</button><button class="btn btn-danger btn-sm" onclick="delW(\''+w.wid+'\')">Del</button></td></tr>';}html+='</tbody></table></div>';el.innerHTML=html;}
-function toggleShift(id){var ws=gW();var w=null;for(var i=0;i<ws.length;i++){if(ws[i].wid===id){w=ws[i];break;}}if(!w)return;var ns=w.shift==='Night'?'Day':'Night';FB.save(COL.W,id,Object.assign({},w,{shift:ns}));toast(w.name+' -> '+ns,'info');}
-function showPw(id){var ws=gW();var w=null;for(var i=0;i<ws.length;i++){if(ws[i].wid===id){w=ws[i];break;}}if(!w)return;var el=$('p-'+id);if(el.textContent==='****'){el.textContent=w.pw;setTimeout(function(){el.textContent='****';},4000);}}
-function resetPw(id){confirmDlg('Reset?','Reset to '+DEFAULT_PW,function(){var ws=gW();var w=null;for(var i=0;i<ws.length;i++){if(ws[i].wid===id){w=ws[i];break;}}if(!w)return;FB.save(COL.W,id,Object.assign({},w,{pw:DEFAULT_PW}));$('mPwBody').innerHTML='<div class="pw-show"><div class="pw-lbl">Reset</div><div class="pw-name">'+w.name+'</div><div class="pw-val">'+DEFAULT_PW+'</div></div>';openModal('mPw');});}
-function openAddWorker(){editId=null;$('mwTitle').textContent='Add Worker';$('mwName').value='';$('mwProf').value='';$('mwSec').value='Indian';$('mwShift').value='Day';$('mwPw').value=DEFAULT_PW;openModal('mWorker');}
-function editW(id){var ws=gW();var w=null;for(var i=0;i<ws.length;i++){if(ws[i].wid===id){w=ws[i];break;}}if(!w)return;editId=id;$('mwTitle').textContent='Edit';$('mwName').value=w.name;$('mwProf').value=w.prof||'';$('mwSec').value=w.sec||'Indian';$('mwShift').value=w.shift||'Day';$('mwPw').value=w.pw;openModal('mWorker');}
-function saveWorkerForm(e){e.preventDefault();var name=$('mwName').value.trim(),prof=$('mwProf').value||'Worker',sec=$('mwSec').value,shift=$('mwShift').value,pw=$('mwPw').value.trim();if(!name||!pw)return toast('Fill all','err');if(editId){var ws=gW();var w=null;for(var i=0;i<ws.length;i++){if(ws[i].wid===editId){w=ws[i];break;}}if(w)FB.save(COL.W,editId,Object.assign({},w,{name:name,prof:prof,sec:sec,shift:shift,pw:pw}));toast('Updated!');closeModal('mWorker');}else{var pre=sec==='Indian'?'IND':'PAK';var nums=gW().filter(function(w){return w.wid.indexOf(pre)===0;}).map(function(w){return parseInt(w.wid.replace(pre,''));}).filter(function(n){return!isNaN(n);});var next=nums.length?Math.max.apply(null,nums)+1:1;var wid=pre+String(next).padStart(4,'0');FB.save(COL.W,wid,{wid:wid,name:name,prof:prof,sec:sec,shift:shift,pw:pw,on:true});$('mPwBody').innerHTML='<div class="pw-show"><div class="pw-lbl">Added</div><div class="pw-name">'+name+' ('+wid+')</div><div class="pw-val">'+pw+'</div></div>';openModal('mPw');toast(wid+' added!');closeModal('mWorker');}return false;}
-function toggleW(id){var ws=gW();var w=null;for(var i=0;i<ws.length;i++){if(ws[i].wid===id){w=ws[i];break;}}if(!w)return;FB.save(COL.W,id,Object.assign({},w,{on:!w.on}));toast(w.on?'Deactivated':'Activated','info');}
-function delW(id){var ws=gW();var w=null;for(var i=0;i<ws.length;i++){if(ws[i].wid===id){w=ws[i];break;}}if(!w)return;confirmDlg('Delete?',w.name+'?',async function(){await FB.del(COL.W,id);var att=gA().filter(function(a){return a.wid===id;});for(var i=0;i<att.length;i++)await FB.del(COL.A,att[i].id);toast('Deleted','info');});}
+function addPDFFooter(doc) {
+  var pageCount = doc.internal.getNumberOfPages();
+  var pageW = doc.internal.pageSize.getWidth();
+  var pageH = doc.internal.pageSize.getHeight();
+  
+  for (var i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(30, 64, 175);
+    doc.rect(0, pageH - 14, pageW, 14, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(COMPANY.full, pageW / 2, pageH - 8, { align: 'center' });
+    doc.text('Generated: ' + fmtDT(tNow()), 10, pageH - 4);
+    doc.text('Page ' + i + ' / ' + pageCount, pageW - 10, pageH - 4, { align: 'right' });
+  }
+}
 
-// ===== REPORTS =====
-function popReportDD(){var s=$('reportWorker');if(!s)return;var cv=s.value;var w=gW().filter(function(x){return x.on;}).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});var h='<option value="">-- Select --</option><option value="__ALL__">All Workers</option>';for(var i=0;i<w.length;i++)h+='<option value="'+w[i].wid+'">'+w[i].name+' - '+w[i].sec+'</option>';s.innerHTML=h;if(cv)s.value=cv;}
-function loadMR(){var wid=$('reportWorker')?$('reportWorker').value:'';var month=$('reportMonth')?$('reportMonth').value:'';var el=$('reportContent');if(!el)return;if(!wid||!month){el.innerHTML='<div class="empty"><h3>Select worker & month</h3></div>';return;}if(wid==='__ALL__'){var ws=gW().filter(function(w){return w.on;});var att=gA().filter(function(a){return a.date.indexOf(month)===0&&a.status==='completed';});var html='<div class="t-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Work</th><th>Country</th><th>Days</th><th>Day</th><th>Night</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th></tr></thead><tbody>';for(var i=0;i<ws.length;i++){var w=ws[i];var m=att.filter(function(a){return a.wid===w.wid;});html+='<tr><td>'+(i+1)+'</td><td><b>'+w.name+'</b></td><td>'+(w.prof||'-')+'</td><td><span class="tag tag-'+(w.sec==='Indian'?'ind':'pak')+'">'+(w.sec==='Indian'?'IN':'PK')+'</span></td><td><b>'+m.length+'</b></td><td>'+m.filter(function(a){return a.shift==='Day'||!a.shift;}).length+'</td><td>'+m.filter(function(a){return a.shift==='Night';}).length+'</td><td style="color:var(--p);font-weight:700">'+m.reduce(function(s,a){return s+(a.total||0);},0).toFixed(2)+'h</td><td>'+m.reduce(function(s,a){return s+(a.regular||0);},0).toFixed(2)+'h</td><td style="color:#d97706">'+m.reduce(function(s,a){return s+(a.compOT||0);},0).toFixed(2)+'h</td><td style="color:#dc2626;font-weight:700">'+m.reduce(function(s,a){return s+(a.extraOT||0);},0).toFixed(2)+'h</td></tr>';}html+='</tbody></table></div>';el.innerHTML=html;}else{var ws2=gW();var w2=null;for(var j=0;j<ws2.length;j++){if(ws2[j].wid===wid){w2=ws2[j];break;}}if(!w2)return;var att2=gA().filter(function(a){return a.wid===wid&&a.date.indexOf(month)===0&&a.status==='completed';}).sort(function(a,b){return a.date.localeCompare(b.date);});var tH=att2.reduce(function(s,a){return s+(a.total||0);},0);var html2='<div class="w-card" style="margin-bottom:20px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff"><h3 style="font-size:20px;margin-bottom:6px">'+w2.name+'</h3><p style="opacity:.9">'+(w2.prof||'Worker')+' | '+w2.sec+'</p><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px"><div style="background:rgba(255,255,255,.15);padding:12px;border-radius:10px;text-align:center"><div style="font-size:22px;font-weight:800">'+att2.length+'</div><div style="font-size:10px">Days</div></div><div style="background:rgba(255,255,255,.15);padding:12px;border-radius:10px;text-align:center"><div style="font-size:22px;font-weight:800">'+att2.filter(function(a){return a.shift==='Day'||!a.shift;}).length+'</div><div style="font-size:10px">Day</div></div><div style="background:rgba(255,255,255,.15);padding:12px;border-radius:10px;text-align:center"><div style="font-size:22px;font-weight:800">'+att2.filter(function(a){return a.shift==='Night';}).length+'</div><div style="font-size:10px">Night</div></div><div style="background:rgba(255,255,255,.15);padding:12px;border-radius:10px;text-align:center"><div style="font-size:22px;font-weight:800">'+tH.toFixed(1)+'h</div><div style="font-size:10px">Total</div></div></div></div>';if(att2.length){html2+='<div class="t-wrap"><table><thead><tr><th>#</th><th>Date</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th></tr></thead><tbody>';for(var k=0;k<att2.length;k++){var a=att2[k];html2+='<tr><td>'+(k+1)+'</td><td><b>'+a.date+'</b></td><td><span class="tag '+(a.shift==='Night'?'tag-o':'tag-b')+'">'+(a.shift==='Night'?'Night':'Day')+'</span></td><td style="color:#059669">'+fT(a.checkinTime)+'</td><td style="color:#dc2626">'+fT(a.checkoutTime)+'</td><td style="color:var(--p);font-weight:700">'+a.total.toFixed(2)+'h</td><td>'+a.regular.toFixed(2)+'h</td><td style="color:#d97706">'+(a.compOT||0).toFixed(2)+'h</td><td style="color:#dc2626;font-weight:700">'+((a.extraOT||0)>0?(a.extraOT).toFixed(2)+'h':'-')+'</td></tr>';}html2+='</tbody></table></div>';}else html2+='<div class="empty"><h3>No records</h3></div>';el.innerHTML=html2;}}
+// ====== CSV EXPORT ======
+function exportCSV(data, filename) {
+  var header = [
+    '# ' + COMPANY.full,
+    '# Generated: ' + fmtDT(tNow()),
+    ''
+  ];
+  
+  var cols = ['Date', 'Worker ID', 'Name', 'Profession', 'Section', 'Shift', 'Check In', 'Check Out', 'Total Hrs', 'Regular', 'CompOT', 'ExtraOT', 'OT', 'Status'];
+  
+  var rows = [header.join('\n'), cols.join(',')];
+  
+  for (var i = 0; i < data.length; i++) {
+    var a = data[i];
+    var row = [
+      a.date || '',
+      a.wid || '',
+      '"' + (a.name || '') + '"',
+      '"' + (a.prof || '') + '"',
+      a.sec || '',
+      a.shift || '',
+      fmtTime(a.checkinTime),
+      fmtTime(a.checkoutTime),
+      a.total || 0,
+      a.regular || 0,
+      a.compOT || 0,
+      a.extraOT || 0,
+      a.ot || 0,
+      a.status || ''
+    ];
+    rows.push(row.join(','));
+  }
+  
+  var csv = rows.join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.href = url;
+  link.download = filename || ('albowry_' + tD() + '.csv');
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded!', 'success');
+}
 
-// ===== PDF/EXCEL/CSV =====
-function addPDFHeader(doc,title,sub,w){doc.setFillColor(30,64,175);doc.rect(0,0,w,52,'F');if(LOGO_BASE64){try{doc.addImage(LOGO_BASE64,'PNG',12,8,32,32);}catch(e){}}doc.setTextColor(255);doc.setFontSize(24);doc.setFont('helvetica','bold');doc.text(COMPANY.name,w/2,18,{align:'center'});doc.setFontSize(12);doc.setFont('helvetica','normal');doc.text('Attendance Report',w/2,26,{align:'center'});doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text(COMPANY.project+' at '+COMPANY.site,w/2,34,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Registered: '+COMPANY.office+' | '+COMPANY.web,w/2,41,{align:'center'});doc.setFontSize(9);doc.text(title+' | '+sub,w/2,48,{align:'center'});doc.setTextColor(0);}
+// ====== TOAST ======
+function showToast(msg, type, duration) {
+  var container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;';
+    document.body.appendChild(container);
+  }
+  
+  var colors = { success: '#10b981', error: '#ef4444', info: '#3b82f6', warn: '#f59e0b' };
+  var icons = { success: 'check_circle', error: 'error', info: 'info', warn: 'warning' };
+  
+  var toast = document.createElement('div');
+  toast.style.cssText = 'background:' + (colors[type] || colors.info) + ';color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:220px;max-width:380px;animation:slideIn 0.3s ease;';
+  toast.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px">' + (icons[type] || icons.info) + '</span>' + msg;
+  container.appendChild(toast);
+  
+  setTimeout(function() {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, duration || 3500);
+}
 
-function addPDFFooter(doc){var pc=doc.internal.getNumberOfPages();for(var i=1;i<=pc;i++){doc.setPage(i);var h=doc.internal.pageSize.height;doc.setDrawColor(200);doc.setLineWidth(0.3);doc.line(10,h-15,doc.internal.pageSize.width-10,h-15);doc.setFontSize(8);doc.setTextColor(120);doc.setFont('helvetica','normal');doc.text(COMPANY.full,doc.internal.pageSize.width/2,h-10,{align:'center'});doc.text('Generated: '+new Date().toLocaleString()+' | Page '+i+'/'+pc,doc.internal.pageSize.width/2,h-6,{align:'center'});}}
+// ====== CONFIRM DIALOG ======
+function showConfirm(msg, onYes, onNo) {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:28px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+  box.innerHTML = '<div style="font-weight:700;font-size:18px;color:#0f172a;margin-bottom:12px">Confirm Action</div>' +
+    '<div style="color:#475569;font-size:14px;margin-bottom:24px;line-height:1.6">' + msg + '</div>' +
+    '<div style="display:flex;gap:12px;justify-content:flex-end">' +
+    '<button onclick="this.closest(\'div[style]\').previousSibling&&document.body.removeChild(this.parentNode.parentNode.parentNode)" style="padding:10px 20px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;font-weight:600;color:#475569" id="cfmNo">Cancel</button>' +
+    '<button style="padding:10px 20px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600" id="cfmYes">Confirm</button>' +
+    '</div>';
+  
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  
+  document.getElementById('cfmYes').onclick = function() {
+    document.body.removeChild(overlay);
+    if (onYes) onYes();
+  };
+  document.getElementById('cfmNo').onclick = function() {
+    document.body.removeChild(overlay);
+    if (onNo) onNo();
+  };
+  overlay.onclick = function(e) {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+      if (onNo) onNo();
+    }
+  };
+}
 
-function downloadReportPDF(){var wid=$('reportWorker').value,month=$('reportMonth').value;if(!wid||!month)return toast('Select both','err');if(!window.jspdf)return toast('Loading...','err');var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF();addPDFHeader(doc,'Monthly Report - '+month,'Reg: 9h + OT: 3h',210);var data=[],fn='';if(wid==='__ALL__'){fn='All_'+month+'.pdf';var ws=gW().filter(function(w){return w.on;});var att=gA().filter(function(a){return a.date.indexOf(month)===0&&a.status==='completed';});for(var i=0;i<ws.length;i++){var w=ws[i];var m=att.filter(function(a){return a.wid===w.wid;});data.push([i+1,w.name,w.prof||'-',w.sec,m.length,m.filter(function(a){return a.shift==='Day'||!a.shift;}).length,m.filter(function(a){return a.shift==='Night';}).length,m.reduce(function(s,a){return s+(a.total||0);},0).toFixed(2)+'h',m.reduce(function(s,a){return s+(a.compOT||0);},0).toFixed(2)+'h',m.reduce(function(s,a){return s+(a.extraOT||0);},0).toFixed(2)+'h']);}doc.autoTable({startY:56,head:[['#','Name','Work','Country','Days','Day','Night','Total','OT','Extra']],body:data,theme:'grid',headStyles:{fillColor:[30,64,175]},alternateRowStyles:{fillColor:[240,249,255]},styles:{fontSize:7}});}else{var ws2=gW();var w2=null;for(var j=0;j<ws2.length;j++){if(ws2[j].wid===wid){w2=ws2[j];break;}}fn=(w2?w2.name.replace(/\s/g,'_'):'Worker')+'_'+month+'.pdf';doc.setFontSize(14);doc.setFont('helvetica','bold');doc.text(w2?w2.name:'',14,58);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text((w2?w2.prof:'')+' | '+(w2?w2.sec:''),14,64);var att2=gA().filter(function(a){return a.wid===wid&&a.date.indexOf(month)===0&&a.status==='completed';}).sort(function(a,b){return a.date.localeCompare(b.date);});for(var k=0;k<att2.length;k++){var a=att2[k];data.push([k+1,a.date,a.shift||'Day',fT(a.checkinTime),fT(a.checkoutTime),a.total.toFixed(2)+'h',a.regular.toFixed(2)+'h',(a.compOT||0).toFixed(2)+'h',(a.extraOT||0).toFixed(2)+'h']);}doc.autoTable({startY:70,head:[['#','Date','Shift','In','Out','Total','Reg','OT','Extra']],body:data,theme:'grid',headStyles:{fillColor:[30,64,175]},alternateRowStyles:{fillColor:[240,249,255]}});}addPDFFooter(doc);doc.save('AlBowry_COP31_'+fn);toast('PDF downloaded!');}
+// ====== MODAL ======
+function showModal(html, title) {
+  var existing = document.getElementById('globalModal');
+  if (existing) document.body.removeChild(existing);
+  
+  var overlay = document.createElement('div');
+  overlay.id = 'globalModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;';
+  
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:28px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+  
+  if (title) {
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;color:#0f172a;font-size:18px">' + title + '</h3><button onclick="document.getElementById(\'globalModal\')&&document.body.removeChild(document.getElementById(\'globalModal\'))" style="background:none;border:none;cursor:pointer;font-size:22px;color:#94a3b8">&times;</button></div>' + html;
+  } else {
+    box.innerHTML = html;
+  }
+  
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  
+  overlay.onclick = function(e) {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  };
+}
 
-function exportPDF(){var s=$('expStart').value,e=$('expEnd').value,sec=$('expSec').value;if(!s||!e)return toast('Dates','err');if(!window.jspdf)return toast('Loading','err');var data=gA().filter(function(a){return a.date>=s&&a.date<=e&&a.status==='completed';});if(sec==='Day')data=data.filter(function(a){return a.shift==='Day'||!a.shift;});else if(sec==='Night')data=data.filter(function(a){return a.shift==='Night';});else if(sec==='Indian')data=data.filter(function(a){return a.sec==='Indian';});else if(sec==='Pakistani')data=data.filter(function(a){return a.sec==='Pakistani';});if(!data.length)return toast('No data','err');var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF('l');addPDFHeader(doc,s+' to '+e+' | '+(sec||'All'),'Reg: 9h | OT: 3h',297);var rows=[];for(var i=0;i<data.length;i++){var a=data[i];rows.push([i+1,a.name,a.prof||'-',a.sec,a.shift||'Day',a.date,fT(a.checkinTime),fT(a.checkoutTime),a.total.toFixed(2),a.regular.toFixed(2),(a.compOT||0).toFixed(2),(a.extraOT||0).toFixed(2)]);}doc.autoTable({startY:56,head:[['#','Name','Work','Country','Shift','Date','In','Out','Total','Reg','OT','Extra']],body:rows,theme:'grid',headStyles:{fillColor:[30,64,175]},styles:{fontSize:7}});addPDFFooter(doc);doc.save('AlBowry_COP31_'+s+'_to_'+e+'.pdf');toast('PDF downloaded!');}
+function closeModal() {
+  var m = document.getElementById('globalModal');
+  if (m) document.body.removeChild(m);
+}
 
-function exportExcel(){var s=$('expStart').value,e=$('expEnd').value,sec=$('expSec').value;if(!s||!e)return toast('Dates','err');var data=gA().filter(function(a){return a.date>=s&&a.date<=e;});if(sec==='Day')data=data.filter(function(a){return a.shift==='Day'||!a.shift;});else if(sec==='Night')data=data.filter(function(a){return a.shift==='Night';});else if(sec==='Indian')data=data.filter(function(a){return a.sec==='Indian';});else if(sec==='Pakistani')data=data.filter(function(a){return a.sec==='Pakistani';});if(!data.length)return toast('No data','err');var logo=LOGO_BASE64?'<img src="'+LOGO_BASE64+'" width="60" height="60">':'<b style="font-size:36px;color:#1e40af">A</b>';var html='<html><head><meta charset="UTF-8"><style>table{border-collapse:collapse;font-family:Arial}th{background:#1e40af;color:#fff;padding:10px 8px;border:1px solid #1e3a8a;font-size:11px;text-align:center}td{padding:8px;border:1px solid #ccc;font-size:11px;text-align:center}.e{background:#f0f9ff}</style></head><body><table border="1"><tr><td colspan="13" style="background:#1e40af;color:#fff;padding:20px"><table style="border:none;width:100%"><tr><td style="border:none;width:80px">'+logo+'</td><td style="border:none;text-align:center"><div style="font-size:26px;font-weight:bold">'+COMPANY.name+'</div><div style="font-size:14px;font-weight:bold;margin-top:4px">Attendance Report</div><div style="font-size:13px;font-weight:bold;margin-top:4px">'+COMPANY.project+' at '+COMPANY.site+'</div><div style="font-size:11px;margin-top:4px">Registered: '+COMPANY.office+' | '+COMPANY.web+'</div></td></tr></table></td></tr><tr><td colspan="13" style="background:#dbeafe;text-align:center;padding:10px;font-weight:bold;color:#1e40af">'+s+' to '+e+' | '+(sec||'All')+' | Reg:9h + OT:3h</td></tr><tr><td colspan="13"></td></tr><tr><th>#</th><th>ID</th><th>Name</th><th>Work</th><th>Country</th><th>Shift</th><th>Date</th><th>In</th><th>Out</th><th>Total</th><th>Reg</th><th>OT</th><th>Extra</th></tr>';for(var i=0;i<data.length;i++){var a=data[i];html+='<tr class="'+(i%2===0?'e':'')+'"><td>'+(i+1)+'</td><td>'+a.wid+'</td><td style="text-align:left"><b>'+a.name+'</b></td><td>'+(a.prof||'-')+'</td><td>'+a.sec+'</td><td>'+(a.shift||'Day')+'</td><td>'+a.date+'</td><td>'+fT(a.checkinTime)+'</td><td>'+fT(a.checkoutTime)+'</td><td><b>'+(a.total||0).toFixed(2)+'</b></td><td>'+(a.regular||0).toFixed(2)+'</td><td>'+(a.compOT||0).toFixed(2)+'</td><td>'+(a.extraOT||0).toFixed(2)+'</td></tr>';}html+='<tr style="background:#dbeafe;font-weight:bold"><td colspan="9" style="text-align:right">TOTALS:</td><td>'+data.reduce(function(s,a){return s+(a.total||0);},0).toFixed(2)+'</td><td>'+data.reduce(function(s,a){return s+(a.regular||0);},0).toFixed(2)+'</td><td>'+data.reduce(function(s,a){return s+(a.compOT||0);},0).toFixed(2)+'</td><td>'+data.reduce(function(s,a){return s+(a.extraOT||0);},0).toFixed(2)+'</td></tr><tr><td colspan="13" style="background:#1e40af;color:#fff;text-align:center;padding:14px;font-size:11px">'+COMPANY.full+' | '+new Date().toLocaleString()+'</td></tr></table></body></html>';var b=new Blob([html],{type:'application/vnd.ms-excel'});var l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='AlBowry_COP31_'+s+'_to_'+e+'.xls';l.click();toast('Excel!');}
+// ====== VOICE WELCOME ======
+function speakWelcome(name) {
+  if (!window.speechSynthesis) return;
+  var utter = new SpeechSynthesisUtterance('Welcome ' + (name || 'Admin'));
+  utter.rate = 0.9;
+  utter.pitch = 1;
+  
+  var voices = window.speechSynthesis.getVoices();
+  for (var i = 0; i < voices.length; i++) {
+    if (voices[i].lang.indexOf('en') === 0) {
+      utter.voice = voices[i];
+      break;
+    }
+  }
+  
+  window.speechSynthesis.speak(utter);
+}
 
-function exportCSV(){var s=$('expStart').value,e=$('expEnd').value,sec=$('expSec').value;if(!s||!e)return toast('Dates','err');var data=gA().filter(function(a){return a.date>=s&&a.date<=e;});if(sec==='Day')data=data.filter(function(a){return a.shift==='Day'||!a.shift;});else if(sec==='Night')data=data.filter(function(a){return a.shift==='Night';});else if(sec==='Indian')data=data.filter(function(a){return a.sec==='Indian';});else if(sec==='Pakistani')data=data.filter(function(a){return a.sec==='Pakistani';});if(!data.length)return toast('No data','err');var csv=COMPANY.name+'\n'+COMPANY.project+' at '+COMPANY.site+'\nRegistered: '+COMPANY.office+'\n'+s+' to '+e+'\n\n#,ID,Name,Work,Country,Shift,Date,In,Out,Total,Reg,OT,Extra,Status\n';for(var i=0;i<data.length;i++){var a=data[i];csv+=(i+1)+','+a.wid+',"'+a.name+'","'+(a.prof||'-')+'",'+a.sec+','+(a.shift||'Day')+','+a.date+','+fT(a.checkinTime)+','+fT(a.checkoutTime)+','+(a.total||0).toFixed(2)+','+(a.regular||0).toFixed(2)+','+(a.compOT||0).toFixed(2)+','+(a.extraOT||0).toFixed(2)+','+a.status+'\n';}var b=new Blob([csv],{type:'text/csv'});var l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='AlBowry_COP31_'+s+'_to_'+e+'.csv';l.click();toast('CSV!');}
+// ====== LIVE CLOCK (Turkey Time) ======
+function startClock(elementId) {
+  function tick() {
+    var el = document.getElementById(elementId);
+    if (!el) return;
+    el.textContent = new Date().toLocaleString('en-GB', {
+      timeZone: TZ,
+      weekday: 'short',
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: true
+    }) + ' (Turkey Time)';
+  }
+  tick();
+  return setInterval(tick, 1000);
+}
 
-// ===== SETTINGS =====
-function updateAdmin(){var nid=$('setNewId').value.trim();var nname=$('setNewName')?$('setNewName').value.trim():'';var npw=$('setNewPw').value;var cpw=$('setConfPw').value;var cur=gAD();var fId=nid||cur.adminId;var fName=nname||cur.name;var fPw=npw||cur.pw;if(npw&&npw!==cpw)return toast('Mismatch','err');if(npw&&npw.length<6)return toast('Min 6','err');if(!nid&&!nname&&!npw)return toast('Enter something','err');FB.save(COL.AD,'main',{adminId:fId,pw:fPw,name:fName});var u=gU();u.id=fId;u.name=fName;sU(u);$('setCurId').value=fId;$('aNavName').textContent=fName;if($('setNewName'))$('setNewName').value='';$('setNewId').value='';$('setNewPw').value='';$('setConfPw').value='';toast('Updated!');speakWelcome(fName);}
-function backupAll(){var d={workers:gW(),attendance:gA(),admin:gAD(),date:new Date().toISOString()};var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='AlBowry_COP31_Backup_'+tD()+'.json';l.click();toast('Backup!');}
-function resetAllPasswords(){confirmDlg('Reset All?','All to '+DEFAULT_PW,async function(){var ws=gW();for(var i=0;i<ws.length;i++)await FB.save(COL.W,ws[i].wid,Object.assign({},ws[i],{pw:DEFAULT_PW}));toast('All reset!');});}
-function clearAttendanceData(){confirmDlg('Clear ALL?','Delete ALL attendance?',async function(){var att=gA();for(var i=0;i<att.length;i++)await FB.del(COL.A,att[i].id);toast('Cleared','info');});}
-function setExpDate(r){var t=tD();if(r==='today'){$('expStart').value=t;$('expEnd').value=t;}else if(r==='week'){var n=new Date(),d=n.getDay(),diff=n.getDate()-d+(d===0?-6:1);$('expStart').value=new Date(n.setDate(diff)).toLocaleDateString('en-CA');$('expEnd').value=tD();}else{$('expStart').value=t.substring(0,8)+'01';$('expEnd').value=t;}}
+// ====== NAV / UI HELPERS ======
+function showSection(id) {
+  var sections = document.querySelectorAll('.admin-section');
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].style.display = 'none';
+  }
+  var target = document.getElementById(id);
+  if (target) {
+    target.style.display = 'block';
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  
+  // Update nav active state
+  var navLinks = document.querySelectorAll('.nav-link');
+  for (var j = 0; j < navLinks.length; j++) {
+    navLinks[j].classList.remove('active');
+    if (navLinks[j].getAttribute('data-section') === id) {
+      navLinks[j].classList.add('active');
+    }
+  }
+}
 
-// ===== CLOCKS =====
-function updateClocks(){var t=tT();var ids=['loginClock','wClock','aClock','wBigClock'];for(var i=0;i<ids.length;i++){var e=$(ids[i]);if(e)e.textContent=t;}}
+function logout() {
+  showConfirm('Are you sure you want to logout?', function() {
+    clearSession();
+    location.reload();
+  });
+}
 
-// ===== PWA =====
-var deferredPrompt=null;
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').then(function(){console.log('SW');}).catch(function(){});});}
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;setTimeout(function(){if(!localStorage.getItem('install_dismissed')&&!localStorage.getItem('app_installed')){var b=$('installBanner');if(b)b.classList.add('show');}},2000);});
-function installApp(){if(!deferredPrompt){alert('Use browser menu -> Add to Home Screen');return;}deferredPrompt.prompt();deferredPrompt.userChoice.then(function(r){if(r.outcome==='accepted'){toast('Installed!');localStorage.setItem('app_installed','true');}deferredPrompt=null;dismissInstall();});}
-function dismissInstall(){var b=$('installBanner');if(b){b.classList.remove('show');localStorage.setItem('install_dismissed','true');}}
-window.addEventListener('appinstalled',function(){localStorage.setItem('app_installed','true');toast('Installed!');dismissInstall();});
+// ====== WORKER DROPDOWN BUILDER ======
+function buildWorkerDropdown(selectEl, includeAll, filter) {
+  if (!selectEl) return;
+  var val = selectEl.value;
+  selectEl.innerHTML = '';
+  
+  if (includeAll) {
+    var allOpt = document.createElement('option');
+    allOpt.value = 'all';
+    allOpt.text = '-- All Workers --';
+    selectEl.appendChild(allOpt);
+  } else {
+    var defOpt = document.createElement('option');
+    defOpt.value = '';
+    defOpt.text = '-- Select Worker --';
+    selectEl.appendChild(defOpt);
+  }
+  
+  var ws = gW();
+  var sections = ['Indian', 'Pakistani'];
+  
+  for (var s = 0; s < sections.length; s++) {
+    var sec = sections[s];
+    var group = document.createElement('optgroup');
+    group.label = '-- ' + sec.toUpperCase() + ' WORKERS --';
+    var added = 0;
+    
+    for (var i = 0; i < ws.length; i++) {
+      var w = ws[i];
+      if (!w.on) continue;
+      if (w.sec !== sec) continue;
+      if (filter && filter !== 'All') {
+        if (filter === 'Day' && w.shift !== 'Day') continue;
+        if (filter === 'Night' && w.shift !== 'Night') continue;
+      }
+      var opt = document.createElement('option');
+      opt.value = w.wid;
+      opt.text = w.wid + ' - ' + w.name + ' (' + w.prof + ')';
+      group.appendChild(opt);
+      added++;
+    }
+    
+    if (added > 0) selectEl.appendChild(group);
+  }
+  
+  // Restore value
+  if (val) selectEl.value = val;
+}
 
-// ===== BOOT =====
-async function boot(){console.log('Booting AL BOWRY...');await initDB();fillDD();updateClocks();setInterval(updateClocks,1000);var u=gU();if(u){if(u.role==='worker')loadWD();else if(u.role==='admin')loadAD();}}
-if(window.FB_READY)boot();else window.addEventListener('fb-ready',boot);
+function renderWorkerDropdowns() {
+  var dropdowns = document.querySelectorAll('[data-worker-dropdown]');
+  for (var i = 0; i < dropdowns.length; i++) {
+    var filter = dropdowns[i].getAttribute('data-filter') || 'All';
+    var includeAll = dropdowns[i].getAttribute('data-include-all') === 'true';
+    buildWorkerDropdown(dropdowns[i], includeAll, filter);
+  }
+}
+
+// ====== WORKER STATS ======
+function getWorkerStats(wid) {
+  var att = getWorkerAtt(wid);
+  var completed = [];
+  for (var i = 0; i < att.length; i++) {
+    if (att[i].status === 'completed') completed.push(att[i]);
+  }
+  
+  var totalDays = completed.length;
+  var totalHrs = 0, totalOT = 0;
+  for (var j = 0; j < completed.length; j++) {
+    totalHrs += completed[j].total || 0;
+    totalOT += completed[j].ot || 0;
+  }
+  
+  return {
+    totalDays: totalDays,
+    totalHrs: Math.round(totalHrs * 100) / 100,
+    totalOT: Math.round(totalOT * 100) / 100,
+    records: att.slice(0, 15)
+  };
+}
+
+// ====== INIT 56 WORKERS ======
+var ALL_WORKERS = [
+  {wid:'IND0001',name:'Hajari Lal',prof:'Foreman',sec:'Indian'},
+  {wid:'IND0002',name:'Rajeev Punia',prof:'Supervisor',sec:'Indian'},
+  {wid:'IND0003',name:'Om Prakash',prof:'Supervisor',sec:'Indian'},
+  {wid:'IND0004',name:'Nitesh Bugalia',prof:'Helper',sec:'Indian'},
+  {wid:'IND0005',name:'Govind Jangir',prof:'Helper',sec:'Indian'},
+  {wid:'IND0006',name:'Lokesh Kumar Verma',prof:'Helper',sec:'Indian'},
+  {wid:'IND0007',name:'Rajendra Kumar',prof:'Helper',sec:'Indian'},
+  {wid:'IND0008',name:'Surendra Budania',prof:'Helper',sec:'Indian'},
+  {wid:'IND0009',name:'Majid Abdul',prof:'Helper',sec:'Indian'},
+  {wid:'IND0010',name:'Pradeep Singh',prof:'Helper',sec:'Indian'},
+  {wid:'IND0011',name:'Akram Khan',prof:'Helper',sec:'Indian'},
+  {wid:'IND0012',name:'Manoj Kumar Jakhar',prof:'Helper',sec:'Indian'},
+  {wid:'IND0013',name:'Puneet Sewda',prof:'Helper',sec:'Indian'},
+  {wid:'IND0014',name:'Surendra Kumar Mahala',prof:'Helper',sec:'Indian'},
+  {wid:'IND0015',name:'Deepak Kumar Jangir',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0016',name:'Jeth Mal Jangir',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0017',name:'Rahul',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0018',name:'Vijendra Kumar',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0019',name:'Rakesh Kumar Jangir',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0020',name:'Jitendra Kumar Jangid',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0021',name:'Dharmendra Khyaliya',prof:'Carpenter (Cutter Operator)',sec:'Indian'},
+  {wid:'IND0022',name:'Jitendra Jangid',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0023',name:'Rahul Verma',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0024',name:'Raj Pal',prof:'Carpenter (Cutter Operator)',sec:'Indian'},
+  {wid:'IND0025',name:'Mukesh Saini',prof:'Carpenter (Cutter Operator)',sec:'Indian'},
+  {wid:'IND0026',name:'Suresh Kumar Jangir',prof:'Carpenter (Cutter Operator)',sec:'Indian'},
+  {wid:'IND0027',name:'Pradip Kumar',prof:'Carpenter',sec:'Indian'},
+  {wid:'IND0028',name:'Ajay Jangir',prof:'Carpenter (Cutter Operator)',sec:'Indian'},
+  {wid:'IND0029',name:'Rajesh Khyalia',prof:'Carpenter (Cutter Operator)',sec:'Indian'},
+  {wid:'IND0030',name:'Ratan Lal',prof:'Painter',sec:'Indian'},
+  {wid:'IND0031',name:'Rakesh Kumar',prof:'Painter',sec:'Indian'},
+  {wid:'IND0032',name:'Chetan Kumar',prof:'Painter',sec:'Indian'},
+  {wid:'IND0033',name:'Wajid Khan',prof:'Painter',sec:'Indian'},
+  {wid:'IND0034',name:'Mohammad Arif',prof:'Painter',sec:'Indian'},
+  {wid:'IND0035',name:'Sajid',prof:'Painter',sec:'Indian'},
+  {wid:'IND0036',name:'Fariyad Khan',prof:'Painter',sec:'Indian'},
+  {wid:'IND0037',name:'Sayad',prof:'Painter',sec:'Indian'},
+  {wid:'PAK0001',name:'Asad Raza',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0002',name:'Muhammad Ramzan',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0003',name:'Muhammad Rizwan',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0004',name:'Sharafat Hussain',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0005',name:'Ali Raza',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0006',name:'Muhammad Amjad',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0007',name:'Sher Bahadur',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0008',name:'Muhammad Arshad',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0009',name:'Taimoor Ahmad',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0010',name:'Muhammad Imtiaz',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0011',name:'Kashif Hussain',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0012',name:'Muhammad Saleem',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0013',name:'Mudasir Hussain',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0014',name:'Sami Ullah',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0015',name:'Muhammad Parvaiz',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0016',name:'Muhammad Awais',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0017',name:'Muhammad Naeem',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0018',name:'Muhammad Faheem',prof:'Worker',sec:'Pakistani'},
+  {wid:'PAK0019',name:'Muhammad Mansoor',prof:'Worker',sec:'Pakistani'}
+];
+
+function initWorkers() {
+  var existing = gW();
+  if (existing.length >= 56) return Promise.resolve();
+  
+  var existingIds = [];
+  for (var i = 0; i < existing.length; i++) existingIds.push(existing[i].wid);
+  
+  var promises = [];
+  for (var j = 0; j < ALL_WORKERS.length; j++) {
+    var aw = ALL_WORKERS[j];
+    if (indexOf(existingIds, aw.wid) === -1) {
+      promises.push(FB.save('workers', aw.wid, {
+        wid: aw.wid,
+        name: aw.name,
+        prof: aw.prof,
+        sec: aw.sec,
+        shift: 'Day',
+        pw: 'Worker@123',
+        on: true
+      }));
+    }
+  }
+  
+  return Promise.all(promises);
+}
+
+// ====== RENDER FUNCTIONS (placeholders - implemented in index.html) ======
+function refreshDashboard() {
+  if (typeof renderDashboard === 'function') renderDashboard();
+}
+
+function refreshApprovals() {
+  if (typeof renderApprovals === 'function') renderApprovals();
+}
+
+function refreshLiveStatus() {
+  if (typeof renderLiveStatus === 'function') renderLiveStatus();
+}
+
+function refreshAttendanceView() {
+  if (typeof renderAttendanceView === 'function') renderAttendanceView();
+}
+
+function refreshAdminWorkers() {
+  if (typeof renderAdminWorkers === 'function') renderAdminWorkers();
+}
+
+function refreshManualEntry() {
+  if (typeof renderManualEntry === 'function') renderManualEntry();
+}
+
+function renderWorkerDashboard() {
+  if (typeof renderWorkerUI === 'function') renderWorkerUI();
+}
+
+// ====== PWA INSTALL ======
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _pendingInstall = e;
+  var banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'flex';
+});
+
+function installApp() {
+  if (!_pendingInstall) return;
+  _pendingInstall.prompt();
+  _pendingInstall.userChoice.then(function(r) {
+    _pendingInstall = null;
+    var banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = 'none';
+  });
+}
+
+// ====== SERVICE WORKER ======
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      console.log('[ALB] SW registered');
+    }).catch(function(e) {
+      console.log('[ALB] SW failed:', e);
+    });
+  });
+}
+
+// ====== SPEECH SYNTHESIS INIT ======
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = function() {
+    window.speechSynthesis.getVoices();
+  };
+}
+
+console.log('[ALB] app.js v16 loaded - ' + COMPANY.full);
