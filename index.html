@@ -7,13 +7,13 @@
   <meta name="description" content="AL BOWRY CARPENTRY LLC - Attendance Management System - COP31 Project Antalya Turkey">
   <title>AL BOWRY CARPENTRY LLC | Attendance</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon-192.png">
+  <link rel="icon" href="logo.png?v=4">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
-  <link rel="stylesheet" href="mobile.css?v=3">
+  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="mobile.css?v=17">
 </head>
 <body>
 
@@ -21,7 +21,9 @@
 <div id="loadingScreen" class="loading-screen">
   <div class="loading-content">
     <div class="loading-logo">
-      <div class="logo-box-lg">A</div>
+      <img src="logo.png?v=4" alt="AL BOWRY" class="loading-logo-img"
+           style="width:100px;height:100px;object-fit:contain;border-radius:22px;background:rgba(255,255,255,0.1);padding:14px;border:2px solid rgba(255,255,255,0.2)"
+           onerror="this.outerHTML='<div class=\'logo-box-lg\'>A</div>'">
     </div>
     <div class="loading-company">AL BOWRY CARPENTRY LLC</div>
     <div class="loading-project">PROJECT COP31 | Antalya, Turkey</div>
@@ -42,11 +44,6 @@
   </div>
 </div>
 
-<!-- ====== SYNC STATUS ====== -->
-<div id="syncStatus" class="sync-badge sync-warn" style="display:none">
-  <span class="sync-dot sync-warn"></span> Syncing...
-</div>
-
 <!-- ====== TOAST CONTAINER ====== -->
 <div id="toastContainer"></div>
 
@@ -61,7 +58,9 @@
     <!-- Company Header -->
     <div class="login-header">
       <div class="login-logo">
-        <div class="logo-box-xl">A</div>
+        <img src="logo.png?v=4" alt="AL BOWRY"
+             style="width:74px;height:74px;object-fit:contain;border-radius:16px;background:#f8fafc;padding:10px;border:2px solid #e2e8f0"
+             onerror="this.outerHTML='<div class=\'logo-box-xl\'>A</div>'">
       </div>
       <div class="login-company-text">
         <div class="login-company-name">AL BOWRY <span>CARPENTRY LLC</span></div>
@@ -154,7 +153,7 @@
 
     <div class="login-footer">
       <div>AL BOWRY CARPENTRY LLC &copy; 2026</div>
-      <div>Attendance System v16 | <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
+      <div>Attendance System v17 | <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
     </div>
   </div>
 </div>
@@ -164,7 +163,9 @@
   <!-- Worker Navbar -->
   <nav class="worker-nav">
     <div class="worker-nav-brand">
-      <div class="logo-box-sm">A</div>
+      <img src="logo.png?v=4" alt="A"
+           style="width:36px;height:36px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.15);padding:4px"
+           onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
       <span>AL BOWRY CARPENTRY LLC</span>
     </div>
     <div class="worker-nav-right">
@@ -316,7 +317,9 @@
   <!-- Admin Navbar -->
   <nav class="admin-nav" id="adminNav">
     <div class="admin-nav-brand">
-      <div class="logo-box-sm">A</div>
+      <img src="logo.png?v=4" alt="A"
+           style="width:36px;height:36px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.15);padding:4px"
+           onerror="this.outerHTML='<div class=\'logo-box-sm\'>A</div>'">
       <div class="admin-nav-title">
         <span class="admin-nav-company">AL BOWRY CARPENTRY LLC</span>
         <span class="admin-nav-project">COP31 Project | Antalya, Turkey</span>
@@ -389,8 +392,11 @@
         </nav>
 
         <div class="sidebar-footer">
+          <img src="logo.png?v=4" alt=""
+               style="width:28px;height:28px;object-fit:contain;border-radius:6px;opacity:0.6;margin-bottom:8px"
+               onerror="this.style.display='none'">
           <div class="sidebar-footer-company">AL BOWRY CARPENTRY LLC</div>
-          <div class="sidebar-footer-ver">Attendance System v16</div>
+          <div class="sidebar-footer-ver">Attendance System v17</div>
           <div class="sidebar-footer-site">COP31 | Antalya, Turkey</div>
         </div>
       </div>
@@ -1274,7 +1280,9 @@
         <!-- Company Info Card -->
         <div class="card company-info-card">
           <div class="company-info-header">
-            <div class="logo-box-xl">A</div>
+            <img src="logo.png?v=4" alt="AL BOWRY"
+                 style="width:80px;height:80px;object-fit:contain;border-radius:18px;background:rgba(255,255,255,0.1);padding:10px;border:2px solid rgba(255,255,255,0.2)"
+                 onerror="this.outerHTML='<div class=\'logo-box-xl\' style=\'background:rgba(255,255,255,0.2);color:white\'>A</div>'">
             <div>
               <div class="company-info-name">AL BOWRY CARPENTRY LLC</div>
               <div class="company-info-sub">Registered: Sharjah, UAE | Project: COP31, Antalya, Turkey</div>
@@ -1372,7 +1380,7 @@
             <div class="sys-info-grid">
               <div class="sys-info-item">
                 <span class="sys-info-label">Version</span>
-                <span class="sys-info-val">v16</span>
+                <span class="sys-info-val">v17</span>
               </div>
               <div class="sys-info-item">
                 <span class="sys-info-label">Total Workers</span>
@@ -1484,9 +1492,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
 <!-- App Scripts -->
-<script src="app.js?v=3"></script>
-<script src="manual.js?v=3"></script>
-<script src="history.js?v=3"></script>
+<script src="app.js?v=17"></script>
+<script src="manual.js?v=17"></script>
+<script src="history.js?v=17"></script>
 
 <script>
 // ====== APP BOOTSTRAP ======
@@ -1593,7 +1601,6 @@ function populateWorkerDropdown() {
 function setCurrentTimeOnLogin() {
   var now = new Date();
   var hr = now.getHours();
-  // Auto-select shift based on time
   var shiftInputs = document.querySelectorAll('input[name="loginShift"]');
   for (var i = 0; i < shiftInputs.length; i++) {
     if (hr >= 8 && hr < 20) {
@@ -1664,12 +1671,15 @@ function renderWorkerUI() {
   if (!session || session.role !== 'worker') return;
 
   var w = findWorker(session.wid);
-  if (!w) return;
+  if (!w) {
+    // Worker deleted - force logout
+    clearSession();
+    location.reload();
+    return;
+  }
 
-  // Update session shift from worker record
   session.shift = w.shift;
 
-  // Avatar
   document.getElementById('workerAvatar').textContent = getInitials(w.name);
   document.getElementById('workerHeroName').textContent = w.name;
   document.getElementById('workerHeroProfession').textContent = w.prof;
@@ -1679,7 +1689,6 @@ function renderWorkerUI() {
   shiftBadge.textContent = (session.shift || w.shift) + ' Shift';
   shiftBadge.className = 'shift-badge shift-' + (session.shift || w.shift).toLowerCase();
 
-  // Attendance status
   var today = tD();
   var allAtt = gA();
   var todayAtt = null;
@@ -1693,13 +1702,11 @@ function renderWorkerUI() {
 
   updateWorkerAttStatus(todayAtt);
 
-  // Stats
   var stats = getWorkerStats(w.wid);
   document.getElementById('wstatDays').textContent = stats.totalDays;
   document.getElementById('wstatHours').textContent = stats.totalHrs + 'h';
   document.getElementById('wstatOT').textContent = stats.totalOT + 'h';
 
-  // History table
   renderWorkerHistory(stats.records);
 }
 
@@ -1712,7 +1719,6 @@ function updateWorkerAttStatus(att) {
   var btnIn = document.getElementById('btnCheckin');
   var btnOut = document.getElementById('btnCheckout');
 
-  // Reset
   pendingMsg.style.display = 'none';
   btnIn.style.display = 'none';
   btnOut.style.display = 'none';
@@ -1786,10 +1792,16 @@ function renderWorkerHistory(records) {
 function requestCheckin() {
   var session = getSession();
   if (!session) return;
-  workerCheckinReq(session.wid, session.shift).then(function(res) {
-    if (res.ok) showToast(res.msg, 'success');
-    else showToast(res.msg, 'error');
-  });
+  var result = workerCheckinReq(session.wid, session.shift);
+  if (result && result.then) {
+    result.then(function(res) {
+      if (res.ok) showToast(res.msg, 'success');
+      else showToast(res.msg, 'error');
+    });
+  } else if (result) {
+    if (result.ok) showToast(result.msg, 'success');
+    else showToast(result.msg, 'error');
+  }
 }
 
 function requestCheckout() {
@@ -1832,21 +1844,16 @@ function showAdminPanel(session) {
   var nameEl = document.getElementById('adminDisplayName');
   if (nameEl) nameEl.textContent = session.name || 'Admin';
 
-  var syncEl = document.getElementById('syncStatus');
-  if (syncEl) syncEl.style.display = 'flex';
-
   if (_clockInterval) clearInterval(_clockInterval);
   _clockInterval = startClock('adminClock');
 
-  // Set today as default date for all date inputs
   var today = tD();
-  var dateInputs = ['attDate', 'histDate', 'dwDate', 'customDate', 'bulkDate', 'histBdDate', 'histBulkDate', 'endDayTime'];
+  var dateInputs = ['attDate', 'histDate', 'dwDate', 'customDate', 'bulkDate', 'histBdDate', 'histBulkDate'];
   for (var i = 0; i < dateInputs.length; i++) {
     var el = document.getElementById(dateInputs[i]);
     if (el && el.type === 'date') el.value = today;
   }
 
-  // Set current time for time inputs
   var nowTime = new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   var timeInputs = ['qcInTime', 'qcOutTime'];
   for (var j = 0; j < timeInputs.length; j++) {
@@ -1854,23 +1861,18 @@ function showAdminPanel(session) {
     if (tel) tel.value = nowTime;
   }
 
-  // Set current month
   var now = new Date();
   var monthSel = document.getElementById('monthlyMonth');
   if (monthSel) monthSel.value = now.getMonth() + 1;
 
-  // Set settings admin name
   var setName = document.getElementById('setAdminName');
   if (setName && _adminData.name) setName.value = _adminData.name;
 
-  // Init history
   if (typeof initHistory === 'function') initHistory();
 
-  // Populate all dropdowns
   renderWorkerDropdowns();
   populateWorkerDropdown();
 
-  // Show dashboard
   showSection('secDashboard');
   renderDashboard();
   renderApprovals();
@@ -1892,7 +1894,6 @@ function renderDashboard() {
     if (allWorkers[i].on) activeWorkers.push(allWorkers[i]);
   }
 
-  // Present worker IDs (CORE FIX - no duplicates)
   var presentWids = getPresentWorkerIds(today, allAtt, 'All');
 
   var working = 0, done = 0, pending = 0;
@@ -1905,18 +1906,14 @@ function renderDashboard() {
     else if (a.status === 'pending_checkin' || a.status === 'pending_checkout') pending++;
   }
 
-  // Update stats
   setEl('dTotalWorkers', activeWorkers.length);
   setEl('dPresent', presentWids.length);
   setEl('dAbsent', activeWorkers.length - presentWids.length);
   setEl('dWorking', working);
   setEl('dDone', done);
   setEl('dPending', pending);
-
-  // Approval count badge
   setEl('approvalCount', pending);
 
-  // Shift breakdown
   var dayWorkers = 0, nightWorkers = 0, dayPresent = 0, nightPresent = 0;
   for (var k = 0; k < activeWorkers.length; k++) {
     var w = activeWorkers[k];
@@ -1934,7 +1931,6 @@ function renderDashboard() {
   setEl('dNightPresent', nightPresent);
   setEl('dNightTotal', nightWorkers);
 
-  // Section breakdown
   var indTotal = 0, pakTotal = 0, indPresent = 0, pakPresent = 0;
   for (var m = 0; m < activeWorkers.length; m++) {
     if (activeWorkers[m].sec === 'Indian') indTotal++;
@@ -1951,7 +1947,6 @@ function renderDashboard() {
   setEl('dPakPresent', pakPresent);
   setEl('dPakTotal', pakTotal);
 
-  // Absent workers list
   var absentWorkers = getAbsentWorkers(today, allAtt, activeWorkers, 'All', 'All');
   setEl('dashAbsentCount', absentWorkers.length);
 
@@ -1988,7 +1983,6 @@ function renderApprovals() {
       pending.push(a);
     }
     if (a.status === 'checked_in' && a.checkinTime) {
-      // Recent check-ins (approved within last 2 hours)
       var cinAge = (Date.now() - new Date(a.checkinTime).getTime()) / 3600000;
       if (cinAge < 2) recentApproved.push(a);
     }
@@ -2038,7 +2032,6 @@ function renderApprovals() {
     }
   }
 
-  // Undo section
   var undoContainer = document.getElementById('undoContainer');
   if (undoContainer) {
     if (recentApproved.length === 0) {
@@ -2173,7 +2166,6 @@ function renderAttendanceView() {
   var allAtt = gA();
   var allWorkers = gW();
 
-  // Get present workers for this date+shift (CORE FIX)
   var presentWids = [];
   var presentRecs = [];
   var processedWids = [];
@@ -2185,7 +2177,7 @@ function renderAttendanceView() {
     if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed') continue;
     if (shift !== 'All' && a.shift !== shift) continue;
     if (section !== 'All' && a.sec !== section) continue;
-    if (indexOf(processedWids, a.wid) !== -1) continue; // NO DUPLICATES
+    if (indexOf(processedWids, a.wid) !== -1) continue;
 
     var w2 = findWorker(a.wid);
     if (!w2) continue;
@@ -2195,27 +2187,24 @@ function renderAttendanceView() {
     presentRecs.push({ worker: w2, att: a });
   }
 
-  // Get absent workers
   var absentWorkers = [];
   for (var j = 0; j < allWorkers.length; j++) {
     var w3 = allWorkers[j];
     if (!w3.on) continue;
     if (section !== 'All' && w3.sec !== section) continue;
     if (shift !== 'All' && w3.shift !== shift) continue;
-    if (indexOf(presentWids, w3.wid) !== -1) continue; // NOT in present = absent
+    if (indexOf(presentWids, w3.wid) !== -1) continue;
     absentWorkers.push(w3);
   }
 
   var totalFiltered = presentRecs.length + absentWorkers.length;
 
-  // Update summary
   setEl('attSumTotal', totalFiltered);
   setEl('attSumPresent', presentRecs.length);
   setEl('attSumAbsent', absentWorkers.length);
   setEl('attPresentCount', presentRecs.length);
   setEl('attAbsentCount', absentWorkers.length);
 
-  // Present table
   var presentBody = document.getElementById('attPresentBody');
   if (presentBody) {
     if (statusFilter === 'Absent') {
@@ -2252,7 +2241,6 @@ function renderAttendanceView() {
     }
   }
 
-  // Absent grid
   var absentGrid = document.getElementById('attAbsentGrid');
   if (absentGrid) {
     if (statusFilter === 'Present') {
@@ -2337,14 +2325,10 @@ function renderAdminWorkers() {
 
   for (var i = 0; i < ws.length; i++) {
     var w = ws[i];
-    // Tab filter
     if (w.sec !== _workerTabActive) continue;
-    // Section filter
     if (secFilter !== 'All' && w.sec !== secFilter) continue;
-    // Status filter
     if (statusFilter === 'Active' && !w.on) continue;
     if (statusFilter === 'Inactive' && w.on) continue;
-    // Search
     if (search) {
       var searchStr = (w.name + w.wid + w.prof + w.sec).toLowerCase();
       if (searchStr.indexOf(search) === -1) continue;
@@ -2659,56 +2643,58 @@ function exportMonthlyPDF() {
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var monthName = monthNames[month - 1];
 
-  var doc = new jspdf.jsPDF();
-  var startY = addPDFHeader(doc, 'Monthly Report - ' + monthName + ' ' + year, 'Workers: ' + reports.length);
+  loadLogoForPDF().then(function() {
+    var doc = new jspdf.jsPDF();
+    var startY = addPDFHeader(doc, 'Monthly Report - ' + monthName + ' ' + year, 'Workers: ' + reports.length);
 
-  for (var i = 0; i < reports.length; i++) {
-    var r = reports[i];
-    if (i > 0) { doc.addPage(); startY = addPDFHeader(doc, 'Monthly Report - ' + monthName + ' ' + year, r.worker.name); }
+    for (var i = 0; i < reports.length; i++) {
+      var r = reports[i];
+      if (i > 0) { doc.addPage(); startY = addPDFHeader(doc, 'Monthly Report - ' + monthName + ' ' + year, r.worker.name); }
 
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(30, 64, 175);
-    doc.text(r.worker.name + ' | ' + r.worker.wid + ' | ' + r.worker.sec, 14, startY + 8);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 64, 175);
+      doc.text(r.worker.name + ' | ' + r.worker.wid + ' | ' + r.worker.sec, 14, startY + 8);
 
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text('Days: ' + r.totalDays + ' | Total Hrs: ' + r.totalHrs + 'h | OT: ' + r.totalOT + 'h | Day Shifts: ' + r.dayShift + ' | Night Shifts: ' + r.nightShift, 14, startY + 16);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      doc.text('Days: ' + r.totalDays + ' | Total Hrs: ' + r.totalHrs + 'h | OT: ' + r.totalOT + 'h | Day Shifts: ' + r.dayShift + ' | Night Shifts: ' + r.nightShift, 14, startY + 16);
 
-    if (r.records.length > 0) {
-      var rows = [];
-      for (var j = 0; j < r.records.length; j++) {
-        var rec = r.records[j];
-        rows.push([
-          fmtDate(rec.date + 'T00:00:00'),
-          rec.shift || 'Day',
-          fmtTime(rec.checkinTime),
-          fmtTime(rec.checkoutTime),
-          (rec.total || 0) + 'h',
-          (rec.regular || 0) + 'h',
-          (rec.compOT || 0) + 'h',
-          (rec.extraOT || 0) + 'h',
-          (rec.ot || 0) + 'h'
-        ]);
+      if (r.records.length > 0) {
+        var rows = [];
+        for (var j = 0; j < r.records.length; j++) {
+          var rec = r.records[j];
+          rows.push([
+            fmtDate(rec.date + 'T00:00:00'),
+            rec.shift || 'Day',
+            fmtTime(rec.checkinTime),
+            fmtTime(rec.checkoutTime),
+            (rec.total || 0) + 'h',
+            (rec.regular || 0) + 'h',
+            (rec.compOT || 0) + 'h',
+            (rec.extraOT || 0) + 'h',
+            (rec.ot || 0) + 'h'
+          ]);
+        }
+
+        doc.autoTable({
+          startY: startY + 22,
+          head: [['Date', 'Shift', 'Check In', 'Check Out', 'Total', 'Regular', 'CompOT', 'ExtraOT', 'OT']],
+          body: rows,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+          alternateRowStyles: { fillColor: [240, 245, 255] }
+        });
+        startY = doc.lastAutoTable.finalY + 10;
       }
-
-      doc.autoTable({
-        startY: startY + 22,
-        head: [['Date', 'Shift', 'Check In', 'Check Out', 'Total', 'Regular', 'CompOT', 'ExtraOT', 'OT']],
-        body: rows,
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [30, 64, 175], textColor: 255 },
-        alternateRowStyles: { fillColor: [240, 245, 255] }
-      });
-      startY = doc.lastAutoTable.finalY + 10;
     }
-  }
 
-  addPDFFooter(doc);
-  doc.save('albowry_monthly_' + year + '_' + month + '.pdf');
-  showToast('Monthly PDF downloaded!', 'success');
+    addPDFFooter(doc);
+    doc.save('albowry_monthly_' + year + '_' + month + '.pdf');
+    showToast('Monthly PDF downloaded!', 'success');
+  });
 }
 
 function exportMonthlyCSV() {
@@ -2754,41 +2740,43 @@ function exportRangePDF() {
   var data = getExportData(from, to, filter);
   if (data.length === 0) { showToast('No data found for selected range', 'warn'); return; }
 
-  var doc = new jspdf.jsPDF('landscape');
-  var startY = addPDFHeader(doc, 'Attendance Export', from + ' to ' + to + ' | ' + filter + ' | ' + data.length + ' records');
+  loadLogoForPDF().then(function() {
+    var doc = new jspdf.jsPDF('landscape');
+    var startY = addPDFHeader(doc, 'Attendance Export', from + ' to ' + to + ' | ' + filter + ' | ' + data.length + ' records');
 
-  var rows = [];
-  for (var i = 0; i < data.length; i++) {
-    var a = data[i];
-    rows.push([
-      a.date || '',
-      a.name || '',
-      a.wid || '',
-      a.sec || '',
-      a.shift || 'Day',
-      fmtTime(a.checkinTime),
-      fmtTime(a.checkoutTime),
-      (a.total || 0) + 'h',
-      (a.regular || 0) + 'h',
-      (a.compOT || 0) + 'h',
-      (a.extraOT || 0) + 'h',
-      (a.ot || 0) + 'h'
-    ]);
-  }
+    var rows = [];
+    for (var i = 0; i < data.length; i++) {
+      var a = data[i];
+      rows.push([
+        a.date || '',
+        a.name || '',
+        a.wid || '',
+        a.sec || '',
+        a.shift || 'Day',
+        fmtTime(a.checkinTime),
+        fmtTime(a.checkoutTime),
+        (a.total || 0) + 'h',
+        (a.regular || 0) + 'h',
+        (a.compOT || 0) + 'h',
+        (a.extraOT || 0) + 'h',
+        (a.ot || 0) + 'h'
+      ]);
+    }
 
-  doc.autoTable({
-    startY: startY,
-    head: [['Date', 'Name', 'ID', 'Section', 'Shift', 'Check In', 'Check Out', 'Total', 'Regular', 'CompOT', 'ExtraOT', 'OT']],
-    body: rows,
-    theme: 'grid',
-    styles: { fontSize: 7, cellPadding: 2 },
-    headStyles: { fillColor: [30, 64, 175], textColor: 255 },
-    alternateRowStyles: { fillColor: [240, 245, 255] }
+    doc.autoTable({
+      startY: startY,
+      head: [['Date', 'Name', 'ID', 'Section', 'Shift', 'Check In', 'Check Out', 'Total', 'Regular', 'CompOT', 'ExtraOT', 'OT']],
+      body: rows,
+      theme: 'grid',
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+      alternateRowStyles: { fillColor: [240, 245, 255] }
+    });
+
+    addPDFFooter(doc);
+    doc.save('albowry_export_' + from + '_to_' + to + '.pdf');
+    showToast('PDF exported!', 'success');
   });
-
-  addPDFFooter(doc);
-  doc.save('albowry_export_' + from + '_to_' + to + '.pdf');
-  showToast('PDF exported!', 'success');
 }
 
 function exportRangeExcel() {
@@ -2859,13 +2847,12 @@ function updateSettingsInfo() {
   if (_lastSyncTime) setEl('sysLastSync', fmtDT(_lastSyncTime.toISOString()));
 }
 
-// ====== HELPER: setEl ======
+// ====== HELPERS ======
 function setEl(id, val) {
   var el = document.getElementById(id);
   if (el) el.textContent = val;
 }
 
-// ====== HELPER: togglePw ======
 function togglePw(inputId, btn) {
   var inp = document.getElementById(inputId);
   if (!inp) return;
@@ -2878,7 +2865,6 @@ function togglePw(inputId, btn) {
   }
 }
 
-// ====== HELPER: toggleSidebar ======
 function toggleSidebar() {
   var sidebar = document.getElementById('adminSidebar');
   var overlay = document.getElementById('sidebarOverlay');
@@ -2886,18 +2872,16 @@ function toggleSidebar() {
   if (overlay) overlay.classList.toggle('show');
 }
 
-// ====== OVERRIDE showSection for admin tabs ======
+// ====== OVERRIDE showSection ======
 var _originalShowSection = showSection;
 showSection = function(id) {
   _originalShowSection(id);
-  // Close sidebar on mobile
   var sidebar = document.getElementById('adminSidebar');
   var overlay = document.getElementById('sidebarOverlay');
   if (window.innerWidth < 768) {
     if (sidebar) sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('show');
   }
-  // Section-specific refresh
   if (id === 'secDashboard') renderDashboard();
   if (id === 'secApprovals') renderApprovals();
   if (id === 'secLive') renderLiveStatus();
