@@ -1,5 +1,40 @@
-const CACHE_NAME='albowry-v11';
-const urls=['./','./index.html','./style.css','./mobile.css','./app.js','./manual.js','./manifest.json','./logo.png','./icon-192.png','./icon-512.png'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(urls).catch(()=>{})));self.skipWaiting();});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(n=>Promise.all(n.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim();});
-self.addEventListener('fetch',e=>{if(e.request.url.includes('firebase')||e.request.url.includes('firestore')||e.request.url.includes('googleapis')||e.request.url.includes('gstatic')||e.request.url.includes('cdnjs'))return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('./index.html'))));});
+var CACHE_NAME = 'albowry-v15';
+var urls = ['./', './index.html', './style.css', './mobile.css', './app.js', './manual.js', './history.js', './manifest.json', './logo.png'];
+
+self.addEventListener('install', function(e) {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(urls).catch(function() {});
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(e) {
+  e.waitUntil(
+    caches.keys().then(function(names) {
+      var promises = [];
+      for (var i = 0; i < names.length; i++) {
+        if (names[i] !== CACHE_NAME) {
+          promises.push(caches.delete(names[i]));
+        }
+      }
+      return Promise.all(promises);
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', function(e) {
+  var url = e.request.url;
+  if (url.indexOf('firebase') > -1 || url.indexOf('firestore') > -1 || url.indexOf('googleapis') > -1 || url.indexOf('gstatic') > -1 || url.indexOf('cdnjs') > -1) {
+    return;
+  }
+  e.respondWith(
+    caches.match(e.request).then(function(response) {
+      return response || fetch(e.request).catch(function() {
+        return caches.match('./index.html');
+      });
+    })
+  );
+});
