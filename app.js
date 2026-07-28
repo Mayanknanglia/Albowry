@@ -1,8 +1,8 @@
 // AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
-// app.js v17 - PDF logo + Check In/Out approval flow
+// app.js v18 - PDF logo + Salary calculation + OT fix
 
-var APP_VERSION = 'v17';
-var CACHE_KEY = 'alb_v17';
+var APP_VERSION = 'v18';
+var CACHE_KEY = 'alb_v18';
 
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
@@ -16,6 +16,7 @@ var COMPANY = {
 var REG_HOURS = 9;
 var COMP_OT = 3;
 var TOTAL_SHIFT = 12;
+var STANDARD_HOURS_PER_MONTH = 270; // 9 hrs × 30 days
 var TZ = 'Europe/Istanbul';
 var SESSION_KEY = 'alb_session';
 var ADMIN_DOC = 'main';
@@ -92,6 +93,7 @@ function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
   return dt.toISOString();
 }
 
+// ====== HOURS CALCULATION - FIXED (12hrs = 9 Regular + 3 CompOT) ======
 function calcHours(checkinISO, checkoutISO) {
   if (!checkinISO || !checkoutISO) return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0 };
   var cin = new Date(checkinISO).getTime();
@@ -177,12 +179,8 @@ function getSession() {
   try { var s = localStorage.getItem(SESSION_KEY); return s ? JSON.parse(s) : null; }
   catch(e) { return null; }
 }
-function setSession(data) {
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {}
-}
-function clearSession() {
-  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
-}
+function setSession(data) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {} }
+function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch(e) {} }
 
 function updateSyncUI() {
   var el = document.getElementById('syncStatus');
@@ -201,17 +199,14 @@ function updateSyncUI() {
 function startRealtimeSync() {
   for (var i = 0; i < _listeners.length; i++) { try { _listeners[i](); } catch(e) {} }
   _listeners = [];
-
   _listeners.push(FB.listen('workers', function(docs) {
     _workers = docs; _syncStatus.workers = true;
     updateSyncUI(); onWorkersUpdated();
   }));
-
   _listeners.push(FB.listen('attendance', function(docs) {
     _attendance = docs; _syncStatus.attendance = true;
     updateSyncUI(); onAttendanceUpdated();
   }));
-
   _listeners.push(FB.listenDoc('admin', ADMIN_DOC, function(doc) {
     if (doc) {
       _adminData = doc; _syncStatus.admin = true;
@@ -231,7 +226,6 @@ function onWorkersUpdated() {
       setSession({ role: 'worker', wid: w.wid, name: w.name, prof: w.prof, sec: w.sec, shift: w.shift });
       renderWorkerDashboard();
     } else {
-      // Worker deleted - force logout
       clearSession(); location.reload();
     }
   }
@@ -320,7 +314,6 @@ function adminLogin(id, pw) {
   return { ok: false, msg: 'Wrong Admin ID or Password' };
 }
 
-// ====== WORKER CHECK-IN REQUEST (Time starts NOW) ======
 function workerCheckinReq(wid, shift) {
   var today = tD();
   var existing = getTodayAtt(wid);
@@ -344,9 +337,7 @@ function workerCheckinReq(wid, shift) {
   };
   return FB.save('attendance', recId, rec).then(function() {
     return { ok: true, msg: 'Check-in requested at ' + fmtTime(nowISO) + '. Waiting for admin approval.' };
-  }).catch(function(e) {
-    return { ok: false, msg: 'Error: ' + e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
 function workerCheckoutReq(wid) {
@@ -364,12 +355,9 @@ function workerCheckoutReq(wid) {
     checkoutReqTime: nowISO, status: 'pending_checkout'
   }).then(function() {
     return { ok: true, msg: 'Checkout requested at ' + fmtTime(nowISO) + '. Waiting for admin approval.' };
-  }).catch(function(e) {
-    return { ok: false, msg: 'Error: ' + e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
-// ====== ADMIN APPROVE - uses worker's request time ======
 function adminApproveCheckin(recId) {
   var att = null; var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
@@ -380,10 +368,7 @@ function adminApproveCheckin(recId) {
   }).then(function() {
     showToast((att.name || 'Worker') + ' check-in approved!', 'success');
     return { ok: true };
-  }).catch(function(e) {
-    showToast('Error: ' + e.message, 'error');
-    return { ok: false };
-  });
+  }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
 
 function adminApproveCheckout(recId) {
@@ -405,10 +390,7 @@ function adminApproveCheckout(recId) {
   }).then(function() {
     showToast((att.name || 'Worker') + ' checkout approved! ' + hrs.total + 'h worked', 'success');
     return { ok: true };
-  }).catch(function(e) {
-    showToast('Error: ' + e.message, 'error');
-    return { ok: false };
-  });
+  }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
 
 function adminReject(recId, reason) {
@@ -496,9 +478,7 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
   };
   return FB.save('attendance', recId, rec).then(function() {
     return { ok: true, msg: w.name + ' checked in at ' + fmtTime(checkinISO) };
-  }).catch(function(e) {
-    return { ok: false, msg: 'Error: ' + e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
 function manualCheckout(wid, shift, dateStr, timeStr) {
@@ -524,9 +504,7 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
     status: 'completed'
   }).then(function() {
     return { ok: true, msg: w.name + ' checked out at ' + fmtTime(checkoutISO) + ' | ' + hrs.total + 'h worked' };
-  }).catch(function(e) {
-    return { ok: false, msg: 'Error: ' + e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
 function bulkCheckin(wids, shift, dateStr, timeStr) {
@@ -571,9 +549,7 @@ function changeWorkerPassword(wid, oldPw, newPw) {
   if (newPw.length < 6) return Promise.resolve({ ok: false, msg: 'New password must be at least 6 characters' });
   return FB.update('workers', wid, { pw: newPw }).then(function() {
     return { ok: true, msg: 'Password changed successfully' };
-  }).catch(function(e) {
-    return { ok: false, msg: 'Error: ' + e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
 function updateAdmin(field, value, confirmPw) {
@@ -594,9 +570,7 @@ function updateAdmin(field, value, confirmPw) {
     Object.assign(_adminData, update);
     showToast(field + ' updated!', 'success');
     return { ok: true };
-  }).catch(function(e) {
-    return { ok: false, msg: e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: e.message }; });
 }
 
 function addWorker(wid, name, prof, sec, shift) {
@@ -610,27 +584,21 @@ function addWorker(wid, name, prof, sec, shift) {
   return FB.save('workers', wid, w).then(function() {
     showToast(name + ' added!', 'success');
     return { ok: true };
-  }).catch(function(e) {
-    return { ok: false, msg: e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: e.message }; });
 }
 
 function editWorker(wid, updates) {
   return FB.update('workers', wid, updates).then(function() {
     showToast('Worker updated!', 'success');
     return { ok: true };
-  }).catch(function(e) {
-    return { ok: false, msg: e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: e.message }; });
 }
 
 function deleteWorker(wid) {
   return FB.delete('workers', wid).then(function() {
     showToast('Worker deleted', 'info');
     return { ok: true };
-  }).catch(function(e) {
-    return { ok: false, msg: e.message };
-  });
+  }).catch(function(e) { return { ok: false, msg: e.message }; });
 }
 
 function toggleWorkerActive(wid) {
@@ -741,6 +709,69 @@ function getExportData(fromDate, toDate, filter) {
   return result;
 }
 
+// ====== SALARY CALCULATION ======
+function calculateSalary(wid, year, month, monthlySalaryAED) {
+  var w = findWorker(wid);
+  if (!w) return null;
+  var allAtt = gA();
+  var monthStr = year + '-' + (month < 10 ? '0' + month : '' + month);
+  var totalDays = 0;
+  var totalRegular = 0, totalCompOT = 0, totalExtraOT = 0, totalHrs = 0;
+  var dayShift = 0, nightShift = 0;
+  var records = [];
+
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    if (a.wid !== wid) continue;
+    if (a.status !== 'completed') continue;
+    var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
+    if (attDate.indexOf(monthStr) !== 0) continue;
+    records.push(a);
+    totalDays++;
+    totalRegular += a.regular || 0;
+    totalCompOT += a.compOT || 0;
+    totalExtraOT += a.extraOT || 0;
+    totalHrs += a.total || 0;
+    if (a.shift === 'Night') nightShift++; else dayShift++;
+  }
+  records.sort(function(a, b) { return a.date > b.date ? 1 : -1; });
+
+  var perHourRate = monthlySalaryAED / STANDARD_HOURS_PER_MONTH;
+  var regularSalary = totalRegular * perHourRate;
+  var compOTSalary = totalCompOT * perHourRate;
+  var extraOTSalary = totalExtraOT * perHourRate * 1.5;
+  var totalSalary = regularSalary + compOTSalary + extraOTSalary;
+
+  return {
+    worker: w, records: records,
+    year: year, month: month,
+    monthlySalary: monthlySalaryAED,
+    perHourRate: Math.round(perHourRate * 100) / 100,
+    totalDays: totalDays,
+    totalHrs: Math.round(totalHrs * 100) / 100,
+    totalRegular: Math.round(totalRegular * 100) / 100,
+    totalCompOT: Math.round(totalCompOT * 100) / 100,
+    totalExtraOT: Math.round(totalExtraOT * 100) / 100,
+    totalOT: Math.round((totalCompOT + totalExtraOT) * 100) / 100,
+    dayShift: dayShift, nightShift: nightShift,
+    regularSalary: Math.round(regularSalary * 100) / 100,
+    compOTSalary: Math.round(compOTSalary * 100) / 100,
+    extraOTSalary: Math.round(extraOTSalary * 100) / 100,
+    totalSalary: Math.round(totalSalary * 100) / 100
+  };
+}
+
+function getAllSalaries(year, month, monthlySalaryAED) {
+  var ws = gW();
+  var result = [];
+  for (var i = 0; i < ws.length; i++) {
+    if (!ws[i].on) continue;
+    var salary = calculateSalary(ws[i].wid, year, month, monthlySalaryAED);
+    if (salary) result.push(salary);
+  }
+  return result;
+}
+
 // ====== PDF LOGO LOADER ======
 function loadLogoForPDF() {
   return new Promise(function(resolve) {
@@ -766,23 +797,18 @@ function loadLogoForPDF() {
       } catch(e) { resolve(null); }
     };
     img.onerror = function() { resolve(null); };
-    img.src = 'logo.png?v=3';
+    img.src = 'logo.png?v=4';
   });
 }
 
 // ====== PDF HEADER WITH LOGO ======
 function addPDFHeader(doc, title, subtitle) {
   var pageW = doc.internal.pageSize.getWidth();
-
-  // Dark header background
   doc.setFillColor(15, 30, 74);
   doc.rect(0, 0, pageW, 44, 'F');
-
-  // Blue gradient
   doc.setFillColor(30, 64, 175);
   doc.rect(0, 22, pageW, 22, 'F');
 
-  // Try to add logo image
   var logoAdded = false;
   if (_cachedLogoDataUrl) {
     try {
@@ -791,7 +817,6 @@ function addPDFHeader(doc, title, subtitle) {
     } catch(e) { logoAdded = false; }
   }
 
-  // Fallback - White box with "A"
   if (!logoAdded) {
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(8, 6, 32, 32, 4, 4, 'F');
@@ -801,30 +826,25 @@ function addPDFHeader(doc, title, subtitle) {
     doc.text('A', 24, 27, { align: 'center' });
   }
 
-  // Company name
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(15);
   doc.setFont('helvetica', 'bold');
   doc.text('AL BOWRY CARPENTRY LLC', 46, 15);
 
-  // Project line
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(220, 220, 240);
   doc.text('PROJECT COP31 at Antalya, Turkey | Registered: Sharjah, UAE', 46, 22);
 
-  // Gold accent line
   doc.setDrawColor(245, 158, 11);
   doc.setLineWidth(1.5);
   doc.line(46, 26, 140, 26);
 
-  // Title
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
   doc.text(title || 'Attendance Report', 46, 35);
 
-  // Right side info
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(220, 220, 240);
@@ -1168,9 +1188,8 @@ if (window.speechSynthesis) {
   };
 }
 
-// Preload logo for PDF
 window.addEventListener('load', function() {
   setTimeout(function() { loadLogoForPDF(); }, 1000);
 });
 
-console.log('[ALB] app.js v17 loaded - ' + COMPANY.full);
+console.log('[ALB] app.js v18 loaded - ' + COMPANY.full);
