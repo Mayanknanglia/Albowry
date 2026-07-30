@@ -1,8 +1,8 @@
 // AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
-// app.js v19 - Night shift fix + Worker count fix
+// app.js v20 - Timezone fix + Night shift proper + Auto times
 
-var APP_VERSION = 'v19';
-var CACHE_KEY = 'alb_v19';
+var APP_VERSION = 'v20';
+var CACHE_KEY = 'alb_v20';
 
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
@@ -18,6 +18,7 @@ var COMP_OT = 3;
 var TOTAL_SHIFT = 12;
 var STANDARD_HOURS_PER_MONTH = 270;
 var TZ = 'Europe/Istanbul';
+var TZ_OFFSET_HOURS = 3; // Turkey is UTC+3
 var SESSION_KEY = 'alb_session';
 var ADMIN_DOC = 'main';
 
@@ -84,22 +85,38 @@ function getTurkeyDate(iso) {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
 }
 
-// ====== FIXED: Night shift handling ======
+// ====== CRITICAL FIX: buildISO handles Turkey timezone properly ======
+// User enters time in Turkey time (e.g., 20:00 for 8 PM Turkey)
+// We must convert this to correct UTC ISO string
 function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
-  var dt = new Date(dateStr + 'T' + timeStr + ':00');
+  // dateStr = "2026-07-29", timeStr = "20:00"
+  // User means: 2026-07-29 20:00 Turkey time
+  // Turkey is UTC+3, so UTC = 20:00 - 3 = 17:00 UTC
 
+  var parts = timeStr.split(':');
+  var hh = parseInt(parts[0]);
+  var mm = parseInt(parts[1]);
+
+  var dateParts = dateStr.split('-');
+  var yyyy = parseInt(dateParts[0]);
+  var mo = parseInt(dateParts[1]) - 1; // JS months 0-11
+  var dd = parseInt(dateParts[2]);
+
+  // Create date as if it's in UTC, then subtract Turkey offset
+  var dt = new Date(Date.UTC(yyyy, mo, dd, hh - TZ_OFFSET_HOURS, mm, 0));
+
+  // Night shift: if checkout time is before check-in time, add 1 day
   if (isNightCheckout && checkinISO) {
     var cin = new Date(checkinISO);
     if (dt <= cin) {
-      dt.setDate(dt.getDate() + 1);
+      dt.setUTCDate(dt.getUTCDate() + 1);
     }
   }
 
-  // If night shift and no checkin reference, and time is AM (morning), add 1 day
+  // Fallback: if night shift with no reference and time is morning (0-12), add 1 day
   if (isNightCheckout && !checkinISO) {
-    var hour = parseInt(timeStr.split(':')[0]);
-    if (hour >= 0 && hour < 12) {
-      dt.setDate(dt.getDate() + 1);
+    if (hh >= 0 && hh < 12) {
+      dt.setUTCDate(dt.getUTCDate() + 1);
     }
   }
 
@@ -384,19 +401,17 @@ function adminApproveCheckin(recId) {
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
 
-// ====== FIXED: Night shift approve checkout ======
 function adminApproveCheckout(recId) {
   var att = null; var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
   var checkoutTime = att.checkoutReqTime || tNow();
 
-  // Night shift fix: ensure checkout is after checkin
   if (att.shift === 'Night' && att.checkinTime) {
     var cin = new Date(att.checkinTime);
     var cout = new Date(checkoutTime);
     if (cout <= cin) {
-      cout.setDate(cout.getDate() + 1);
+      cout.setUTCDate(cout.getUTCDate() + 1);
       checkoutTime = cout.toISOString();
     }
   }
@@ -408,7 +423,7 @@ function adminApproveCheckout(recId) {
     compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
     status: 'completed'
   }).then(function() {
-    showToast((att.name || 'Worker') + ' checkout approved! ' + hrs.total + 'h (Regular: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)', 'success');
+    showToast((att.name || 'Worker') + ' checkout approved! ' + hrs.total + 'h (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)', 'success');
     return { ok: true };
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
@@ -471,15 +486,12 @@ function undoApproval(recId) {
   return Promise.resolve({ ok: false, msg: 'Cannot undo this record' });
 }
 
-// ====== FIXED: Manual check-in - properly uses shift parameter ======
 function manualCheckin(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
   var date = dateStr || tD();
-  var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
   var checkinISO = buildISO(date, time, false, null);
-
-  // IMPORTANT: Use provided shift OR worker's default shift (never null)
   var actualShift = shift || w.shift || 'Day';
 
   var allAtt = gA();
@@ -502,11 +514,10 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
     status: 'checked_in', backdated: dateStr ? true : false
   };
   return FB.save('attendance', recId, rec).then(function() {
-    return { ok: true, msg: w.name + ' (' + actualShift + ' shift) checked in at ' + fmtTime(checkinISO) };
+    return { ok: true, msg: w.name + ' (' + actualShift + ') checked in at ' + fmtTime(checkinISO) };
   }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
-// ====== FIXED: Manual checkout - night shift handling ======
 function manualCheckout(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
@@ -521,16 +532,15 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
   }
   if (!att) return Promise.resolve({ ok: false, msg: w.name + ' has no active check-in for ' + date });
 
-  var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
   var isNight = att.shift === 'Night';
   var checkoutISO = buildISO(date, time, isNight, att.checkinTime);
 
-  // Extra safety for night shift
   if (isNight && att.checkinTime) {
     var cinDt = new Date(att.checkinTime);
     var coutDt = new Date(checkoutISO);
     if (coutDt <= cinDt) {
-      coutDt.setDate(coutDt.getDate() + 1);
+      coutDt.setUTCDate(coutDt.getUTCDate() + 1);
       checkoutISO = coutDt.toISOString();
     }
   }
@@ -748,7 +758,6 @@ function getExportData(fromDate, toDate, filter) {
   return result;
 }
 
-// ====== SALARY CALCULATION ======
 function calculateSalary(wid, year, month, monthlySalaryAED) {
   var w = findWorker(wid);
   if (!w) return null;
@@ -811,7 +820,6 @@ function getAllSalaries(year, month, monthlySalaryAED) {
   return result;
 }
 
-// ====== PDF LOGO LOADER ======
 function loadLogoForPDF() {
   return new Promise(function(resolve) {
     if (_cachedLogoDataUrl) { resolve(_cachedLogoDataUrl); return; }
@@ -1073,7 +1081,7 @@ function buildWorkerDropdown(selectEl, includeAll, filter) {
       }
       var opt = document.createElement('option');
       opt.value = w.wid;
-      opt.text = w.wid + ' - ' + w.name + ' (' + w.prof + ') [' + w.shift + ']';
+      opt.text = w.wid + ' - ' + w.name + ' [' + w.shift + ']';
       group.appendChild(opt);
       added++;
     }
@@ -1107,6 +1115,14 @@ function getWorkerStats(wid) {
     totalOT: Math.round(totalOT * 100) / 100,
     records: att.slice(0, 15)
   };
+}
+
+// ====== SHIFT HELPER - Auto set times based on shift ======
+function getShiftDefaults(shift) {
+  if (shift === 'Night') {
+    return { inTime: '20:00', outTime: '08:00' };
+  }
+  return { inTime: '08:00', outTime: '20:00' };
 }
 
 var ALL_WORKERS = [
@@ -1230,4 +1246,4 @@ window.addEventListener('load', function() {
   setTimeout(function() { loadLogoForPDF(); }, 1000);
 });
 
-console.log('[ALB] app.js v19 loaded - ' + COMPANY.full);
+console.log('[ALB] app.js v20 loaded - ' + COMPANY.full);
