@@ -674,7 +674,7 @@
                   <option value="">-- Select Worker --</option>
                 </select></div>
               <div class="form-group"><label class="form-label">Shift</label>
-                <select id="qcInShift" class="form-control">
+                <select id="qcInShift" class="form-control" onchange="updateQcInTime()">
                   <option value="Day">Day Shift (8AM-8PM)</option>
                   <option value="Night">Night Shift (8PM-8AM)</option>
                 </select></div>
@@ -716,7 +716,7 @@
                   <option value="out">Check Out Only</option>
                 </select></div>
               <div class="form-group"><label class="form-label">Shift</label>
-                <select id="customShift" class="form-control">
+                <select id="customShift" class="form-control" onchange="updateCustomTimes()">
                   <option value="Day">Day Shift (8AM-8PM)</option>
                   <option value="Night">Night Shift (8PM-8AM)</option>
                 </select></div>
@@ -818,7 +818,7 @@
               <div class="form-group"><label class="form-label">Date</label>
                 <input type="date" id="histBdDate" class="form-control"></div>
               <div class="form-group"><label class="form-label">Shift</label>
-                <select id="histBdShift" class="form-control">
+                <select id="histBdShift" class="form-control" onchange="updateHistBdTimes()">
                   <option value="Day">Day Shift (8AM-8PM)</option>
                   <option value="Night">Night Shift (8PM-8AM)</option>
                 </select></div>
@@ -840,7 +840,7 @@
               <div class="form-group"><label class="form-label">Date</label>
                 <input type="date" id="histBulkDate" class="form-control"></div>
               <div class="form-group"><label class="form-label">Shift</label>
-                <select id="histBulkShift" class="form-control">
+                <select id="histBulkShift" class="form-control" onchange="updateHistBulkTimes()">
                   <option value="Day">Day Shift (8AM-8PM)</option>
                   <option value="Night">Night Shift (8PM-8AM)</option>
                 </select></div>
@@ -1204,9 +1204,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
 <!-- App Scripts -->
-<script src="app.js?v=19"></script>
-<script src="manual.js?v=19"></script>
-<script src="history.js?v=19"></script>
+<script src="app.js?v=120"></script>
+<script src="manual.js?v=20"></script>
+<script src="history.js?v=20"></script>
 
 <script>
 var _workerTab = 'Indian';
@@ -2593,6 +2593,18 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.addEventListener('DOMContentLoaded', function() { bootstrap(); });
+function updateCustomTimes() {
+  var shift = document.getElementById('customShift').value;
+  var defaults = getShiftDefaults(shift);
+  document.getElementById('customIn').value = defaults.inTime;
+  document.getElementById('customOut').value = defaults.outTime;
+}
+
+function updateQcInTime() {
+  var shift = document.getElementById('qcInShift').value;
+  var defaults = getShiftDefaults(shift);
+  document.getElementById('qcInTime').value = defaults.inTime;
+}
 </script>
 </body>
 </html>
