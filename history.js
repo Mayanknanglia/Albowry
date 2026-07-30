@@ -1,5 +1,5 @@
 // AL BOWRY CARPENTRY LLC - History & Backdated Attendance
-// history.js v19 - Night shift fix
+// history.js v20 - Auto shift times + Night shift proper
 
 var _historyDate = '';
 var _historyShift = 'All';
@@ -11,6 +11,9 @@ function initHistory() {
   loadHistoryWorkers();
   renderHistoryView();
   renderDayWiseView();
+  // Set default times on init
+  updateHistBdTimes();
+  updateHistBulkTimes();
 }
 
 function loadHistoryWorkers() {
@@ -55,6 +58,39 @@ function loadHistoryWorkers() {
     }
     if (prevVal) sel.value = prevVal;
   }
+}
+
+// ====== Auto-set times when shift changes ======
+function updateHistBdTimes() {
+  var shiftEl = document.getElementById('histBdShift');
+  if (!shiftEl) return;
+  var shift = shiftEl.value;
+  var defaults = getShiftDefaults(shift);
+  var inEl = document.getElementById('histBdIn');
+  var outEl = document.getElementById('histBdOut');
+  if (inEl) inEl.value = defaults.inTime;
+  if (outEl) outEl.value = defaults.outTime;
+}
+
+function updateHistBulkTimes() {
+  var shiftEl = document.getElementById('histBulkShift');
+  if (!shiftEl) return;
+  var shift = shiftEl.value;
+  var defaults = getShiftDefaults(shift);
+  var inEl = document.getElementById('histBulkIn');
+  var outEl = document.getElementById('histBulkOut');
+  if (inEl) inEl.value = defaults.inTime;
+  if (outEl) outEl.value = defaults.outTime;
+}
+
+// ====== Auto shift on worker selection in backdated ======
+function updateHistBdShiftFromWorker() {
+  var wid = document.getElementById('histBdWorker').value;
+  if (!wid) return;
+  var w = findWorker(wid);
+  if (!w) return;
+  document.getElementById('histBdShift').value = w.shift || 'Day';
+  updateHistBdTimes();
 }
 
 function renderHistoryView() {
@@ -189,8 +225,7 @@ function quickAddAbsent(wid, date) {
   var w = findWorker(wid);
   if (!w) return;
   var shift = w.shift;
-  var defaultIn = shift === 'Night' ? '20:00' : '08:00';
-  var defaultOut = shift === 'Night' ? '08:00' : '20:00';
+  var defaults = getShiftDefaults(shift);
   var html = '<div class="form-grid">' +
     '<div class="form-group"><label>Worker</label><input type="text" value="' + w.name + '" readonly class="form-control"></div>' +
     '<div class="form-group"><label>Date</label><input type="date" id="qaDate" value="' + date + '" class="form-control"></div>' +
@@ -198,8 +233,8 @@ function quickAddAbsent(wid, date) {
       '<option value="Day"' + (shift === 'Day' ? ' selected' : '') + '>Day Shift (8AM-8PM)</option>' +
       '<option value="Night"' + (shift === 'Night' ? ' selected' : '') + '>Night Shift (8PM-8AM)</option>' +
     '</select></div>' +
-    '<div class="form-group"><label>Check In Time</label><input type="time" id="qaIn" value="' + defaultIn + '" class="form-control"></div>' +
-    '<div class="form-group"><label>Check Out Time</label><input type="time" id="qaOut" value="' + defaultOut + '" class="form-control"></div>' +
+    '<div class="form-group"><label>Check In Time</label><input type="time" id="qaIn" value="' + defaults.inTime + '" class="form-control"></div>' +
+    '<div class="form-group"><label>Check Out Time</label><input type="time" id="qaOut" value="' + defaults.outTime + '" class="form-control"></div>' +
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
       '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
@@ -210,8 +245,9 @@ function quickAddAbsent(wid, date) {
 
 function updateQATimes() {
   var shift = document.getElementById('qaShift').value;
-  document.getElementById('qaIn').value = shift === 'Night' ? '20:00' : '08:00';
-  document.getElementById('qaOut').value = shift === 'Night' ? '08:00' : '20:00';
+  var defaults = getShiftDefaults(shift);
+  document.getElementById('qaIn').value = defaults.inTime;
+  document.getElementById('qaOut').value = defaults.outTime;
 }
 
 function submitQuickAbsent(wid) {
@@ -322,14 +358,14 @@ function editHistRecord(recId) {
   }
   if (!rec) { showToast('Record not found', 'error'); return; }
   var cinDate = rec.date || getTurkeyDate(rec.checkinTime);
-  var cinTime = rec.checkinTime ? new Date(rec.checkinTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) : '08:00';
-  var coutTime = rec.checkoutTime ? new Date(rec.checkoutTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) : '';
+  var cinTime = rec.checkinTime ? new Date(rec.checkinTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }) : '08:00';
+  var coutTime = rec.checkoutTime ? new Date(rec.checkoutTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }) : '';
   var html = '<div class="form-grid">' +
     '<div class="form-group"><label>Worker</label><input type="text" value="' + rec.name + '" readonly class="form-control"></div>' +
     '<div class="form-group"><label>Date</label><input type="date" id="editDate" value="' + cinDate + '" class="form-control"></div>' +
-    '<div class="form-group"><label>Shift</label><select id="editShift" class="form-control">' +
-      '<option value="Day"' + (rec.shift === 'Day' ? ' selected' : '') + '>Day Shift</option>' +
-      '<option value="Night"' + (rec.shift === 'Night' ? ' selected' : '') + '>Night Shift</option>' +
+    '<div class="form-group"><label>Shift</label><select id="editShift" class="form-control" onchange="updateEditTimes()">' +
+      '<option value="Day"' + (rec.shift === 'Day' ? ' selected' : '') + '>Day Shift (8AM-8PM)</option>' +
+      '<option value="Night"' + (rec.shift === 'Night' ? ' selected' : '') + '>Night Shift (8PM-8AM)</option>' +
     '</select></div>' +
     '<div class="form-group"><label>Check In Time</label><input type="time" id="editCin" value="' + cinTime + '" class="form-control"></div>' +
     '<div class="form-group"><label>Check Out Time</label><input type="time" id="editCout" value="' + coutTime + '" class="form-control"></div>' +
@@ -339,6 +375,13 @@ function editHistRecord(recId) {
       '<button class="btn btn-primary" onclick="saveHistEdit(\'' + recId + '\')">Save Changes</button>' +
     '</div>';
   showModal(html, 'Edit Record - ' + rec.name);
+}
+
+function updateEditTimes() {
+  var shift = document.getElementById('editShift').value;
+  var defaults = getShiftDefaults(shift);
+  document.getElementById('editCin').value = defaults.inTime;
+  document.getElementById('editCout').value = defaults.outTime;
 }
 
 function saveHistEdit(recId) {
@@ -356,12 +399,11 @@ function saveHistEdit(recId) {
   if (coutTime) {
     var checkoutISO = buildISO(date, coutTime, shift === 'Night', checkinISO);
 
-    // Extra night shift safety
     if (shift === 'Night') {
       var cin = new Date(checkinISO);
       var cout = new Date(checkoutISO);
       if (cout <= cin) {
-        cout.setDate(cout.getDate() + 1);
+        cout.setUTCDate(cout.getUTCDate() + 1);
         checkoutISO = cout.toISOString();
       }
     }
@@ -394,7 +436,6 @@ function deleteHistRecord(recId) {
   });
 }
 
-// ====== FIXED: Force checkout with night shift ======
 function forceCheckout(recId) {
   var allAtt = gA();
   var rec = null;
@@ -402,10 +443,10 @@ function forceCheckout(recId) {
     if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
   }
   if (!rec) return;
-  var defaultOut = rec.shift === 'Night' ? '08:00' : '20:00';
+  var defaults = getShiftDefaults(rec.shift);
   var date = rec.date || getTurkeyDate(rec.checkinTime);
   var html = '<p>Force checkout <strong>' + rec.name + '</strong> (' + rec.shift + ' shift)</p>' +
-    '<div class="form-group"><label>Checkout Time</label><input type="time" id="fcOut" value="' + defaultOut + '" class="form-control"></div>' +
+    '<div class="form-group"><label>Checkout Time</label><input type="time" id="fcOut" value="' + defaults.outTime + '" class="form-control"></div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
       '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
       '<button class="btn btn-warning" onclick="submitForceCheckout(\'' + recId + '\',\'' + date + '\')">Force Checkout</button>' +
@@ -426,12 +467,11 @@ function submitForceCheckout(recId, date) {
   var isNight = rec.shift === 'Night';
   var checkoutISO = buildISO(date, outTime, isNight, rec.checkinTime);
 
-  // Extra safety for night shift
   if (isNight && rec.checkinTime) {
     var cin = new Date(rec.checkinTime);
     var cout = new Date(checkoutISO);
     if (cout <= cin) {
-      cout.setDate(cout.getDate() + 1);
+      cout.setUTCDate(cout.getUTCDate() + 1);
       checkoutISO = cout.toISOString();
     }
   }
@@ -470,12 +510,11 @@ function submitBackdatedEntry() {
   var checkinISO = buildISO(date, inTime, false, null);
   var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
 
-  // Extra night shift safety
   if (shift === 'Night') {
     var cin = new Date(checkinISO);
     var cout = new Date(checkoutISO);
     if (cout <= cin) {
-      cout.setDate(cout.getDate() + 1);
+      cout.setUTCDate(cout.getUTCDate() + 1);
       checkoutISO = cout.toISOString();
     }
   }
@@ -533,7 +572,7 @@ function submitBulkBackdated() {
         var cin = new Date(checkinISO);
         var cout = new Date(checkoutISO);
         if (cout <= cin) {
-          cout.setDate(cout.getDate() + 1);
+          cout.setUTCDate(cout.getUTCDate() + 1);
           checkoutISO = cout.toISOString();
         }
       }
@@ -729,6 +768,17 @@ document.addEventListener('DOMContentLoaded', function() {
       renderHistoryView();
     });
   }
+  var histWorkerSelEl = document.getElementById('histWorkerSel');
+  if (histWorkerSelEl) {
+    histWorkerSelEl.addEventListener('change', function() {
+      _historyWorkerFilter = this.value;
+      renderHistoryView();
+    });
+  }
+  var histBdWorkerEl = document.getElementById('histBdWorker');
+  if (histBdWorkerEl) {
+    histBdWorkerEl.addEventListener('change', updateHistBdShiftFromWorker);
+  }
   var dwDateInput = document.getElementById('dwDate');
   if (dwDateInput) {
     dwDateInput.addEventListener('change', function() {
@@ -737,4 +787,4 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-console.log('[ALB] history.js v19 loaded');
+console.log('[ALB] history.js v20 loaded');
