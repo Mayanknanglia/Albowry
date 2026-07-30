@@ -1,5 +1,5 @@
 // AL BOWRY CARPENTRY LLC - History & Backdated Attendance
-// history.js v17
+// history.js v19 - Night shift fix
 
 var _historyDate = '';
 var _historyShift = 'All';
@@ -48,7 +48,7 @@ function loadHistoryWorkers() {
         if (!w.on) continue;
         if (w.sec !== sections[sc]) continue;
         var opt = document.createElement('option');
-        opt.value = w.wid; opt.text = w.wid + ' - ' + w.name;
+        opt.value = w.wid; opt.text = w.wid + ' - ' + w.name + ' [' + w.shift + ']';
         group.appendChild(opt); cnt++;
       }
       if (cnt > 0) sel.appendChild(group);
@@ -194,7 +194,7 @@ function quickAddAbsent(wid, date) {
   var html = '<div class="form-grid">' +
     '<div class="form-group"><label>Worker</label><input type="text" value="' + w.name + '" readonly class="form-control"></div>' +
     '<div class="form-group"><label>Date</label><input type="date" id="qaDate" value="' + date + '" class="form-control"></div>' +
-    '<div class="form-group"><label>Shift</label><select id="qaShift" class="form-control">' +
+    '<div class="form-group"><label>Shift</label><select id="qaShift" class="form-control" onchange="updateQATimes()">' +
       '<option value="Day"' + (shift === 'Day' ? ' selected' : '') + '>Day Shift (8AM-8PM)</option>' +
       '<option value="Night"' + (shift === 'Night' ? ' selected' : '') + '>Night Shift (8PM-8AM)</option>' +
     '</select></div>' +
@@ -206,6 +206,12 @@ function quickAddAbsent(wid, date) {
       '<button class="btn btn-primary" onclick="submitQuickAbsent(\'' + wid + '\')">Add Attendance</button>' +
     '</div>';
   showModal(html, 'Add Attendance - ' + w.name);
+}
+
+function updateQATimes() {
+  var shift = document.getElementById('qaShift').value;
+  document.getElementById('qaIn').value = shift === 'Night' ? '20:00' : '08:00';
+  document.getElementById('qaOut').value = shift === 'Night' ? '08:00' : '20:00';
 }
 
 function submitQuickAbsent(wid) {
@@ -231,7 +237,7 @@ function submitQuickAbsent(wid) {
   };
   FB.save('attendance', recId, rec).then(function() {
     closeModal();
-    showToast(w.name + ' attendance added!', 'success');
+    showToast(w.name + ' attendance added! (' + hrs.total + 'h)', 'success');
     renderHistoryView();
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
 }
@@ -349,6 +355,17 @@ function saveHistEdit(recId) {
   };
   if (coutTime) {
     var checkoutISO = buildISO(date, coutTime, shift === 'Night', checkinISO);
+
+    // Extra night shift safety
+    if (shift === 'Night') {
+      var cin = new Date(checkinISO);
+      var cout = new Date(checkoutISO);
+      if (cout <= cin) {
+        cout.setDate(cout.getDate() + 1);
+        checkoutISO = cout.toISOString();
+      }
+    }
+
     var hrs = calcHours(checkinISO, checkoutISO);
     update.checkoutTime = checkoutISO;
     update.checkoutReqTime = checkoutISO;
@@ -377,6 +394,7 @@ function deleteHistRecord(recId) {
   });
 }
 
+// ====== FIXED: Force checkout with night shift ======
 function forceCheckout(recId) {
   var allAtt = gA();
   var rec = null;
@@ -386,7 +404,7 @@ function forceCheckout(recId) {
   if (!rec) return;
   var defaultOut = rec.shift === 'Night' ? '08:00' : '20:00';
   var date = rec.date || getTurkeyDate(rec.checkinTime);
-  var html = '<p>Force checkout <strong>' + rec.name + '</strong></p>' +
+  var html = '<p>Force checkout <strong>' + rec.name + '</strong> (' + rec.shift + ' shift)</p>' +
     '<div class="form-group"><label>Checkout Time</label><input type="time" id="fcOut" value="' + defaultOut + '" class="form-control"></div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
       '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
@@ -404,7 +422,20 @@ function submitForceCheckout(recId, date) {
     if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
   }
   if (!rec) return;
-  var checkoutISO = buildISO(date, outTime, rec.shift === 'Night', rec.checkinTime);
+
+  var isNight = rec.shift === 'Night';
+  var checkoutISO = buildISO(date, outTime, isNight, rec.checkinTime);
+
+  // Extra safety for night shift
+  if (isNight && rec.checkinTime) {
+    var cin = new Date(rec.checkinTime);
+    var cout = new Date(checkoutISO);
+    if (cout <= cin) {
+      cout.setDate(cout.getDate() + 1);
+      checkoutISO = cout.toISOString();
+    }
+  }
+
   var hrs = calcHours(rec.checkinTime, checkoutISO);
   FB.update('attendance', recId, {
     checkoutTime: checkoutISO, checkoutReqTime: checkoutISO,
@@ -413,7 +444,7 @@ function submitForceCheckout(recId, date) {
     status: 'completed'
   }).then(function() {
     closeModal();
-    showToast('Forced checkout!', 'success');
+    showToast('Force checkout done! ' + hrs.total + 'h (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)', 'success');
     renderHistoryView();
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
 }
@@ -438,6 +469,17 @@ function submitBackdatedEntry() {
   }
   var checkinISO = buildISO(date, inTime, false, null);
   var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
+
+  // Extra night shift safety
+  if (shift === 'Night') {
+    var cin = new Date(checkinISO);
+    var cout = new Date(checkoutISO);
+    if (cout <= cin) {
+      cout.setDate(cout.getDate() + 1);
+      checkoutISO = cout.toISOString();
+    }
+  }
+
   var hrs = calcHours(checkinISO, checkoutISO);
   var recId = genRecId(wid, true);
   var rec = {
@@ -450,7 +492,7 @@ function submitBackdatedEntry() {
     status: 'completed', backdated: true
   };
   FB.save('attendance', recId, rec).then(function() {
-    showToast(w.name + ' backdated entry added for ' + date, 'success');
+    showToast(w.name + ' entry added for ' + date + ' (' + hrs.total + 'h)', 'success');
     renderHistoryView();
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
 }
@@ -486,6 +528,16 @@ function submitBulkBackdated() {
       if (indexOf(existingOnDate, tw.wid) !== -1) { skipped++; continue; }
       var checkinISO = buildISO(date, inTime, false, null);
       var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
+
+      if (shift === 'Night') {
+        var cin = new Date(checkinISO);
+        var cout = new Date(checkoutISO);
+        if (cout <= cin) {
+          cout.setDate(cout.getDate() + 1);
+          checkoutISO = cout.toISOString();
+        }
+      }
+
       var hrs = calcHours(checkinISO, checkoutISO);
       var recId = genRecId(tw.wid, true);
       var rec = {
@@ -685,4 +737,4 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-console.log('[ALB] history.js v17 loaded');
+console.log('[ALB] history.js v19 loaded');
