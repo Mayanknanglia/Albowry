@@ -1204,9 +1204,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
 <!-- App Scripts -->
-<script src="app.js?v=18"></script>
-<script src="manual.js?v=18"></script>
-<script src="history.js?v=18"></script>
+<script src="app.js?v=19"></script>
+<script src="manual.js?v=19"></script>
+<script src="history.js?v=19"></script>
 
 <script>
 var _workerTab = 'Indian';
@@ -1873,13 +1873,26 @@ function setWorkerTab(tab) {
   document.getElementById('wtabPakistani').classList.toggle('active', tab === 'Pakistani');
   renderAdminWorkers();
 }
-
 function renderAdminWorkers() {
   var search = document.getElementById('workerSearch') ? document.getElementById('workerSearch').value.toLowerCase() : '';
   var secFilter = document.getElementById('workerSecFilter') ? document.getElementById('workerSecFilter').value : 'All';
   var statusFilter = document.getElementById('workerStatusFilter') ? document.getElementById('workerStatusFilter').value : 'All';
   var ws = gW();
   var filtered = [];
+
+  // UPDATE TAB COUNTS
+  var indCount = 0, pakCount = 0;
+  for (var x = 0; x < ws.length; x++) {
+    if (ws[x].on && ws[x].sec === 'Indian') indCount++;
+    if (ws[x].on && ws[x].sec === 'Pakistani') pakCount++;
+  }
+  var indTab = document.getElementById('wtabIndian');
+  var pakTab = document.getElementById('wtabPakistani');
+  if (indTab) indTab.innerHTML = '<span class="material-symbols-outlined">flag</span> Indian (' + indCount + ')';
+  if (pakTab) pakTab.innerHTML = '<span class="material-symbols-outlined">flag</span> Pakistani (' + pakCount + ')';
+  if (indTab) indTab.classList.toggle('active', _workerTabActive === 'Indian');
+  if (pakTab) pakTab.classList.toggle('active', _workerTabActive === 'Pakistani');
+
   for (var i = 0; i < ws.length; i++) {
     var w = ws[i];
     if (w.sec !== _workerTabActive) continue;
@@ -1918,7 +1931,6 @@ function renderAdminWorkers() {
   }
   tbody.innerHTML = html;
 }
-
 function showAddWorker() {
   var html = '<div class="form-grid">' +
     '<div class="form-group"><label class="form-label">Worker ID</label><input type="text" id="awId" class="form-control" placeholder="e.g. IND0038"></div>' +
