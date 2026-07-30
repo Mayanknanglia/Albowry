@@ -1,8 +1,8 @@
 // AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
-// app.js v18 - PDF logo + Salary calculation + OT fix
+// app.js v19 - Night shift fix + Worker count fix
 
-var APP_VERSION = 'v18';
-var CACHE_KEY = 'alb_v18';
+var APP_VERSION = 'v19';
+var CACHE_KEY = 'alb_v19';
 
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
@@ -16,7 +16,7 @@ var COMPANY = {
 var REG_HOURS = 9;
 var COMP_OT = 3;
 var TOTAL_SHIFT = 12;
-var STANDARD_HOURS_PER_MONTH = 270; // 9 hrs × 30 days
+var STANDARD_HOURS_PER_MONTH = 270;
 var TZ = 'Europe/Istanbul';
 var SESSION_KEY = 'alb_session';
 var ADMIN_DOC = 'main';
@@ -84,16 +84,29 @@ function getTurkeyDate(iso) {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
 }
 
+// ====== FIXED: Night shift handling ======
 function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
   var dt = new Date(dateStr + 'T' + timeStr + ':00');
+
   if (isNightCheckout && checkinISO) {
     var cin = new Date(checkinISO);
-    if (dt <= cin) { dt.setDate(dt.getDate() + 1); }
+    if (dt <= cin) {
+      dt.setDate(dt.getDate() + 1);
+    }
   }
+
+  // If night shift and no checkin reference, and time is AM (morning), add 1 day
+  if (isNightCheckout && !checkinISO) {
+    var hour = parseInt(timeStr.split(':')[0]);
+    if (hour >= 0 && hour < 12) {
+      dt.setDate(dt.getDate() + 1);
+    }
+  }
+
   return dt.toISOString();
 }
 
-// ====== HOURS CALCULATION - FIXED (12hrs = 9 Regular + 3 CompOT) ======
+// ====== HOURS: 12hrs = 9 Regular + 3 CompOT + 0 Extra ======
 function calcHours(checkinISO, checkoutISO) {
   if (!checkinISO || !checkoutISO) return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0 };
   var cin = new Date(checkinISO).getTime();
@@ -371,16 +384,23 @@ function adminApproveCheckin(recId) {
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
 
+// ====== FIXED: Night shift approve checkout ======
 function adminApproveCheckout(recId) {
   var att = null; var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
   var checkoutTime = att.checkoutReqTime || tNow();
+
+  // Night shift fix: ensure checkout is after checkin
   if (att.shift === 'Night' && att.checkinTime) {
     var cin = new Date(att.checkinTime);
     var cout = new Date(checkoutTime);
-    if (cout <= cin) { cout.setDate(cout.getDate() + 1); checkoutTime = cout.toISOString(); }
+    if (cout <= cin) {
+      cout.setDate(cout.getDate() + 1);
+      checkoutTime = cout.toISOString();
+    }
   }
+
   var hrs = calcHours(att.checkinTime, checkoutTime);
   return FB.update('attendance', recId, {
     checkoutTime: checkoutTime,
@@ -388,7 +408,7 @@ function adminApproveCheckout(recId) {
     compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
     status: 'completed'
   }).then(function() {
-    showToast((att.name || 'Worker') + ' checkout approved! ' + hrs.total + 'h worked', 'success');
+    showToast((att.name || 'Worker') + ' checkout approved! ' + hrs.total + 'h (Regular: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)', 'success');
     return { ok: true };
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
@@ -451,12 +471,17 @@ function undoApproval(recId) {
   return Promise.resolve({ ok: false, msg: 'Cannot undo this record' });
 }
 
+// ====== FIXED: Manual check-in - properly uses shift parameter ======
 function manualCheckin(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
   var date = dateStr || tD();
   var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   var checkinISO = buildISO(date, time, false, null);
+
+  // IMPORTANT: Use provided shift OR worker's default shift (never null)
+  var actualShift = shift || w.shift || 'Day';
+
   var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
@@ -470,17 +495,18 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
   var recId = genRecId(wid, dateStr ? true : false);
   var rec = {
     recId: recId, wid: wid, name: w.name, prof: w.prof, sec: w.sec,
-    shift: shift || w.shift, date: date,
+    shift: actualShift, date: date,
     checkinReqTime: checkinISO, checkinTime: checkinISO,
     checkoutReqTime: null, checkoutTime: null,
     total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
     status: 'checked_in', backdated: dateStr ? true : false
   };
   return FB.save('attendance', recId, rec).then(function() {
-    return { ok: true, msg: w.name + ' checked in at ' + fmtTime(checkinISO) };
+    return { ok: true, msg: w.name + ' (' + actualShift + ' shift) checked in at ' + fmtTime(checkinISO) };
   }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
+// ====== FIXED: Manual checkout - night shift handling ======
 function manualCheckout(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
@@ -494,8 +520,21 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
     }
   }
   if (!att) return Promise.resolve({ ok: false, msg: w.name + ' has no active check-in for ' + date });
+
   var time = timeStr || new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-  var checkoutISO = buildISO(date, time, att.shift === 'Night', att.checkinTime);
+  var isNight = att.shift === 'Night';
+  var checkoutISO = buildISO(date, time, isNight, att.checkinTime);
+
+  // Extra safety for night shift
+  if (isNight && att.checkinTime) {
+    var cinDt = new Date(att.checkinTime);
+    var coutDt = new Date(checkoutISO);
+    if (coutDt <= cinDt) {
+      coutDt.setDate(coutDt.getDate() + 1);
+      checkoutISO = coutDt.toISOString();
+    }
+  }
+
   var hrs = calcHours(att.checkinTime, checkoutISO);
   return FB.update('attendance', att.recId, {
     checkoutTime: checkoutISO, checkoutReqTime: checkoutISO,
@@ -503,7 +542,7 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
     compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
     status: 'completed'
   }).then(function() {
-    return { ok: true, msg: w.name + ' checked out at ' + fmtTime(checkoutISO) + ' | ' + hrs.total + 'h worked' };
+    return { ok: true, msg: w.name + ' checked out at ' + fmtTime(checkoutISO) + ' | ' + hrs.total + 'h (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)' };
   }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
@@ -801,7 +840,6 @@ function loadLogoForPDF() {
   });
 }
 
-// ====== PDF HEADER WITH LOGO ======
 function addPDFHeader(doc, title, subtitle) {
   var pageW = doc.internal.pageSize.getWidth();
   doc.setFillColor(15, 30, 74);
@@ -1035,7 +1073,7 @@ function buildWorkerDropdown(selectEl, includeAll, filter) {
       }
       var opt = document.createElement('option');
       opt.value = w.wid;
-      opt.text = w.wid + ' - ' + w.name + ' (' + w.prof + ')';
+      opt.text = w.wid + ' - ' + w.name + ' (' + w.prof + ') [' + w.shift + ']';
       group.appendChild(opt);
       added++;
     }
@@ -1192,4 +1230,4 @@ window.addEventListener('load', function() {
   setTimeout(function() { loadLogoForPDF(); }, 1000);
 });
 
-console.log('[ALB] app.js v18 loaded - ' + COMPANY.full);
+console.log('[ALB] app.js v19 loaded - ' + COMPANY.full);
