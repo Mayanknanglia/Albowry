@@ -1,10 +1,22 @@
 // AL BOWRY CARPENTRY LLC - History & Backdated Attendance
-// history.js v23 - Extra OT in PDF + All existing features
+// history.js v24 - Date fix + Extra OT in PDF/CSV
 
 var _historyDate = '';
 var _historyShift = 'All';
 var _historySection = 'All';
 var _historyWorkerFilter = 'all';
+
+// Date formatter without timezone issues
+function formatDateStr(dateStr) {
+  if (!dateStr) return '-';
+  var parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var day = parseInt(parts[2]);
+  var mon = parseInt(parts[1]) - 1;
+  var year = parts[0];
+  return (day < 10 ? '0' + day : day) + ' ' + months[mon] + ' ' + year;
+}
 
 function initHistory() {
   _historyDate = tD();
@@ -162,7 +174,7 @@ function renderHistoryView() {
   html += '<div class="hist-section">';
   html += '<div class="hist-section-header hist-present-hdr"><span class="material-symbols-outlined">check_circle</span> Present (' + presentList.length + ')</div>';
   if (presentList.length === 0) {
-    html += '<div class="hist-empty">No workers present on ' + fmtDate(date + 'T00:00:00') + '</div>';
+    html += '<div class="hist-empty">No workers present on ' + formatDateStr(date) + '</div>';
   } else {
     html += '<div class="table-responsive"><table class="hist-table">' +
       '<thead><tr><th>#</th><th>Worker</th><th>Section</th><th>Shift</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>OT</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
@@ -308,7 +320,7 @@ function renderDayWiseView() {
     '<span class="dw-badge dw-absent">Absent: ' + absentList.length + '</span></div>';
   html += '<h4 class="dw-title present-title">Present Workers</h4>';
   if (presentWids.length === 0) {
-    html += '<div class="hist-empty">No attendance records for ' + date + '</div>';
+    html += '<div class="hist-empty">No attendance records for ' + formatDateStr(date) + '</div>';
   } else {
     html += '<table class="dw-table"><thead><tr><th>#</th><th>Name</th><th>ID</th><th>Section</th><th>Shift</th><th>In</th><th>Out</th><th>Hours</th><th>OT</th></tr></thead><tbody>';
     var num = 1;
@@ -337,8 +349,7 @@ function renderDayWiseView() {
 }
 
 function editHistRecord(recId) {
-  var allAtt = gA();
-  var rec = null;
+  var allAtt = gA(); var rec = null;
   for (var i = 0; i < allAtt.length; i++) {
     if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
   }
@@ -380,8 +391,7 @@ function saveHistEdit(recId) {
   if (coutTime) {
     var checkoutISO = buildISO(date, coutTime, shift === 'Night', checkinISO);
     if (shift === 'Night') {
-      var cin = new Date(checkinISO);
-      var cout = new Date(checkoutISO);
+      var cin = new Date(checkinISO); var cout = new Date(checkoutISO);
       if (cout <= cin) { cout.setUTCDate(cout.getUTCDate() + 1); checkoutISO = cout.toISOString(); }
     }
     var hrs = calcHours(checkinISO, checkoutISO);
@@ -529,7 +539,7 @@ function submitBulkBackdated() {
   });
 }
 
-// ====== PDF WITH EXTRA OT ======
+// ====== PDF WITH EXTRA OT + DATE FIX ======
 function exportHistoryPDF() {
   var date = _historyDate || tD();
   var allAtt = gA(); var allWorkers = gW();
@@ -562,9 +572,9 @@ function exportHistoryPDF() {
 
   loadLogoForPDF().then(function() {
     var doc = new jspdf.jsPDF('landscape');
-    var startY = addPDFHeader(doc, 'Attendance Report - ' + fmtDate(date + 'T00:00:00'), 'Present: ' + presentRecs.length + ' | Absent: ' + absentList.length);
+    var startY = addPDFHeader(doc, 'Attendance Report - ' + formatDateStr(date), 'Present: ' + presentRecs.length + ' | Absent: ' + absentList.length);
 
-    // Summary
+    // Summary box
     var pageW = doc.internal.pageSize.getWidth();
     doc.setFillColor(240, 245, 255);
     doc.rect(14, startY, pageW - 28, 16, 'F');
@@ -575,7 +585,7 @@ function exportHistoryPDF() {
     doc.setFont('helvetica', 'bold'); doc.setTextColor(217, 119, 6);
     doc.text('Extra OT: ' + totalExtraOT.toFixed(1) + 'h | Extra Workers: ' + extraWorkers.length, 150, startY + 11);
 
-    // Present table
+    // Present table with Extra OT column
     doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(16, 185, 129);
     doc.text('PRESENT WORKERS (' + presentRecs.length + ')', 14, startY + 24);
 
@@ -653,11 +663,11 @@ function exportHistoryPDF() {
     }
     addPDFFooter(doc);
     doc.save('albowry_attendance_' + date + '.pdf');
-    showToast('PDF downloaded with Extra Work!', 'success');
+    showToast('PDF downloaded!', 'success');
   });
 }
 
-// ====== CSV WITH EXTRA OT ======
+// ====== CSV WITH EXTRA OT + DATE FIX ======
 function exportHistoryExcel() {
   var date = _historyDate || tD();
   var allAtt = gA(); var allWorkers = gW();
@@ -688,7 +698,7 @@ function exportHistoryExcel() {
     if ((presentRecs[t].extraOT || 0) > 0) extraWorkers.push(presentRecs[t]);
   }
 
-  var csv = COMPANY.full + '\nDate: ' + date + '\nPresent: ' + presentRecs.length + ' | Absent: ' + absentList.length + '\n';
+  var csv = COMPANY.full + '\nDate: ' + formatDateStr(date) + '\nPresent: ' + presentRecs.length + ' | Absent: ' + absentList.length + '\n';
   csv += 'Regular: ' + totalReg.toFixed(1) + 'h | Comp OT: ' + totalCompOT.toFixed(1) + 'h | Extra OT: ' + totalExtraOT.toFixed(1) + 'h\n\n';
   csv += 'PRESENT WORKERS\n';
   csv += '#,Name,ID,Section,Shift,In,Out,Total,Regular,CompOT,ExtraOT,Status\n';
@@ -720,7 +730,7 @@ function exportHistoryExcel() {
   var link = document.createElement('a');
   link.href = url; link.download = 'albowry_attendance_' + date + '.csv'; link.click();
   URL.revokeObjectURL(url);
-  showToast('CSV downloaded with Extra Work!', 'success');
+  showToast('CSV downloaded!', 'success');
 }
 
 function getStatusBadge(status) {
@@ -755,4 +765,4 @@ document.addEventListener('DOMContentLoaded', function() {
   if (dwDateInput) dwDateInput.addEventListener('change', function() { renderDayWiseView(); });
 });
 
-console.log('[ALB] history.js v23 loaded');
+console.log('[ALB] history.js v24 loaded');
