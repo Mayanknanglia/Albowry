@@ -1,5 +1,5 @@
 // AL BOWRY CARPENTRY LLC - History & Backdated Attendance
-// history.js v20 - Auto shift times + Night shift proper
+// history.js v23 - Extra OT in PDF + All existing features
 
 var _historyDate = '';
 var _historyShift = 'All';
@@ -11,7 +11,6 @@ function initHistory() {
   loadHistoryWorkers();
   renderHistoryView();
   renderDayWiseView();
-  // Set default times on init
   updateHistBdTimes();
   updateHistBulkTimes();
 }
@@ -60,7 +59,6 @@ function loadHistoryWorkers() {
   }
 }
 
-// ====== Auto-set times when shift changes ======
 function updateHistBdTimes() {
   var shiftEl = document.getElementById('histBdShift');
   if (!shiftEl) return;
@@ -83,7 +81,6 @@ function updateHistBulkTimes() {
   if (outEl) outEl.value = defaults.outTime;
 }
 
-// ====== Auto shift on worker selection in backdated ======
 function updateHistBdShiftFromWorker() {
   var wid = document.getElementById('histBdWorker').value;
   if (!wid) return;
@@ -189,8 +186,7 @@ function renderHistoryView() {
           '<button class="btn-icon btn-edit" onclick="editHistRecord(\'' + a4.recId + '\')" title="Edit"><span class="material-symbols-outlined">edit</span></button>' +
           (a4.status === 'checked_in' ? '<button class="btn-icon btn-success" onclick="forceCheckout(\'' + a4.recId + '\')" title="Force Checkout"><span class="material-symbols-outlined">logout</span></button>' : '') +
           '<button class="btn-icon btn-delete" onclick="deleteHistRecord(\'' + a4.recId + '\')" title="Delete"><span class="material-symbols-outlined">delete</span></button>' +
-        '</td>' +
-        '</tr>';
+        '</td></tr>';
     }
     html += '</tbody></table></div>';
   }
@@ -212,8 +208,7 @@ function renderHistoryView() {
         '</div>' +
         '<button class="btn-absent-in" onclick="quickAddAbsent(\'' + abW.wid + '\',\'' + date + '\')" title="Add attendance">' +
           '<span class="material-symbols-outlined">add_circle</span> Mark Present' +
-        '</button>' +
-        '</div>';
+        '</button></div>';
     }
     html += '</div>';
   }
@@ -238,8 +233,7 @@ function quickAddAbsent(wid, date) {
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
       '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="submitQuickAbsent(\'' + wid + '\')">Add Attendance</button>' +
-    '</div>';
+      '<button class="btn btn-primary" onclick="submitQuickAbsent(\'' + wid + '\')">Add Attendance</button></div>';
   showModal(html, 'Add Attendance - ' + w.name);
 }
 
@@ -311,8 +305,7 @@ function renderDayWiseView() {
   var html = '<div class="dw-summary">' +
     '<span class="dw-badge dw-total">Total: ' + (allWorkers.filter(function(w2) { return w2.on; }).length) + '</span>' +
     '<span class="dw-badge dw-present">Present: ' + presentWids.length + '</span>' +
-    '<span class="dw-badge dw-absent">Absent: ' + absentList.length + '</span>' +
-    '</div>';
+    '<span class="dw-badge dw-absent">Absent: ' + absentList.length + '</span></div>';
   html += '<h4 class="dw-title present-title">Present Workers</h4>';
   if (presentWids.length === 0) {
     html += '<div class="hist-empty">No attendance records for ' + date + '</div>';
@@ -322,17 +315,10 @@ function renderDayWiseView() {
     for (var k = 0; k < dateAtt.length; k++) {
       var a2 = dateAtt[k];
       if (a2.status !== 'checked_in' && a2.status !== 'pending_checkout' && a2.status !== 'completed') continue;
-      html += '<tr>' +
-        '<td>' + (num++) + '</td>' +
-        '<td>' + a2.name + (a2.backdated ? ' <span class="tag-manual">M</span>' : '') + '</td>' +
-        '<td>' + a2.wid + '</td>' +
-        '<td>' + a2.sec + '</td>' +
-        '<td>' + (a2.shift || 'Day') + '</td>' +
-        '<td>' + fmtTime(a2.checkinTime || a2.checkinReqTime) + '</td>' +
-        '<td>' + fmtTime(a2.checkoutTime) + '</td>' +
-        '<td>' + (a2.total ? a2.total + 'h' : '-') + '</td>' +
-        '<td>' + (a2.ot ? a2.ot + 'h' : '-') + '</td>' +
-        '</tr>';
+      html += '<tr><td>' + (num++) + '</td><td>' + a2.name + (a2.backdated ? ' <span class="tag-manual">M</span>' : '') + '</td>' +
+        '<td>' + a2.wid + '</td><td>' + a2.sec + '</td><td>' + (a2.shift || 'Day') + '</td>' +
+        '<td>' + fmtTime(a2.checkinTime || a2.checkinReqTime) + '</td><td>' + fmtTime(a2.checkoutTime) + '</td>' +
+        '<td>' + (a2.total ? a2.total + 'h' : '-') + '</td><td>' + (a2.ot ? a2.ot + 'h' : '-') + '</td></tr>';
     }
     html += '</tbody></table>';
   }
@@ -364,16 +350,15 @@ function editHistRecord(recId) {
     '<div class="form-group"><label>Worker</label><input type="text" value="' + rec.name + '" readonly class="form-control"></div>' +
     '<div class="form-group"><label>Date</label><input type="date" id="editDate" value="' + cinDate + '" class="form-control"></div>' +
     '<div class="form-group"><label>Shift</label><select id="editShift" class="form-control" onchange="updateEditTimes()">' +
-      '<option value="Day"' + (rec.shift === 'Day' ? ' selected' : '') + '>Day Shift (8AM-8PM)</option>' +
-      '<option value="Night"' + (rec.shift === 'Night' ? ' selected' : '') + '>Night Shift (8PM-8AM)</option>' +
+      '<option value="Day"' + (rec.shift === 'Day' ? ' selected' : '') + '>Day Shift</option>' +
+      '<option value="Night"' + (rec.shift === 'Night' ? ' selected' : '') + '>Night Shift</option>' +
     '</select></div>' +
     '<div class="form-group"><label>Check In Time</label><input type="time" id="editCin" value="' + cinTime + '" class="form-control"></div>' +
     '<div class="form-group"><label>Check Out Time</label><input type="time" id="editCout" value="' + coutTime + '" class="form-control"></div>' +
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
       '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="saveHistEdit(\'' + recId + '\')">Save Changes</button>' +
-    '</div>';
+      '<button class="btn btn-primary" onclick="saveHistEdit(\'' + recId + '\')">Save Changes</button></div>';
   showModal(html, 'Edit Record - ' + rec.name);
 }
 
@@ -391,57 +376,40 @@ function saveHistEdit(recId) {
   var coutTime = document.getElementById('editCout').value;
   if (!date || !cinTime) { showToast('Date and check-in time required', 'error'); return; }
   var checkinISO = buildISO(date, cinTime, false, null);
-  var update = {
-    date: date, shift: shift,
-    checkinTime: checkinISO, checkinReqTime: checkinISO,
-    backdated: true
-  };
+  var update = { date: date, shift: shift, checkinTime: checkinISO, checkinReqTime: checkinISO, backdated: true };
   if (coutTime) {
     var checkoutISO = buildISO(date, coutTime, shift === 'Night', checkinISO);
-
     if (shift === 'Night') {
       var cin = new Date(checkinISO);
       var cout = new Date(checkoutISO);
-      if (cout <= cin) {
-        cout.setUTCDate(cout.getUTCDate() + 1);
-        checkoutISO = cout.toISOString();
-      }
+      if (cout <= cin) { cout.setUTCDate(cout.getUTCDate() + 1); checkoutISO = cout.toISOString(); }
     }
-
     var hrs = calcHours(checkinISO, checkoutISO);
-    update.checkoutTime = checkoutISO;
-    update.checkoutReqTime = checkoutISO;
+    update.checkoutTime = checkoutISO; update.checkoutReqTime = checkoutISO;
     update.total = hrs.total; update.regular = hrs.regular;
     update.compOT = hrs.compOT; update.extraOT = hrs.extraOT; update.ot = hrs.ot;
     update.status = 'completed';
   } else {
     update.checkoutTime = null; update.checkoutReqTime = null;
-    update.total = 0; update.regular = 0;
-    update.compOT = 0; update.extraOT = 0; update.ot = 0;
+    update.total = 0; update.regular = 0; update.compOT = 0; update.extraOT = 0; update.ot = 0;
     update.status = 'checked_in';
   }
   FB.update('attendance', recId, update).then(function() {
-    closeModal();
-    showToast('Record updated!', 'success');
-    renderHistoryView();
+    closeModal(); showToast('Record updated!', 'success'); renderHistoryView();
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
 }
 
 function deleteHistRecord(recId) {
   showConfirm('Delete this attendance record? This cannot be undone.', function() {
     FB.delete('attendance', recId).then(function() {
-      showToast('Record deleted', 'info');
-      renderHistoryView();
+      showToast('Record deleted', 'info'); renderHistoryView();
     }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
   });
 }
 
 function forceCheckout(recId) {
-  var allAtt = gA();
-  var rec = null;
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
-  }
+  var allAtt = gA(); var rec = null;
+  for (var i = 0; i < allAtt.length; i++) { if (allAtt[i].recId === recId) { rec = allAtt[i]; break; } }
   if (!rec) return;
   var defaults = getShiftDefaults(rec.shift);
   var date = rec.date || getTurkeyDate(rec.checkinTime);
@@ -449,43 +417,29 @@ function forceCheckout(recId) {
     '<div class="form-group"><label>Checkout Time</label><input type="time" id="fcOut" value="' + defaults.outTime + '" class="form-control"></div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
       '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-warning" onclick="submitForceCheckout(\'' + recId + '\',\'' + date + '\')">Force Checkout</button>' +
-    '</div>';
+      '<button class="btn btn-warning" onclick="submitForceCheckout(\'' + recId + '\',\'' + date + '\')">Force Checkout</button></div>';
   showModal(html, 'Force Checkout');
 }
 
 function submitForceCheckout(recId, date) {
   var outTime = document.getElementById('fcOut').value;
   if (!outTime) { showToast('Enter checkout time', 'error'); return; }
-  var allAtt = gA();
-  var rec = null;
-  for (var i = 0; i < allAtt.length; i++) {
-    if (allAtt[i].recId === recId) { rec = allAtt[i]; break; }
-  }
+  var allAtt = gA(); var rec = null;
+  for (var i = 0; i < allAtt.length; i++) { if (allAtt[i].recId === recId) { rec = allAtt[i]; break; } }
   if (!rec) return;
-
   var isNight = rec.shift === 'Night';
   var checkoutISO = buildISO(date, outTime, isNight, rec.checkinTime);
-
   if (isNight && rec.checkinTime) {
-    var cin = new Date(rec.checkinTime);
-    var cout = new Date(checkoutISO);
-    if (cout <= cin) {
-      cout.setUTCDate(cout.getUTCDate() + 1);
-      checkoutISO = cout.toISOString();
-    }
+    var cin = new Date(rec.checkinTime); var cout = new Date(checkoutISO);
+    if (cout <= cin) { cout.setUTCDate(cout.getUTCDate() + 1); checkoutISO = cout.toISOString(); }
   }
-
   var hrs = calcHours(rec.checkinTime, checkoutISO);
   FB.update('attendance', recId, {
     checkoutTime: checkoutISO, checkoutReqTime: checkoutISO,
-    total: hrs.total, regular: hrs.regular,
-    compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
+    total: hrs.total, regular: hrs.regular, compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
     status: 'completed'
   }).then(function() {
-    closeModal();
-    showToast('Force checkout done! ' + hrs.total + 'h (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)', 'success');
-    renderHistoryView();
+    closeModal(); showToast('Force checkout done! ' + hrs.total + 'h', 'success'); renderHistoryView();
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
 }
 
@@ -503,22 +457,15 @@ function submitBackdatedEntry() {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
     if (a.wid === wid && aDate === date) {
-      showToast(w.name + ' already has a record for ' + date + '. Delete it first.', 'warn');
-      return;
+      showToast(w.name + ' already has a record for ' + date + '. Delete it first.', 'warn'); return;
     }
   }
   var checkinISO = buildISO(date, inTime, false, null);
   var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
-
   if (shift === 'Night') {
-    var cin = new Date(checkinISO);
-    var cout = new Date(checkoutISO);
-    if (cout <= cin) {
-      cout.setUTCDate(cout.getUTCDate() + 1);
-      checkoutISO = cout.toISOString();
-    }
+    var cin = new Date(checkinISO); var cout = new Date(checkoutISO);
+    if (cout <= cin) { cout.setUTCDate(cout.getUTCDate() + 1); checkoutISO = cout.toISOString(); }
   }
-
   var hrs = calcHours(checkinISO, checkoutISO);
   var recId = genRecId(wid, true);
   var rec = {
@@ -526,13 +473,11 @@ function submitBackdatedEntry() {
     shift: shift, date: date,
     checkinReqTime: checkinISO, checkinTime: checkinISO,
     checkoutReqTime: checkoutISO, checkoutTime: checkoutISO,
-    total: hrs.total, regular: hrs.regular,
-    compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
+    total: hrs.total, regular: hrs.regular, compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
     status: 'completed', backdated: true
   };
   FB.save('attendance', recId, rec).then(function() {
-    showToast(w.name + ' entry added for ' + date + ' (' + hrs.total + 'h)', 'success');
-    renderHistoryView();
+    showToast(w.name + ' entry added (' + hrs.total + 'h)', 'success'); renderHistoryView();
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
 }
 
@@ -542,67 +487,53 @@ function submitBulkBackdated() {
   var filter = document.getElementById('histBulkFilter') ? document.getElementById('histBulkFilter').value : 'all';
   var inTime = document.getElementById('histBulkIn') ? document.getElementById('histBulkIn').value : '';
   var outTime = document.getElementById('histBulkOut') ? document.getElementById('histBulkOut').value : '';
-  if (!date || !inTime || !outTime) { showToast('Please fill date, in-time, and out-time', 'error'); return; }
-  var ws = gW();
-  var targetWorkers = [];
+  if (!date || !inTime || !outTime) { showToast('Fill date, in-time, out-time', 'error'); return; }
+  var ws = gW(); var targetWorkers = [];
   for (var i = 0; i < ws.length; i++) {
-    var w = ws[i];
-    if (!w.on) continue;
+    var w = ws[i]; if (!w.on) continue;
     if (filter !== 'all' && w.wid !== filter && w.sec !== filter && w.shift !== filter) continue;
     targetWorkers.push(w);
   }
-  if (targetWorkers.length === 0) { showToast('No workers match the filter', 'warn'); return; }
+  if (targetWorkers.length === 0) { showToast('No workers match', 'warn'); return; }
   showConfirm('Add attendance for ' + targetWorkers.length + ' workers on ' + date + '?', function() {
-    var allAtt = gA();
-    var existingOnDate = [];
+    var allAtt = gA(); var existingOnDate = [];
     for (var j = 0; j < allAtt.length; j++) {
       var a = allAtt[j];
       var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
       if (aDate === date) existingOnDate.push(a.wid);
     }
-    var promises = [];
-    var skipped = 0;
+    var promises = []; var skipped = 0;
     for (var k = 0; k < targetWorkers.length; k++) {
       var tw = targetWorkers[k];
       if (indexOf(existingOnDate, tw.wid) !== -1) { skipped++; continue; }
       var checkinISO = buildISO(date, inTime, false, null);
       var checkoutISO = buildISO(date, outTime, shift === 'Night', checkinISO);
-
       if (shift === 'Night') {
-        var cin = new Date(checkinISO);
-        var cout = new Date(checkoutISO);
-        if (cout <= cin) {
-          cout.setUTCDate(cout.getUTCDate() + 1);
-          checkoutISO = cout.toISOString();
-        }
+        var cin = new Date(checkinISO); var cout = new Date(checkoutISO);
+        if (cout <= cin) { cout.setUTCDate(cout.getUTCDate() + 1); checkoutISO = cout.toISOString(); }
       }
-
       var hrs = calcHours(checkinISO, checkoutISO);
       var recId = genRecId(tw.wid, true);
-      var rec = {
+      promises.push(FB.save('attendance', recId, {
         recId: recId, wid: tw.wid, name: tw.name, prof: tw.prof, sec: tw.sec,
         shift: shift, date: date,
         checkinReqTime: checkinISO, checkinTime: checkinISO,
         checkoutReqTime: checkoutISO, checkoutTime: checkoutISO,
-        total: hrs.total, regular: hrs.regular,
-        compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
+        total: hrs.total, regular: hrs.regular, compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
         status: 'completed', backdated: true
-      };
-      promises.push(FB.save('attendance', recId, rec));
+      }));
     }
     Promise.all(promises).then(function() {
-      showToast('Added ' + promises.length + ' records. Skipped ' + skipped + ' (already exist).', 'success');
-      renderHistoryView();
+      showToast('Added ' + promises.length + '. Skipped ' + skipped + '.', 'success'); renderHistoryView();
     }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
   });
 }
 
+// ====== PDF WITH EXTRA OT ======
 function exportHistoryPDF() {
   var date = _historyDate || tD();
-  var allAtt = gA();
-  var allWorkers = gW();
-  var presentRecs = [];
-  var presentWids = [];
+  var allAtt = gA(); var allWorkers = gW();
+  var presentRecs = []; var presentWids = [];
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
@@ -610,83 +541,127 @@ function exportHistoryPDF() {
     if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed') continue;
     if (_historyShift !== 'All' && a.shift !== _historyShift) continue;
     if (_historySection !== 'All' && a.sec !== _historySection) continue;
-    if (indexOf(presentWids, a.wid) === -1) {
-      presentRecs.push(a); presentWids.push(a.wid);
-    }
+    if (indexOf(presentWids, a.wid) === -1) { presentRecs.push(a); presentWids.push(a.wid); }
   }
   var absentList = [];
   for (var j = 0; j < allWorkers.length; j++) {
-    var w = allWorkers[j];
-    if (!w.on) continue;
+    var w = allWorkers[j]; if (!w.on) continue;
     if (_historySection !== 'All' && w.sec !== _historySection) continue;
     if (_historyShift !== 'All' && w.shift !== _historyShift) continue;
     if (indexOf(presentWids, w.wid) === -1) absentList.push(w);
   }
+
+  var extraWorkers = [];
+  var totalReg = 0, totalCompOT = 0, totalExtraOT = 0;
+  for (var e = 0; e < presentRecs.length; e++) {
+    totalReg += presentRecs[e].regular || 0;
+    totalCompOT += presentRecs[e].compOT || 0;
+    totalExtraOT += presentRecs[e].extraOT || 0;
+    if ((presentRecs[e].extraOT || 0) > 0) extraWorkers.push(presentRecs[e]);
+  }
+
   loadLogoForPDF().then(function() {
-    var doc = new jspdf.jsPDF();
+    var doc = new jspdf.jsPDF('landscape');
     var startY = addPDFHeader(doc, 'Attendance Report - ' + fmtDate(date + 'T00:00:00'), 'Present: ' + presentRecs.length + ' | Absent: ' + absentList.length);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(16, 185, 129);
-    doc.text('PRESENT WORKERS (' + presentRecs.length + ')', 14, startY + 8);
+
+    // Summary
+    var pageW = doc.internal.pageSize.getWidth();
+    doc.setFillColor(240, 245, 255);
+    doc.rect(14, startY, pageW - 28, 16, 'F');
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175);
+    doc.text('SUMMARY:', 18, startY + 5);
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(15, 23, 42);
+    doc.text('Present: ' + presentRecs.length + ' | Regular: ' + totalReg.toFixed(1) + 'h | Comp OT: ' + totalCompOT.toFixed(1) + 'h', 18, startY + 11);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(217, 119, 6);
+    doc.text('Extra OT: ' + totalExtraOT.toFixed(1) + 'h | Extra Workers: ' + extraWorkers.length, 150, startY + 11);
+
+    // Present table
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(16, 185, 129);
+    doc.text('PRESENT WORKERS (' + presentRecs.length + ')', 14, startY + 24);
+
     if (presentRecs.length > 0) {
       var pRows = [];
       for (var p = 0; p < presentRecs.length; p++) {
         var r = presentRecs[p];
-        pRows.push([
-          p + 1, r.name, r.wid, r.sec, r.shift || 'Day',
-          fmtTime(r.checkinTime || r.checkinReqTime),
-          fmtTime(r.checkoutTime) || '-',
-          (r.total || 0) + 'h', (r.ot || 0) + 'h',
-          r.status === 'completed' ? 'Done' : 'Active'
-        ]);
+        pRows.push([p+1, r.name, r.wid, r.sec, r.shift||'Day',
+          fmtTime(r.checkinTime||r.checkinReqTime), fmtTime(r.checkoutTime)||'-',
+          (r.total||0)+'h', (r.regular||0)+'h', (r.compOT||0)+'h',
+          (r.extraOT||0) > 0 ? (r.extraOT)+'h' : '-',
+          r.status==='completed'?'Done':'Active']);
       }
       doc.autoTable({
-        startY: startY + 12,
-        head: [['#', 'Name', 'ID', 'Section', 'Shift', 'Check In', 'Check Out', 'Hours', 'OT', 'Status']],
-        body: pRows,
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [240, 255, 250] }
+        startY: startY + 28,
+        head: [['#','Name','ID','Section','Shift','In','Out','Total','Regular','CompOT','ExtraOT','Status']],
+        body: pRows, theme: 'grid',
+        styles: { fontSize: 7, cellPadding: 2 },
+        headStyles: { fillColor: [16,185,129], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [240,255,250] },
+        didParseCell: function(data) {
+          if (data.section === 'body' && data.column.index === 10) {
+            if (presentRecs[data.row.index] && (presentRecs[data.row.index].extraOT||0) > 0) {
+              data.cell.styles.fillColor = [254,243,199];
+              data.cell.styles.textColor = [217,119,6];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        }
       });
     }
-    var finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : startY + 20;
-    if (finalY + 40 > doc.internal.pageSize.getHeight() - 20) {
-      doc.addPage(); finalY = 20;
+
+    var finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : startY + 40;
+
+    // Extra Work section
+    if (extraWorkers.length > 0) {
+      if (finalY + 40 > doc.internal.pageSize.getHeight() - 20) { doc.addPage(); finalY = 20; }
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(217,119,6);
+      doc.text('EXTRA WORK - Beyond 12 Hours (' + extraWorkers.length + ' workers)', 14, finalY);
+      var eRows = [];
+      for (var ex = 0; ex < extraWorkers.length; ex++) {
+        var er = extraWorkers[ex];
+        eRows.push([ex+1, er.name, er.wid, er.shift||'Day', fmtTime(er.checkinTime), fmtTime(er.checkoutTime),
+          (er.total||0)+'h', '12h', (er.extraOT||0)+'h', '1.5x Rate']);
+      }
+      doc.autoTable({
+        startY: finalY + 4,
+        head: [['#','Name','ID','Shift','In','Out','Total','Standard','Extra','Pay Rate']],
+        body: eRows, theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2, fillColor: [254,249,235] },
+        headStyles: { fillColor: [217,119,6], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [254,243,199] }
+      });
+      finalY = doc.lastAutoTable.finalY + 8;
     }
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(239, 68, 68);
+
+    // Absent
+    if (finalY + 40 > doc.internal.pageSize.getHeight() - 20) { doc.addPage(); finalY = 20; }
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(239,68,68);
     doc.text('ABSENT WORKERS (' + absentList.length + ')', 14, finalY);
     if (absentList.length > 0) {
       var aRows = [];
       for (var ab = 0; ab < absentList.length; ab++) {
         var abW = absentList[ab];
-        aRows.push([ab + 1, abW.name, abW.wid, abW.sec, abW.prof, abW.shift]);
+        aRows.push([ab+1, abW.name, abW.wid, abW.sec, abW.prof, abW.shift]);
       }
       doc.autoTable({
         startY: finalY + 4,
-        head: [['#', 'Name', 'ID', 'Section', 'Profession', 'Shift']],
-        body: aRows,
-        theme: 'grid',
+        head: [['#','Name','ID','Section','Profession','Shift']],
+        body: aRows, theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [239, 68, 68], textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [255, 245, 245] }
+        headStyles: { fillColor: [239,68,68], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [255,245,245] }
       });
     }
     addPDFFooter(doc);
     doc.save('albowry_attendance_' + date + '.pdf');
-    showToast('PDF downloaded!', 'success');
+    showToast('PDF downloaded with Extra Work!', 'success');
   });
 }
 
+// ====== CSV WITH EXTRA OT ======
 function exportHistoryExcel() {
   var date = _historyDate || tD();
-  var allAtt = gA();
-  var allWorkers = gW();
-  var presentRecs = [];
-  var presentWids = [];
+  var allAtt = gA(); var allWorkers = gW();
+  var presentRecs = []; var presentWids = [];
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var attDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
@@ -694,39 +669,58 @@ function exportHistoryExcel() {
     if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed') continue;
     if (_historyShift !== 'All' && a.shift !== _historyShift) continue;
     if (_historySection !== 'All' && a.sec !== _historySection) continue;
-    if (indexOf(presentWids, a.wid) === -1) {
-      presentRecs.push(a); presentWids.push(a.wid);
-    }
+    if (indexOf(presentWids, a.wid) === -1) { presentRecs.push(a); presentWids.push(a.wid); }
   }
   var absentList = [];
   for (var j = 0; j < allWorkers.length; j++) {
-    var w = allWorkers[j];
-    if (!w.on) continue;
+    var w = allWorkers[j]; if (!w.on) continue;
     if (_historySection !== 'All' && w.sec !== _historySection) continue;
     if (_historyShift !== 'All' && w.shift !== _historyShift) continue;
     if (indexOf(presentWids, w.wid) === -1) absentList.push(w);
   }
-  var csvContent = COMPANY.full + '\nDate: ' + date + '\nPresent: ' + presentRecs.length + ' | Absent: ' + absentList.length + '\n\n';
-  csvContent += 'PRESENT WORKERS\n';
-  csvContent += '#,Name,Worker ID,Section,Shift,Check In,Check Out,Total Hours,OT Hours,Status\n';
+
+  var totalReg = 0, totalCompOT = 0, totalExtraOT = 0;
+  var extraWorkers = [];
+  for (var t = 0; t < presentRecs.length; t++) {
+    totalReg += presentRecs[t].regular || 0;
+    totalCompOT += presentRecs[t].compOT || 0;
+    totalExtraOT += presentRecs[t].extraOT || 0;
+    if ((presentRecs[t].extraOT || 0) > 0) extraWorkers.push(presentRecs[t]);
+  }
+
+  var csv = COMPANY.full + '\nDate: ' + date + '\nPresent: ' + presentRecs.length + ' | Absent: ' + absentList.length + '\n';
+  csv += 'Regular: ' + totalReg.toFixed(1) + 'h | Comp OT: ' + totalCompOT.toFixed(1) + 'h | Extra OT: ' + totalExtraOT.toFixed(1) + 'h\n\n';
+  csv += 'PRESENT WORKERS\n';
+  csv += '#,Name,ID,Section,Shift,In,Out,Total,Regular,CompOT,ExtraOT,Status\n';
   for (var p = 0; p < presentRecs.length; p++) {
     var r = presentRecs[p];
-    csvContent += (p+1) + ',"' + r.name + '",' + r.wid + ',' + r.sec + ',' + (r.shift||'Day') + ',' +
-      fmtTime(r.checkinTime||r.checkinReqTime) + ',' + (fmtTime(r.checkoutTime)||'-') + ',' +
-      (r.total||0) + ',' + (r.ot||0) + ',' + r.status + '\n';
+    csv += (p+1)+',"'+r.name+'",'+r.wid+','+r.sec+','+(r.shift||'Day')+','+
+      fmtTime(r.checkinTime||r.checkinReqTime)+','+(fmtTime(r.checkoutTime)||'-')+','+
+      (r.total||0)+','+(r.regular||0)+','+(r.compOT||0)+','+(r.extraOT||0)+','+r.status+'\n';
   }
-  csvContent += '\nABSENT WORKERS\n';
-  csvContent += '#,Name,Worker ID,Section,Profession,Default Shift\n';
+
+  if (extraWorkers.length > 0) {
+    csv += '\nEXTRA WORK (Beyond 12h) - ' + extraWorkers.length + ' workers\n';
+    csv += '#,Name,ID,Shift,In,Out,Total,Standard,Extra,Rate\n';
+    for (var e = 0; e < extraWorkers.length; e++) {
+      var er = extraWorkers[e];
+      csv += (e+1)+',"'+er.name+'",'+er.wid+','+(er.shift||'Day')+','+
+        fmtTime(er.checkinTime)+','+fmtTime(er.checkoutTime)+','+
+        (er.total||0)+'h,12h,'+(er.extraOT||0)+'h,1.5x\n';
+    }
+  }
+
+  csv += '\nABSENT WORKERS\n#,Name,ID,Section,Profession,Shift\n';
   for (var ab = 0; ab < absentList.length; ab++) {
     var abW = absentList[ab];
-    csvContent += (ab+1) + ',"' + abW.name + '",' + abW.wid + ',' + abW.sec + ',"' + abW.prof + '",' + abW.shift + '\n';
+    csv += (ab+1)+',"'+abW.name+'",'+abW.wid+','+abW.sec+',"'+abW.prof+'",'+abW.shift+'\n';
   }
-  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var link = document.createElement('a');
   link.href = url; link.download = 'albowry_attendance_' + date + '.csv'; link.click();
   URL.revokeObjectURL(url);
-  showToast('Excel/CSV downloaded!', 'success');
+  showToast('CSV downloaded with Extra Work!', 'success');
 }
 
 function getStatusBadge(status) {
@@ -748,43 +742,17 @@ function getInitials(name) {
 
 document.addEventListener('DOMContentLoaded', function() {
   var histDateInput = document.getElementById('histDate');
-  if (histDateInput) {
-    histDateInput.addEventListener('change', function() {
-      _historyDate = this.value;
-      renderHistoryView();
-    });
-  }
+  if (histDateInput) histDateInput.addEventListener('change', function() { _historyDate = this.value; renderHistoryView(); });
   var histShiftSel = document.getElementById('histShift');
-  if (histShiftSel) {
-    histShiftSel.addEventListener('change', function() {
-      _historyShift = this.value;
-      renderHistoryView();
-    });
-  }
+  if (histShiftSel) histShiftSel.addEventListener('change', function() { _historyShift = this.value; renderHistoryView(); });
   var histSecSel = document.getElementById('histSection');
-  if (histSecSel) {
-    histSecSel.addEventListener('change', function() {
-      _historySection = this.value;
-      renderHistoryView();
-    });
-  }
+  if (histSecSel) histSecSel.addEventListener('change', function() { _historySection = this.value; renderHistoryView(); });
   var histWorkerSelEl = document.getElementById('histWorkerSel');
-  if (histWorkerSelEl) {
-    histWorkerSelEl.addEventListener('change', function() {
-      _historyWorkerFilter = this.value;
-      renderHistoryView();
-    });
-  }
+  if (histWorkerSelEl) histWorkerSelEl.addEventListener('change', function() { _historyWorkerFilter = this.value; renderHistoryView(); });
   var histBdWorkerEl = document.getElementById('histBdWorker');
-  if (histBdWorkerEl) {
-    histBdWorkerEl.addEventListener('change', updateHistBdShiftFromWorker);
-  }
+  if (histBdWorkerEl) histBdWorkerEl.addEventListener('change', updateHistBdShiftFromWorker);
   var dwDateInput = document.getElementById('dwDate');
-  if (dwDateInput) {
-    dwDateInput.addEventListener('change', function() {
-      renderDayWiseView();
-    });
-  }
+  if (dwDateInput) dwDateInput.addEventListener('change', function() { renderDayWiseView(); });
 });
 
-console.log('[ALB] history.js v20 loaded');
+console.log('[ALB] history.js v23 loaded');
