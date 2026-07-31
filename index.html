@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=18">
-  <link rel="stylesheet" href="mobile.css?v=18">
+  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="mobile.css?v=21">
 </head>
 <body>
 
@@ -146,7 +146,7 @@
 
     <div class="login-footer">
       <div>AL BOWRY CARPENTRY LLC &copy; 2026</div>
-      <div>Attendance System v18 | <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
+      <div>Attendance System v21 | <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
     </div>
   </div>
 </div>
@@ -344,6 +344,11 @@
             <span class="material-symbols-outlined">history</span> History & Backdated
           </a>
 
+          <div class="sidebar-section-label">WORK</div>
+          <a class="nav-link" data-section="secWork" onclick="showSection('secWork')">
+            <span class="material-symbols-outlined">construction</span> Work & Panels
+          </a>
+
           <div class="sidebar-section-label">REPORTS</div>
           <a class="nav-link" data-section="secSalary" onclick="showSection('secSalary')">
             <span class="material-symbols-outlined">payments</span> Salary
@@ -372,7 +377,7 @@
                style="width:28px;height:28px;object-fit:contain;border-radius:6px;opacity:0.6;margin-bottom:8px"
                onerror="this.style.display='none'">
           <div class="sidebar-footer-company">AL BOWRY CARPENTRY LLC</div>
-          <div class="sidebar-footer-ver">Attendance System v18</div>
+          <div class="sidebar-footer-ver">Attendance System v21</div>
           <div class="sidebar-footer-site">COP31 | Antalya, Turkey</div>
         </div>
       </div>
@@ -872,6 +877,68 @@
         </div>
       </section>
 
+      <!-- WORK & PANELS -->
+      <section class="admin-section" id="secWork" style="display:none">
+        <div class="section-header">
+          <h2><span class="material-symbols-outlined">construction</span> Work Area & Panels</h2>
+          <div class="section-header-right">
+            <button class="btn btn-danger btn-sm" onclick="exportWorkPDF()">
+              <span class="material-symbols-outlined">picture_as_pdf</span> PDF
+            </button>
+            <button class="btn btn-success btn-sm" onclick="exportWorkCSV()">
+              <span class="material-symbols-outlined">table_view</span> CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel Calculator -->
+        <div class="card">
+          <div class="card-header">
+            <span class="material-symbols-outlined">view_in_ar</span>
+            <h3>Panel Calculator - Work Area Covered</h3>
+            <button class="btn btn-primary btn-sm" onclick="showAddPanelModal()" style="margin-left:auto">
+              <span class="material-symbols-outlined">add</span> Add Panel
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="info-box info-blue">
+              <span class="material-symbols-outlined">info</span>
+              <p><strong>Formula:</strong> Length x Breadth = Area per panel (m2)<br>
+              Area per panel x No. of Panels = Total Area Covered<br>
+              <strong>Example:</strong> 6000mm x 1200mm x 100mm = 7.2 m2 x 10 panels = 72 m2 total</p>
+            </div>
+            <div id="panelCalcContainer">
+              <div class="empty-state"><span class="material-symbols-outlined">view_in_ar</span><p>No panel entries yet. Click "Add Panel" to start.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Assignments -->
+        <div class="card" style="margin-top:20px">
+          <div class="card-header">
+            <span class="material-symbols-outlined">table_restaurant</span>
+            <h3>Table Assignments (Workers & Work Distribution)</h3>
+          </div>
+          <div class="card-body" id="tableAssignContainer">
+            <div class="text-muted text-center">Loading tables...</div>
+          </div>
+        </div>
+
+        <!-- Work Progress -->
+        <div class="card" style="margin-top:20px">
+          <div class="card-header">
+            <span class="material-symbols-outlined">trending_up</span>
+            <h3>Daily Work Progress</h3>
+            <button class="btn btn-primary btn-sm" onclick="showAddProgressModal()" style="margin-left:auto">
+              <span class="material-symbols-outlined">add</span> Add Progress
+            </button>
+          </div>
+          <div class="card-body" id="workProgressContainer">
+            <div class="empty-state"><span class="material-symbols-outlined">construction</span><p>No progress entries yet.</p></div>
+          </div>
+        </div>
+      </section>
+
       <!-- SALARY SECTION -->
       <section class="admin-section" id="secSalary" style="display:none">
         <div class="section-header">
@@ -1136,7 +1203,7 @@
           <div class="card-header"><span class="material-symbols-outlined">info</span><h3>System Information</h3></div>
           <div class="card-body">
             <div class="sys-info-grid">
-              <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v18</span></div>
+              <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v21</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Total Workers</span><span class="sys-info-val" id="sysWorkerCount">56</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Total Attendance Records</span><span class="sys-info-val" id="sysAttCount">0</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Firebase Project</span><span class="sys-info-val">albowry-attendance</span></div>
@@ -1204,13 +1271,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
 <!-- App Scripts -->
-<script src="app.js?v=120"></script>
-<script src="manual.js?v=20"></script>
-<script src="history.js?v=20"></script>
+<script src="app.js?v=21"></script>
+<script src="manual.js?v=21"></script>
+<script src="history.js?v=21"></script>
+<script src="work.js?v=21"></script>
 
 <script>
 var _workerTab = 'Indian';
 var _clockInterval = null;
+
+// ====== SHIFT TIME AUTO UPDATE HELPERS ======
+function updateHistBdTimes() {
+  var shift = document.getElementById('histBdShift').value;
+  document.getElementById('histBdIn').value = shift === 'Night' ? '20:00' : '08:00';
+  document.getElementById('histBdOut').value = shift === 'Night' ? '08:00' : '20:00';
+}
+
+function updateHistBulkTimes() {
+  var shift = document.getElementById('histBulkShift').value;
+  document.getElementById('histBulkIn').value = shift === 'Night' ? '20:00' : '08:00';
+  document.getElementById('histBulkOut').value = shift === 'Night' ? '08:00' : '20:00';
+}
+
+function updateCustomTimes() {
+  var shift = document.getElementById('customShift').value;
+  document.getElementById('customIn').value = shift === 'Night' ? '20:00' : '08:00';
+  document.getElementById('customOut').value = shift === 'Night' ? '08:00' : '20:00';
+}
+
+function updateQcInTime() {
+  var shift = document.getElementById('qcInShift').value;
+  document.getElementById('qcInTime').value = shift === 'Night' ? '20:00' : '08:00';
+}
 
 function bootstrap() {
   setLoadingText('Connecting to Firebase...');
@@ -1873,6 +1965,7 @@ function setWorkerTab(tab) {
   document.getElementById('wtabPakistani').classList.toggle('active', tab === 'Pakistani');
   renderAdminWorkers();
 }
+
 function renderAdminWorkers() {
   var search = document.getElementById('workerSearch') ? document.getElementById('workerSearch').value.toLowerCase() : '';
   var secFilter = document.getElementById('workerSecFilter') ? document.getElementById('workerSecFilter').value : 'All';
@@ -1880,7 +1973,6 @@ function renderAdminWorkers() {
   var ws = gW();
   var filtered = [];
 
-  // UPDATE TAB COUNTS
   var indCount = 0, pakCount = 0;
   for (var x = 0; x < ws.length; x++) {
     if (ws[x].on && ws[x].sec === 'Indian') indCount++;
@@ -1931,6 +2023,7 @@ function renderAdminWorkers() {
   }
   tbody.innerHTML = html;
 }
+
 function showAddWorker() {
   var html = '<div class="form-grid">' +
     '<div class="form-group"><label class="form-label">Worker ID</label><input type="text" id="awId" class="form-control" placeholder="e.g. IND0038"></div>' +
@@ -2057,105 +2150,71 @@ function doEndDay() {
   });
 }
 
-// ====== SALARY REPORT ======
 function generateSalaryReport() {
   var wid = document.getElementById('salaryWorker').value;
   var year = parseInt(document.getElementById('salaryYear').value);
   var month = parseInt(document.getElementById('salaryMonth').value);
   var monthlySalary = parseFloat(document.getElementById('salaryMonthly').value);
-
-  if (!monthlySalary || monthlySalary <= 0) {
-    showToast('Please enter valid monthly salary', 'error');
-    return;
-  }
-
-  var reports = wid === 'all'
-    ? getAllSalaries(year, month, monthlySalary)
-    : [calculateSalary(wid, year, month, monthlySalary)].filter(function(x) { return x !== null; });
-
+  if (!monthlySalary || monthlySalary <= 0) { showToast('Please enter valid monthly salary', 'error'); return; }
+  var reports = wid === 'all' ? getAllSalaries(year, month, monthlySalary) : [calculateSalary(wid, year, month, monthlySalary)].filter(function(x) { return x !== null; });
   var container = document.getElementById('salaryReportContainer');
   if (!container) return;
-
   if (!reports || reports.length === 0) {
     container.innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">payments</span><p>No completed attendance found for selected period</p></div>';
     return;
   }
-
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var monthName = monthNames[month - 1];
-
-  var grandTotal = 0;
-  var totalWorkers = reports.length;
-  var totalHours = 0;
+  var grandTotal = 0, totalWorkers = reports.length, totalHours = 0;
   for (var g = 0; g < reports.length; g++) {
     grandTotal += reports[g].totalSalary;
     totalHours += reports[g].totalHrs;
   }
-
-  var html = '<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;border:none">' +
-    '<div class="card-body">' +
-      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;align-items:center">' +
-        '<div>' +
-          '<div style="font-size:14px;opacity:0.9;margin-bottom:4px">Total Payroll - ' + monthName + ' ' + year + '</div>' +
-          '<div style="font-size:32px;font-weight:900">AED ' + grandTotal.toFixed(2) + '</div>' +
-        '</div>' +
-        '<div style="text-align:right">' +
-          '<div style="font-size:12px;opacity:0.9">Workers: ' + totalWorkers + '</div>' +
-          '<div style="font-size:12px;opacity:0.9">Total Hours: ' + totalHours.toFixed(2) + 'h</div>' +
-          '<div style="font-size:12px;opacity:0.9">Per Hour Rate: AED ' + (reports[0].perHourRate).toFixed(2) + '</div>' +
-        '</div>' +
-      '</div>' +
+  var html = '<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;border:none"><div class="card-body">' +
+    '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;align-items:center">' +
+      '<div><div style="font-size:14px;opacity:0.9;margin-bottom:4px">Total Payroll - ' + monthName + ' ' + year + '</div>' +
+      '<div style="font-size:32px;font-weight:900">AED ' + grandTotal.toFixed(2) + '</div></div>' +
+      '<div style="text-align:right"><div style="font-size:12px;opacity:0.9">Workers: ' + totalWorkers + '</div>' +
+      '<div style="font-size:12px;opacity:0.9">Total Hours: ' + totalHours.toFixed(2) + 'h</div>' +
+      '<div style="font-size:12px;opacity:0.9">Per Hour Rate: AED ' + (reports[0].perHourRate).toFixed(2) + '</div></div></div>' +
     '</div></div>';
 
   for (var i = 0; i < reports.length; i++) {
     var r = reports[i];
-    html += '<div class="card" style="margin-bottom:16px">' +
-      '<div class="card-header">' +
-        '<span class="material-symbols-outlined">person</span>' +
-        '<h3>' + r.worker.name + '</h3>' +
-        '<span class="text-muted">' + r.worker.wid + ' | ' + r.worker.sec + '</span>' +
-        '<span class="badge badge-success" style="font-size:14px;padding:6px 14px">AED ' + r.totalSalary.toFixed(2) + '</span>' +
+    html += '<div class="card" style="margin-bottom:16px"><div class="card-header">' +
+      '<span class="material-symbols-outlined">person</span><h3>' + r.worker.name + '</h3>' +
+      '<span class="text-muted">' + r.worker.wid + ' | ' + r.worker.sec + '</span>' +
+      '<span class="badge badge-success" style="font-size:14px;padding:6px 14px">AED ' + r.totalSalary.toFixed(2) + '</span>' +
+      '</div><div class="card-body">' +
+      '<div class="monthly-stats-row">' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalDays + '</span><span>Days</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalHrs + 'h</span><span>Total Hours</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalRegular + 'h</span><span>Regular</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalCompOT + 'h</span><span>Comp OT</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalExtraOT + 'h</span><span>Extra OT</span></div>' +
       '</div>' +
-      '<div class="card-body">' +
-        '<div class="monthly-stats-row">' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalDays + '</span><span>Days</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalHrs + 'h</span><span>Total Hours</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalRegular + 'h</span><span>Regular</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalCompOT + 'h</span><span>Comp OT</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalExtraOT + 'h</span><span>Extra OT</span></div>' +
-        '</div>' +
-        '<div style="background:#f0f4f9;padding:16px;border-radius:10px;margin:16px 0">' +
-          '<div style="font-weight:700;font-size:13px;color:#0f172a;margin-bottom:12px">SALARY BREAKDOWN</div>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">' +
-            '<div><div style="font-size:11px;color:#64748b;font-weight:600">Regular Pay (' + r.totalRegular + 'h × ' + r.perHourRate + ')</div><div style="font-size:16px;font-weight:800;color:#059669">AED ' + r.regularSalary.toFixed(2) + '</div></div>' +
-            '<div><div style="font-size:11px;color:#64748b;font-weight:600">Comp OT Pay (' + r.totalCompOT + 'h × ' + r.perHourRate + ')</div><div style="font-size:16px;font-weight:800;color:#2563eb">AED ' + r.compOTSalary.toFixed(2) + '</div></div>' +
-            '<div><div style="font-size:11px;color:#64748b;font-weight:600">Extra OT Pay (' + r.totalExtraOT + 'h × ' + (r.perHourRate * 1.5).toFixed(2) + ')</div><div style="font-size:16px;font-weight:800;color:#d97706">AED ' + r.extraOTSalary.toFixed(2) + '</div></div>' +
-            '<div style="border-left:3px solid #1e40af;padding-left:12px"><div style="font-size:11px;color:#64748b;font-weight:600">TOTAL SALARY</div><div style="font-size:20px;font-weight:900;color:#1e40af">AED ' + r.totalSalary.toFixed(2) + '</div></div>' +
-          '</div>' +
-        '</div>';
-
+      '<div style="background:#f0f4f9;padding:16px;border-radius:10px;margin:16px 0">' +
+        '<div style="font-weight:700;font-size:13px;color:#0f172a;margin-bottom:12px">SALARY BREAKDOWN</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">' +
+          '<div><div style="font-size:11px;color:#64748b;font-weight:600">Regular Pay (' + r.totalRegular + 'h x ' + r.perHourRate + ')</div><div style="font-size:16px;font-weight:800;color:#059669">AED ' + r.regularSalary.toFixed(2) + '</div></div>' +
+          '<div><div style="font-size:11px;color:#64748b;font-weight:600">Comp OT Pay (' + r.totalCompOT + 'h x ' + r.perHourRate + ')</div><div style="font-size:16px;font-weight:800;color:#2563eb">AED ' + r.compOTSalary.toFixed(2) + '</div></div>' +
+          '<div><div style="font-size:11px;color:#64748b;font-weight:600">Extra OT Pay (' + r.totalExtraOT + 'h x ' + (r.perHourRate * 1.5).toFixed(2) + ')</div><div style="font-size:16px;font-weight:800;color:#d97706">AED ' + r.extraOTSalary.toFixed(2) + '</div></div>' +
+          '<div style="border-left:3px solid #1e40af;padding-left:12px"><div style="font-size:11px;color:#64748b;font-weight:600">TOTAL SALARY</div><div style="font-size:20px;font-weight:900;color:#1e40af">AED ' + r.totalSalary.toFixed(2) + '</div></div>' +
+        '</div></div>';
     if (r.records.length > 0) {
-      html += '<div class="table-responsive"><table class="data-table"><thead><tr>' +
-        '<th>Date</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>Regular</th><th>Comp OT</th><th>Extra OT</th>' +
-        '</tr></thead><tbody>';
+      html += '<div class="table-responsive"><table class="data-table"><thead><tr><th>Date</th><th>Shift</th><th>In</th><th>Out</th><th>Total</th><th>Regular</th><th>Comp OT</th><th>Extra OT</th></tr></thead><tbody>';
       for (var j = 0; j < r.records.length; j++) {
         var rec = r.records[j];
-        html += '<tr>' +
-          '<td>' + fmtDate(rec.date + 'T00:00:00') + '</td>' +
+        html += '<tr><td>' + fmtDate(rec.date + 'T00:00:00') + '</td>' +
           '<td><span class="shift-badge shift-' + (rec.shift || 'day').toLowerCase() + '">' + (rec.shift || 'Day') + '</span></td>' +
-          '<td>' + fmtTime(rec.checkinTime) + '</td>' +
-          '<td>' + fmtTime(rec.checkoutTime) + '</td>' +
-          '<td><strong>' + (rec.total || 0) + 'h</strong></td>' +
-          '<td>' + (rec.regular || 0) + 'h</td>' +
-          '<td>' + (rec.compOT || 0) + 'h</td>' +
-          '<td>' + (rec.extraOT || 0) + 'h</td>' +
-          '</tr>';
+          '<td>' + fmtTime(rec.checkinTime) + '</td><td>' + fmtTime(rec.checkoutTime) + '</td>' +
+          '<td><strong>' + (rec.total || 0) + 'h</strong></td><td>' + (rec.regular || 0) + 'h</td>' +
+          '<td>' + (rec.compOT || 0) + 'h</td><td>' + (rec.extraOT || 0) + 'h</td></tr>';
       }
       html += '</tbody></table></div>';
     }
     html += '</div></div>';
   }
-
   container.innerHTML = html;
   showToast('Salary calculated for ' + totalWorkers + ' worker(s)', 'success');
 }
@@ -2166,114 +2225,69 @@ function exportSalaryPDF() {
   var month = parseInt(document.getElementById('salaryMonth').value);
   var monthlySalary = parseFloat(document.getElementById('salaryMonthly').value);
   if (!monthlySalary || monthlySalary <= 0) { showToast('Enter monthly salary', 'error'); return; }
-  var reports = wid === 'all'
-    ? getAllSalaries(year, month, monthlySalary)
-    : [calculateSalary(wid, year, month, monthlySalary)].filter(function(x) { return x !== null; });
+  var reports = wid === 'all' ? getAllSalaries(year, month, monthlySalary) : [calculateSalary(wid, year, month, monthlySalary)].filter(function(x) { return x !== null; });
   if (!reports || reports.length === 0) { showToast('No data to export', 'warn'); return; }
-
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var monthName = monthNames[month - 1];
   var grandTotal = 0;
   for (var g = 0; g < reports.length; g++) grandTotal += reports[g].totalSalary;
-
   loadLogoForPDF().then(function() {
     var doc = new jspdf.jsPDF();
     var startY = addPDFHeader(doc, 'Salary Report - ' + monthName + ' ' + year, 'Total: AED ' + grandTotal.toFixed(2));
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175);
     doc.text('SALARY SUMMARY (' + reports.length + ' workers)', 14, startY + 8);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(71, 85, 105);
     doc.text('Monthly Base: AED ' + monthlySalary + ' | Per Hour: AED ' + (monthlySalary/270).toFixed(2) + ' | Standard: 270 hrs/month', 14, startY + 15);
-
     var summaryRows = [];
     for (var s = 0; s < reports.length; s++) {
       var r = reports[s];
-      summaryRows.push([
-        s + 1, r.worker.name, r.worker.wid, r.totalDays,
-        r.totalHrs + 'h', r.totalRegular + 'h', r.totalCompOT + 'h', r.totalExtraOT + 'h',
-        'AED ' + r.totalSalary.toFixed(2)
-      ]);
+      summaryRows.push([s + 1, r.worker.name, r.worker.wid, r.totalDays, r.totalHrs + 'h', r.totalRegular + 'h', r.totalCompOT + 'h', r.totalExtraOT + 'h', 'AED ' + r.totalSalary.toFixed(2)]);
     }
-
     doc.autoTable({
       startY: startY + 20,
       head: [['#', 'Name', 'ID', 'Days', 'Total', 'Regular', 'Comp OT', 'Extra OT', 'Salary (AED)']],
-      body: summaryRows,
-      theme: 'grid',
+      body: summaryRows, theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [240, 245, 255] },
       foot: [['', '', '', '', '', '', '', 'GRAND TOTAL:', 'AED ' + grandTotal.toFixed(2)]],
       footStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold', fontSize: 10 }
     });
-
     for (var i = 0; i < reports.length; i++) {
       var r2 = reports[i];
       doc.addPage();
       var y = addPDFHeader(doc, 'Salary Details - ' + r2.worker.name, monthName + ' ' + year);
-
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 64, 175);
+      doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175);
       doc.text(r2.worker.name + ' (' + r2.worker.wid + ')', 14, y + 8);
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(71, 85, 105);
       doc.text('Section: ' + r2.worker.sec + ' | Profession: ' + r2.worker.prof, 14, y + 15);
-
-      doc.setFillColor(240, 245, 255);
-      doc.rect(14, y + 20, 180, 40, 'F');
-
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(15, 23, 42);
+      doc.setFillColor(240, 245, 255); doc.rect(14, y + 20, 180, 40, 'F');
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
       doc.text('SALARY BREAKDOWN', 18, y + 27);
-
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal');
       doc.text('Total Days: ' + r2.totalDays + ' days', 18, y + 34);
       doc.text('Total Hours: ' + r2.totalHrs + 'h', 18, y + 39);
       doc.text('Regular: ' + r2.totalRegular + 'h x AED ' + r2.perHourRate + ' = AED ' + r2.regularSalary.toFixed(2), 18, y + 44);
       doc.text('Comp OT: ' + r2.totalCompOT + 'h x AED ' + r2.perHourRate + ' = AED ' + r2.compOTSalary.toFixed(2), 18, y + 49);
       doc.text('Extra OT: ' + r2.totalExtraOT + 'h x AED ' + (r2.perHourRate * 1.5).toFixed(2) + ' = AED ' + r2.extraOTSalary.toFixed(2), 18, y + 54);
-
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(5, 150, 105);
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(5, 150, 105);
       doc.text('TOTAL SALARY: AED ' + r2.totalSalary.toFixed(2), 130, y + 40);
-
       if (r2.records.length > 0) {
         var recRows = [];
         for (var k = 0; k < r2.records.length; k++) {
           var rec = r2.records[k];
-          recRows.push([
-            fmtDate(rec.date + 'T00:00:00'),
-            rec.shift || 'Day',
-            fmtTime(rec.checkinTime),
-            fmtTime(rec.checkoutTime),
-            (rec.total || 0) + 'h',
-            (rec.regular || 0) + 'h',
-            (rec.compOT || 0) + 'h',
-            (rec.extraOT || 0) + 'h'
-          ]);
+          recRows.push([fmtDate(rec.date + 'T00:00:00'), rec.shift || 'Day', fmtTime(rec.checkinTime), fmtTime(rec.checkoutTime), (rec.total || 0) + 'h', (rec.regular || 0) + 'h', (rec.compOT || 0) + 'h', (rec.extraOT || 0) + 'h']);
         }
         doc.autoTable({
           startY: y + 68,
           head: [['Date', 'Shift', 'In', 'Out', 'Total', 'Regular', 'Comp OT', 'Extra OT']],
-          body: recRows,
-          theme: 'grid',
+          body: recRows, theme: 'grid',
           styles: { fontSize: 8, cellPadding: 2 },
           headStyles: { fillColor: [30, 64, 175], textColor: 255 },
           alternateRowStyles: { fillColor: [240, 245, 255] }
         });
       }
     }
-
     addPDFFooter(doc);
     doc.save('albowry_salary_' + year + '_' + month + '.pdf');
     showToast('Salary PDF downloaded!', 'success');
@@ -2286,40 +2300,28 @@ function exportSalaryCSV() {
   var month = parseInt(document.getElementById('salaryMonth').value);
   var monthlySalary = parseFloat(document.getElementById('salaryMonthly').value);
   if (!monthlySalary || monthlySalary <= 0) { showToast('Enter monthly salary', 'error'); return; }
-  var reports = wid === 'all'
-    ? getAllSalaries(year, month, monthlySalary)
-    : [calculateSalary(wid, year, month, monthlySalary)].filter(function(x) { return x !== null; });
+  var reports = wid === 'all' ? getAllSalaries(year, month, monthlySalary) : [calculateSalary(wid, year, month, monthlySalary)].filter(function(x) { return x !== null; });
   if (!reports || reports.length === 0) { showToast('No data', 'warn'); return; }
-
   var grandTotal = 0;
   for (var g = 0; g < reports.length; g++) grandTotal += reports[g].totalSalary;
-
   var csv = COMPANY.full + '\nSalary Report: ' + year + '-' + month + '\n';
   csv += 'Monthly Base Salary: AED ' + monthlySalary + '\n';
   csv += 'Per Hour Rate: AED ' + (monthlySalary/270).toFixed(2) + '\n';
   csv += 'Standard Hours: 270 hrs (9hrs x 30 days)\n';
   csv += 'GRAND TOTAL: AED ' + grandTotal.toFixed(2) + '\n\n';
   csv += 'Name,ID,Section,Days,Total Hrs,Regular Hrs,Comp OT Hrs,Extra OT Hrs,Regular Pay (AED),Comp OT Pay (AED),Extra OT Pay (AED),Total Salary (AED)\n';
-
   for (var i = 0; i < reports.length; i++) {
     var r = reports[i];
-    csv += '"' + r.worker.name + '",' + r.worker.wid + ',' + r.worker.sec + ',' +
-      r.totalDays + ',' + r.totalHrs + ',' + r.totalRegular + ',' + r.totalCompOT + ',' + r.totalExtraOT + ',' +
-      r.regularSalary.toFixed(2) + ',' + r.compOTSalary.toFixed(2) + ',' + r.extraOTSalary.toFixed(2) + ',' +
-      r.totalSalary.toFixed(2) + '\n';
+    csv += '"' + r.worker.name + '",' + r.worker.wid + ',' + r.worker.sec + ',' + r.totalDays + ',' + r.totalHrs + ',' + r.totalRegular + ',' + r.totalCompOT + ',' + r.totalExtraOT + ',' + r.regularSalary.toFixed(2) + ',' + r.compOTSalary.toFixed(2) + ',' + r.extraOTSalary.toFixed(2) + ',' + r.totalSalary.toFixed(2) + '\n';
   }
-
   var blob = new Blob([csv], { type: 'text/csv' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
-  a.href = url;
-  a.download = 'albowry_salary_' + year + '_' + month + '.csv';
-  a.click();
+  a.href = url; a.download = 'albowry_salary_' + year + '_' + month + '.csv'; a.click();
   URL.revokeObjectURL(url);
   showToast('Salary CSV downloaded!', 'success');
 }
 
-// ====== MONTHLY REPORT ======
 function generateMonthlyReport() {
   var wid = document.getElementById('monthlyWorker').value;
   var year = parseInt(document.getElementById('monthlyYear').value);
@@ -2334,34 +2336,23 @@ function generateMonthlyReport() {
   var html = '';
   for (var i = 0; i < reports.length; i++) {
     var r = reports[i];
-    html += '<div class="card monthly-report-card">' +
-      '<div class="card-header">' +
-        '<span class="material-symbols-outlined">person</span>' +
-        '<h3>' + r.worker.name + '</h3>' +
-        '<span class="text-muted">' + r.worker.wid + ' | ' + r.worker.sec + '</span>' +
-      '</div>' +
-      '<div class="card-body">' +
-        '<div class="monthly-stats-row">' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalDays + '</span><span>Days</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalHrs + 'h</span><span>Total Hours</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.totalOT + 'h</span><span>Total OT</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.dayShift + '</span><span>Day Shifts</span></div>' +
-          '<div class="mstat"><span class="mstat-num">' + r.nightShift + '</span><span>Night Shifts</span></div>' +
-        '</div>';
+    html += '<div class="card monthly-report-card"><div class="card-header">' +
+      '<span class="material-symbols-outlined">person</span><h3>' + r.worker.name + '</h3>' +
+      '<span class="text-muted">' + r.worker.wid + ' | ' + r.worker.sec + '</span></div>' +
+      '<div class="card-body"><div class="monthly-stats-row">' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalDays + '</span><span>Days</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalHrs + 'h</span><span>Total Hours</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.totalOT + 'h</span><span>Total OT</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.dayShift + '</span><span>Day Shifts</span></div>' +
+        '<div class="mstat"><span class="mstat-num">' + r.nightShift + '</span><span>Night Shifts</span></div></div>';
     if (r.records.length > 0) {
-      html += '<div class="table-responsive"><table class="data-table"><thead><tr>' +
-        '<th>Date</th><th>Shift</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>OT</th>' +
-        '</tr></thead><tbody>';
+      html += '<div class="table-responsive"><table class="data-table"><thead><tr><th>Date</th><th>Shift</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>OT</th></tr></thead><tbody>';
       for (var j = 0; j < r.records.length; j++) {
         var rec = r.records[j];
-        html += '<tr>' +
-          '<td>' + fmtDate(rec.date + 'T00:00:00') + '</td>' +
+        html += '<tr><td>' + fmtDate(rec.date + 'T00:00:00') + '</td>' +
           '<td><span class="shift-badge shift-' + (rec.shift || 'day').toLowerCase() + '">' + (rec.shift || 'Day') + '</span></td>' +
-          '<td>' + fmtTime(rec.checkinTime) + '</td>' +
-          '<td>' + fmtTime(rec.checkoutTime) + '</td>' +
-          '<td>' + (rec.total || 0) + 'h</td>' +
-          '<td>' + (rec.ot || 0) + 'h</td>' +
-          '</tr>';
+          '<td>' + fmtTime(rec.checkinTime) + '</td><td>' + fmtTime(rec.checkoutTime) + '</td>' +
+          '<td>' + (rec.total || 0) + 'h</td><td>' + (rec.ot || 0) + 'h</td></tr>';
       }
       html += '</tbody></table></div>';
     }
@@ -2378,37 +2369,26 @@ function exportMonthlyPDF() {
   if (!reports || reports.length === 0) { showToast('No data to export', 'warn'); return; }
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var monthName = monthNames[month - 1];
-
   loadLogoForPDF().then(function() {
     var doc = new jspdf.jsPDF();
     var startY = addPDFHeader(doc, 'Monthly Report - ' + monthName + ' ' + year, 'Workers: ' + reports.length);
     for (var i = 0; i < reports.length; i++) {
       var r = reports[i];
       if (i > 0) { doc.addPage(); startY = addPDFHeader(doc, 'Monthly Report - ' + monthName + ' ' + year, r.worker.name); }
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 64, 175);
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175);
       doc.text(r.worker.name + ' | ' + r.worker.wid + ' | ' + r.worker.sec, 14, startY + 8);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      doc.text('Days: ' + r.totalDays + ' | Total Hrs: ' + r.totalHrs + 'h | OT: ' + r.totalOT + 'h | Day Shifts: ' + r.dayShift + ' | Night Shifts: ' + r.nightShift, 14, startY + 16);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(71, 85, 105);
+      doc.text('Days: ' + r.totalDays + ' | Total Hrs: ' + r.totalHrs + 'h | OT: ' + r.totalOT + 'h | Day: ' + r.dayShift + ' | Night: ' + r.nightShift, 14, startY + 16);
       if (r.records.length > 0) {
         var rows = [];
         for (var j = 0; j < r.records.length; j++) {
           var rec = r.records[j];
-          rows.push([
-            fmtDate(rec.date + 'T00:00:00'), rec.shift || 'Day',
-            fmtTime(rec.checkinTime), fmtTime(rec.checkoutTime),
-            (rec.total || 0) + 'h', (rec.regular || 0) + 'h',
-            (rec.compOT || 0) + 'h', (rec.extraOT || 0) + 'h', (rec.ot || 0) + 'h'
-          ]);
+          rows.push([fmtDate(rec.date + 'T00:00:00'), rec.shift || 'Day', fmtTime(rec.checkinTime), fmtTime(rec.checkoutTime), (rec.total || 0) + 'h', (rec.regular || 0) + 'h', (rec.compOT || 0) + 'h', (rec.extraOT || 0) + 'h', (rec.ot || 0) + 'h']);
         }
         doc.autoTable({
           startY: startY + 22,
           head: [['Date', 'Shift', 'Check In', 'Check Out', 'Total', 'Regular', 'CompOT', 'ExtraOT', 'OT']],
-          body: rows,
-          theme: 'grid',
+          body: rows, theme: 'grid',
           styles: { fontSize: 8, cellPadding: 2 },
           headStyles: { fillColor: [30, 64, 175], textColor: 255 },
           alternateRowStyles: { fillColor: [240, 245, 255] }
@@ -2434,10 +2414,7 @@ function exportMonthlyCSV() {
     var r = reports[i];
     for (var j = 0; j < r.records.length; j++) {
       var rec = r.records[j];
-      csv += '"' + r.worker.name + '",' + r.worker.wid + ',' + r.worker.sec + ',"' + r.worker.prof + '",' +
-        rec.date + ',' + (rec.shift || 'Day') + ',' +
-        fmtTime(rec.checkinTime) + ',' + fmtTime(rec.checkoutTime) + ',' +
-        (rec.total || 0) + ',' + (rec.regular || 0) + ',' + (rec.compOT || 0) + ',' + (rec.extraOT || 0) + ',' + (rec.ot || 0) + '\n';
+      csv += '"' + r.worker.name + '",' + r.worker.wid + ',' + r.worker.sec + ',"' + r.worker.prof + '",' + rec.date + ',' + (rec.shift || 'Day') + ',' + fmtTime(rec.checkinTime) + ',' + fmtTime(rec.checkoutTime) + ',' + (rec.total || 0) + ',' + (rec.regular || 0) + ',' + (rec.compOT || 0) + ',' + (rec.extraOT || 0) + ',' + (rec.ot || 0) + '\n';
     }
   }
   var blob = new Blob([csv], { type: 'text/csv' });
@@ -2455,25 +2432,18 @@ function exportRangePDF() {
   if (!from || !to) { showToast('Select date range', 'error'); return; }
   var data = getExportData(from, to, filter);
   if (data.length === 0) { showToast('No data found for selected range', 'warn'); return; }
-
   loadLogoForPDF().then(function() {
     var doc = new jspdf.jsPDF('landscape');
     var startY = addPDFHeader(doc, 'Attendance Export', from + ' to ' + to + ' | ' + filter + ' | ' + data.length + ' records');
     var rows = [];
     for (var i = 0; i < data.length; i++) {
       var a = data[i];
-      rows.push([
-        a.date || '', a.name || '', a.wid || '', a.sec || '', a.shift || 'Day',
-        fmtTime(a.checkinTime), fmtTime(a.checkoutTime),
-        (a.total || 0) + 'h', (a.regular || 0) + 'h',
-        (a.compOT || 0) + 'h', (a.extraOT || 0) + 'h', (a.ot || 0) + 'h'
-      ]);
+      rows.push([a.date || '', a.name || '', a.wid || '', a.sec || '', a.shift || 'Day', fmtTime(a.checkinTime), fmtTime(a.checkoutTime), (a.total || 0) + 'h', (a.regular || 0) + 'h', (a.compOT || 0) + 'h', (a.extraOT || 0) + 'h', (a.ot || 0) + 'h']);
     }
     doc.autoTable({
       startY: startY,
       head: [['Date', 'Name', 'ID', 'Section', 'Shift', 'Check In', 'Check Out', 'Total', 'Regular', 'CompOT', 'ExtraOT', 'OT']],
-      body: rows,
-      theme: 'grid',
+      body: rows, theme: 'grid',
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [30, 64, 175], textColor: 255 },
       alternateRowStyles: { fillColor: [240, 245, 255] }
@@ -2498,10 +2468,7 @@ function exportRangeCSV() { exportRangeExcel(); }
 function doUpdateAdminName() {
   var name = document.getElementById('setAdminName').value.trim();
   updateAdmin('name', name).then(function(res) {
-    if (res.ok) {
-      var nameEl = document.getElementById('adminDisplayName');
-      if (nameEl) nameEl.textContent = name;
-    }
+    if (res.ok) { var nameEl = document.getElementById('adminDisplayName'); if (nameEl) nameEl.textContent = name; }
   });
 }
 
@@ -2509,10 +2476,7 @@ function doUpdateAdminId() {
   var id = document.getElementById('setAdminId').value.trim();
   var pw = document.getElementById('setAdminIdPw').value;
   updateAdmin('id', id, pw).then(function(res) {
-    if (res.ok) {
-      document.getElementById('setAdminId').value = '';
-      document.getElementById('setAdminIdPw').value = '';
-    }
+    if (res.ok) { document.getElementById('setAdminId').value = ''; document.getElementById('setAdminIdPw').value = ''; }
   });
 }
 
@@ -2520,10 +2484,7 @@ function doUpdateAdminPw() {
   var oldPw = document.getElementById('setOldPw').value;
   var newPw = document.getElementById('setNewPw').value;
   updateAdmin('pw', newPw, oldPw).then(function(res) {
-    if (res.ok) {
-      document.getElementById('setOldPw').value = '';
-      document.getElementById('setNewPw').value = '';
-    }
+    if (res.ok) { document.getElementById('setOldPw').value = ''; document.getElementById('setNewPw').value = ''; }
   });
 }
 
@@ -2581,6 +2542,7 @@ showSection = function(id) {
   if (id === 'secEndDay') updateEndDayStats();
   if (id === 'secSettings') updateSettingsInfo();
   if (id === 'secSalary') { renderWorkerDropdowns(); }
+  if (id === 'secWork') { if (typeof renderWorkSection === 'function') renderWorkSection(); }
 };
 
 document.addEventListener('keydown', function(e) {
@@ -2593,18 +2555,6 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.addEventListener('DOMContentLoaded', function() { bootstrap(); });
-function updateCustomTimes() {
-  var shift = document.getElementById('customShift').value;
-  var defaults = getShiftDefaults(shift);
-  document.getElementById('customIn').value = defaults.inTime;
-  document.getElementById('customOut').value = defaults.outTime;
-}
-
-function updateQcInTime() {
-  var shift = document.getElementById('qcInShift').value;
-  var defaults = getShiftDefaults(shift);
-  document.getElementById('qcInTime').value = defaults.inTime;
-}
 </script>
 </body>
 </html>
