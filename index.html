@@ -1578,6 +1578,7 @@ function showAdminPanel(session) {
   for (var i = 0; i < dateInputs.length; i++) {
     var el = document.getElementById(dateInputs[i]);
     if (el && el.type === 'date') el.value = today;
+    if (typeof startWorkSync === 'function') startWorkSync();
   }
   var nowTime = new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   var timeInputs = ['qcInTime', 'qcOutTime'];
