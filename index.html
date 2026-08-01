@@ -1572,6 +1572,7 @@ function showAdminPanel(session) {
   var nameEl = document.getElementById('adminDisplayName');
   if (nameEl) nameEl.textContent = session.name || 'Admin';
   if (_clockInterval) clearInterval(_clockInterval);
+  if (typeof startWorkSync === 'function') startWorkSync();
   _clockInterval = startClock('adminClock');
   var today = tD();
   var dateInputs = ['attDate', 'histDate', 'dwDate', 'customDate', 'bulkDate', 'histBdDate', 'histBulkDate'];
