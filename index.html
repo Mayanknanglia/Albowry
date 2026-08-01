@@ -879,72 +879,75 @@
 
       <!-- WORK & PANELS -->
      <!-- WORK & PANELS -->
+<!-- WORK & PANELS -->
 <section class="admin-section" id="secWork" style="display:none">
   <div class="section-header">
     <h2><span class="material-symbols-outlined">construction</span> Work Area & Panels</h2>
     <div class="section-header-right">
-      <button class="btn btn-danger btn-sm" onclick="exportWorkPDF()">
-        <span class="material-symbols-outlined">picture_as_pdf</span> PDF Report
-      </button>
-      <button class="btn btn-success btn-sm" onclick="exportWorkCSV()">
-        <span class="material-symbols-outlined">table_view</span> CSV Export
-      </button>
+      <button class="btn btn-danger btn-sm" onclick="exportWorkPDF()"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</button>
+      <button class="btn btn-success btn-sm" onclick="exportWorkCSV()"><span class="material-symbols-outlined">table_view</span> CSV</button>
     </div>
   </div>
 
-  <!-- Panel Calculator -->
+  <!-- Panel Items with Date Filter -->
   <div class="card">
     <div class="card-header">
       <span class="material-symbols-outlined">view_in_ar</span>
       <h3>Items & Materials</h3>
-      <button class="btn btn-primary btn-sm" onclick="showAddPanelModal()" style="margin-left:auto">
-        <span class="material-symbols-outlined">add</span> Add Item
-      </button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input type="date" id="panelDateFilterInput" class="form-control" style="width:150px;padding:6px 10px;font-size:12px" onchange="filterPanelsByDateInput()">
+        <button class="btn btn-sm btn-secondary" onclick="clearPanelDateFilter()" title="Show All" style="padding:6px 8px">
+          <span class="material-symbols-outlined" style="font-size:16px">clear_all</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="showAddPanelModal()">
+          <span class="material-symbols-outlined">add</span> Add Item
+        </button>
+      </div>
     </div>
     <div class="card-body" id="panelCalcContainer">
       <div class="empty-state"><span class="material-symbols-outlined">view_in_ar</span><p>No items yet.</p></div>
     </div>
   </div>
 
-  <!-- Area Coverage - Date Wise -->
+  <!-- Date-wise Panel Summary -->
   <div class="card" style="margin-top:20px">
     <div class="card-header">
       <span class="material-symbols-outlined">area_chart</span>
-      <h3>Area Coverage - Date Wise</h3>
+      <h3>Date-wise Area Coverage</h3>
     </div>
-    <div class="card-body" id="areaCoverageContainer">
-      <div class="empty-state"><span class="material-symbols-outlined">area_chart</span><p>No data yet. Add progress entries.</p></div>
+    <div class="card-body" id="panelDateSummary">
+      <div class="empty-state"><span class="material-symbols-outlined">area_chart</span><p>Add items with dates to see coverage</p></div>
     </div>
   </div>
 
-  <!-- Table Assignments -->
+  <!-- Tables -->
   <div class="card" style="margin-top:20px">
     <div class="card-header">
       <span class="material-symbols-outlined">table_restaurant</span>
       <h3>Table Assignments & Workers</h3>
     </div>
     <div class="card-body" id="tableAssignContainer">
-      <div class="text-muted text-center">Loading tables...</div>
+      <div class="text-muted text-center">Loading...</div>
     </div>
   </div>
 
-  <!-- Daily Work Progress -->
+  <!-- Progress -->
   <div class="card" style="margin-top:20px">
     <div class="card-header">
       <span class="material-symbols-outlined">trending_up</span>
       <h3>Daily Work Progress</h3>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
         <input type="date" id="progressDateFilter" class="form-control" style="width:150px;padding:6px 10px;font-size:12px" onchange="filterProgressByDate()">
-        <button class="btn btn-sm btn-secondary" onclick="clearProgressFilter()" title="Show All" style="padding:6px 8px">
+        <button class="btn btn-sm btn-secondary" onclick="clearProgressFilter()" style="padding:6px 8px">
           <span class="material-symbols-outlined" style="font-size:16px">clear_all</span>
         </button>
         <button class="btn btn-primary btn-sm" onclick="showAddProgressModal()">
-          <span class="material-symbols-outlined">add</span> Add Progress
+          <span class="material-symbols-outlined">add</span> Add
         </button>
       </div>
     </div>
     <div class="card-body" id="workProgressContainer">
-      <div class="empty-state"><span class="material-symbols-outlined">trending_up</span><p>No progress entries yet.</p></div>
+      <div class="empty-state"><span class="material-symbols-outlined">trending_up</span><p>No progress yet.</p></div>
     </div>
   </div>
 </section>
