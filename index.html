@@ -925,18 +925,25 @@
         </div>
 
         <!-- Work Progress -->
-        <div class="card" style="margin-top:20px">
-          <div class="card-header">
-            <span class="material-symbols-outlined">trending_up</span>
-            <h3>Daily Work Progress</h3>
-            <button class="btn btn-primary btn-sm" onclick="showAddProgressModal()" style="margin-left:auto">
-              <span class="material-symbols-outlined">add</span> Add Progress
-            </button>
-          </div>
-          <div class="card-body" id="workProgressContainer">
-            <div class="empty-state"><span class="material-symbols-outlined">construction</span><p>No progress entries yet.</p></div>
-          </div>
-        </div>
+       <!-- Work Progress -->
+<div class="card" style="margin-top:20px">
+  <div class="card-header">
+    <span class="material-symbols-outlined">trending_up</span>
+    <h3>Daily Work Progress</h3>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <input type="date" id="workProgressDateFilter" class="form-control" style="width:160px;padding:6px 10px;font-size:12px" onchange="filterWorkProgressByDate()">
+      <button class="btn btn-sm btn-secondary" onclick="clearWorkProgressFilter()" title="Show All">
+        <span class="material-symbols-outlined" style="font-size:16px">clear</span>
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="showAddProgressModal()">
+        <span class="material-symbols-outlined">add</span> Add
+      </button>
+    </div>
+  </div>
+  <div class="card-body" id="workProgressContainer">
+    <div class="empty-state"><span class="material-symbols-outlined">trending_up</span><p>No progress entries yet.</p></div>
+  </div>
+</div>
       </section>
 
       <!-- SALARY SECTION -->
