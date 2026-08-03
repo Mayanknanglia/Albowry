@@ -860,7 +860,7 @@ function calculateSalary(wid, year, month, monthlySalaryAED) {
   records.sort(function(a, b) { return a.date > b.date ? 1 : -1; });
 
   var perHourRate = monthlySalaryAED / STANDARD_HOURS_PER_MONTH;
-  // Regular + CompOT at 1x rate, ExtraOT (includes Sunday hours) at 1.5x
+  // Regular + CompOT at 1x rate, ExtraOT (includes Sunday hours) at 1x
   var regularSalary = totalRegular * perHourRate;
   var compOTSalary = totalCompOT * perHourRate;
   var extraOTSalary = totalExtraOT * perHourRate;
