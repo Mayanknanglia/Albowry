@@ -863,7 +863,7 @@ function calculateSalary(wid, year, month, monthlySalaryAED) {
   // Regular + CompOT at 1x rate, ExtraOT (includes Sunday hours) at 1.5x
   var regularSalary = totalRegular * perHourRate;
   var compOTSalary = totalCompOT * perHourRate;
-  var extraOTSalary = totalExtraOT * perHourRate * 1.5;
+  var extraOTSalary = totalExtraOT * perHourRate;
   var totalSalary = regularSalary + compOTSalary + extraOTSalary;
 
   return {
