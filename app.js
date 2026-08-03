@@ -1325,3 +1325,73 @@ window.addEventListener('load', function() {
 });
 
 console.log('[ALB] app.js v21 loaded - Sunday Full OT - ' + COMPANY.full);
+// ====== SUNDAY OT MIGRATION - One time fix for old records ======
+function migrateSundayRecords() {
+  var allAtt = gA();
+  var sundayRecords = [];
+
+  // Find all completed records on Sundays
+  for (var i = 0; i < allAtt.length; i++) {
+    var a = allAtt[i];
+    if (a.status !== 'completed') continue;
+    if (!a.checkinTime || !a.checkoutTime) continue;
+
+    var attDate = a.date || getTurkeyDate(a.checkinTime);
+
+    // Check if it's Sunday AND not already marked
+    if (isSunday(attDate) && !a.isSundayShift) {
+      sundayRecords.push(a);
+    }
+  }
+
+  if (sundayRecords.length === 0) {
+    showToast('No old Sunday records found to fix!', 'info');
+    return Promise.resolve({ ok: true, count: 0 });
+  }
+
+  showConfirm(
+    'Found <b>' + sundayRecords.length + '</b> old Sunday records.<br><br>' +
+    'These will be updated so ALL hours become Extra OT (1.5x pay).<br><br>' +
+    'This cannot be undone. Continue?',
+    function() {
+      var promises = [];
+      var updated = 0;
+
+      for (var j = 0; j < sundayRecords.length; j++) {
+        (function(rec) {
+          // Recalculate with Sunday logic
+          var hrs = calcHours(rec.checkinTime, rec.checkoutTime, rec.date || getTurkeyDate(rec.checkinTime));
+
+          var promise = FB.update('attendance', rec.recId, {
+            regular: hrs.regular,       // 0 on Sunday
+            compOT: hrs.compOT,         // 0 on Sunday
+            extraOT: hrs.extraOT,       // all hours on Sunday
+            ot: hrs.ot,                 // all hours on Sunday
+            total: hrs.total,           // unchanged
+            isSundayShift: true
+          }).then(function() {
+            updated++;
+          }).catch(function(e) {
+            console.log('[ALB] Migration error for ' + rec.recId + ':', e);
+          });
+
+          promises.push(promise);
+        })(sundayRecords[j]);
+      }
+
+      Promise.all(promises).then(function() {
+        showToast(
+          updated + ' Sunday records updated! All hours moved to Extra OT.',
+          'success',
+          5000
+        );
+        console.log('[ALB] Sunday migration complete: ' + updated + ' records updated');
+      });
+    },
+    function() {
+      showToast('Migration cancelled', 'info');
+    }
+  );
+
+  return Promise.resolve({ ok: true, count: sundayRecords.length });
+}
