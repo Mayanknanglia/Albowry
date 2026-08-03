@@ -1,8 +1,8 @@
 // AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
-// app.js v20 - Timezone fix + Night shift proper + Auto times
+// app.js v21 - Timezone fix + Night shift proper + Auto times + Sunday Full OT
 
-var APP_VERSION = 'v20';
-var CACHE_KEY = 'alb_v20';
+var APP_VERSION = 'v21';
+var CACHE_KEY = 'alb_v21';
 
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
@@ -85,27 +85,35 @@ function getTurkeyDate(iso) {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
 }
 
-// ====== CRITICAL FIX: buildISO handles Turkey timezone properly ======
-// User enters time in Turkey time (e.g., 20:00 for 8 PM Turkey)
-// We must convert this to correct UTC ISO string
-function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
-  // dateStr = "2026-07-29", timeStr = "20:00"
-  // User means: 2026-07-29 20:00 Turkey time
-  // Turkey is UTC+3, so UTC = 20:00 - 3 = 17:00 UTC
+// ====== NEW: Check if a date string (YYYY-MM-DD) is Sunday ======
+// Date string is Turkey local date, no timezone conversion needed
+function isSunday(dateStr) {
+  if (!dateStr) return false;
+  try {
+    // Parse as local date to avoid timezone shifting
+    var parts = dateStr.split('-');
+    var yyyy = parseInt(parts[0]);
+    var mm = parseInt(parts[1]) - 1; // JS months 0-11
+    var dd = parseInt(parts[2]);
+    // getDay(): 0=Sunday, 1=Monday ... 6=Saturday
+    var day = new Date(yyyy, mm, dd).getDay();
+    return day === 0;
+  } catch(e) { return false; }
+}
 
+// ====== CRITICAL FIX: buildISO handles Turkey timezone properly ======
+function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
   var parts = timeStr.split(':');
   var hh = parseInt(parts[0]);
   var mm = parseInt(parts[1]);
 
   var dateParts = dateStr.split('-');
   var yyyy = parseInt(dateParts[0]);
-  var mo = parseInt(dateParts[1]) - 1; // JS months 0-11
+  var mo = parseInt(dateParts[1]) - 1;
   var dd = parseInt(dateParts[2]);
 
-  // Create date as if it's in UTC, then subtract Turkey offset
   var dt = new Date(Date.UTC(yyyy, mo, dd, hh - TZ_OFFSET_HOURS, mm, 0));
 
-  // Night shift: if checkout time is before check-in time, add 1 day
   if (isNightCheckout && checkinISO) {
     var cin = new Date(checkinISO);
     if (dt <= cin) {
@@ -113,7 +121,6 @@ function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
     }
   }
 
-  // Fallback: if night shift with no reference and time is morning (0-12), add 1 day
   if (isNightCheckout && !checkinISO) {
     if (hh >= 0 && hh < 12) {
       dt.setUTCDate(dt.getUTCDate() + 1);
@@ -123,25 +130,54 @@ function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
   return dt.toISOString();
 }
 
-// ====== HOURS: 12hrs = 9 Regular + 3 CompOT + 0 Extra ======
-function calcHours(checkinISO, checkoutISO) {
-  if (!checkinISO || !checkoutISO) return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0 };
+// ====== HOURS CALCULATION ======
+// Sunday: ALL hours = ExtraOT (paid at 1.5x)
+// Normal: 9 Regular + 3 CompOT + remaining ExtraOT
+// dateStr is Turkey date "YYYY-MM-DD" - used to check Sunday
+function calcHours(checkinISO, checkoutISO, dateStr) {
+  if (!checkinISO || !checkoutISO) {
+    return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0, isSundayShift: false };
+  }
+
   var cin = new Date(checkinISO).getTime();
   var cout = new Date(checkoutISO).getTime();
   var totalMs = cout - cin;
-  if (totalMs <= 0) return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0 };
+
+  if (totalMs <= 0) {
+    return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0, isSundayShift: false };
+  }
+
   var total = Math.round((totalMs / 3600000) * 100) / 100;
-  var regular = Math.min(total, REG_HOURS);
-  var remaining = Math.max(0, total - REG_HOURS);
-  var compOT = Math.min(remaining, COMP_OT);
-  var extraOT = Math.max(0, remaining - COMP_OT);
-  var ot = compOT + extraOT;
+
+  // Determine date for Sunday check
+  // Use dateStr if provided, else derive from checkinISO in Turkey timezone
+  var checkDate = dateStr || getTurkeyDate(checkinISO);
+  var sundayShift = isSunday(checkDate);
+
+  var regular, compOT, extraOT, ot;
+
+  if (sundayShift) {
+    // Sunday: ALL hours are Extra OT (1.5x rate)
+    regular = 0;
+    compOT = 0;
+    extraOT = total;
+    ot = total;
+  } else {
+    // Normal day
+    regular = Math.min(total, REG_HOURS);
+    var remaining = Math.max(0, total - REG_HOURS);
+    compOT = Math.min(remaining, COMP_OT);
+    extraOT = Math.max(0, remaining - COMP_OT);
+    ot = compOT + extraOT;
+  }
+
   return {
     total: Math.round(total * 100) / 100,
     regular: Math.round(regular * 100) / 100,
     compOT: Math.round(compOT * 100) / 100,
     extraOT: Math.round(extraOT * 100) / 100,
-    ot: Math.round(ot * 100) / 100
+    ot: Math.round(ot * 100) / 100,
+    isSundayShift: sundayShift
   };
 }
 
@@ -357,16 +393,22 @@ function workerCheckinReq(wid, shift) {
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
   var nowISO = tNow();
   var recId = genRecId(wid, false);
+
+  // Check if today is Sunday - store flag in record
+  var sundayFlag = isSunday(today);
+
   var rec = {
     recId: recId, wid: wid, name: w.name, prof: w.prof, sec: w.sec,
     shift: shift || w.shift, date: today,
     checkinReqTime: nowISO, checkinTime: nowISO,
     checkoutReqTime: null, checkoutTime: null,
     total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
-    status: 'pending_checkin', backdated: false
+    status: 'pending_checkin', backdated: false,
+    isSundayShift: sundayFlag
   };
   return FB.save('attendance', recId, rec).then(function() {
-    return { ok: true, msg: 'Check-in requested at ' + fmtTime(nowISO) + '. Waiting for admin approval.' };
+    var sundayNote = sundayFlag ? ' [SUNDAY - Full OT will apply]' : '';
+    return { ok: true, msg: 'Check-in requested at ' + fmtTime(nowISO) + sundayNote + '. Waiting for admin approval.' };
   }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
@@ -396,7 +438,8 @@ function adminApproveCheckin(recId) {
   return FB.update('attendance', recId, {
     checkinTime: checkinTime, status: 'checked_in'
   }).then(function() {
-    showToast((att.name || 'Worker') + ' check-in approved!', 'success');
+    var sundayNote = isSunday(att.date) ? ' [SUNDAY]' : '';
+    showToast((att.name || 'Worker') + ' check-in approved!' + sundayNote, 'success');
     return { ok: true };
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
@@ -405,8 +448,10 @@ function adminApproveCheckout(recId) {
   var att = null; var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
+
   var checkoutTime = att.checkoutReqTime || tNow();
 
+  // Night shift: fix if checkout before checkin
   if (att.shift === 'Night' && att.checkinTime) {
     var cin = new Date(att.checkinTime);
     var cout = new Date(checkoutTime);
@@ -416,14 +461,27 @@ function adminApproveCheckout(recId) {
     }
   }
 
-  var hrs = calcHours(att.checkinTime, checkoutTime);
+  // Pass att.date to calcHours for Sunday detection
+  var hrs = calcHours(att.checkinTime, checkoutTime, att.date);
+
+  var sundayNote = hrs.isSundayShift ? ' [SUNDAY - Full OT: ' + hrs.extraOT + 'h]' : '';
+
   return FB.update('attendance', recId, {
     checkoutTime: checkoutTime,
-    total: hrs.total, regular: hrs.regular,
-    compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
+    total: hrs.total,
+    regular: hrs.regular,
+    compOT: hrs.compOT,
+    extraOT: hrs.extraOT,
+    ot: hrs.ot,
+    isSundayShift: hrs.isSundayShift,
     status: 'completed'
   }).then(function() {
-    showToast((att.name || 'Worker') + ' checkout approved! ' + hrs.total + 'h (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)', 'success');
+    showToast(
+      (att.name || 'Worker') + ' checkout approved! ' +
+      hrs.total + 'h' + sundayNote +
+      ' (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)',
+      'success'
+    );
     return { ok: true };
   }).catch(function(e) { showToast('Error: ' + e.message, 'error'); return { ok: false }; });
 }
@@ -477,6 +535,7 @@ function undoApproval(recId) {
     return FB.update('attendance', recId, {
       checkoutTime: null, checkoutReqTime: null,
       total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
+      isSundayShift: false,
       status: 'checked_in'
     }).then(function() {
       showToast('Checkout undone', 'info');
@@ -504,6 +563,8 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
       }
     }
   }
+
+  var sundayFlag = isSunday(date);
   var recId = genRecId(wid, dateStr ? true : false);
   var rec = {
     recId: recId, wid: wid, name: w.name, prof: w.prof, sec: w.sec,
@@ -511,10 +572,12 @@ function manualCheckin(wid, shift, dateStr, timeStr) {
     checkinReqTime: checkinISO, checkinTime: checkinISO,
     checkoutReqTime: null, checkoutTime: null,
     total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
-    status: 'checked_in', backdated: dateStr ? true : false
+    status: 'checked_in', backdated: dateStr ? true : false,
+    isSundayShift: sundayFlag
   };
   return FB.save('attendance', recId, rec).then(function() {
-    return { ok: true, msg: w.name + ' (' + actualShift + ') checked in at ' + fmtTime(checkinISO) };
+    var sundayNote = sundayFlag ? ' [SUNDAY]' : '';
+    return { ok: true, msg: w.name + ' (' + actualShift + ') checked in at ' + fmtTime(checkinISO) + sundayNote };
   }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
@@ -545,14 +608,24 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
     }
   }
 
-  var hrs = calcHours(att.checkinTime, checkoutISO);
+  // Pass att.date to calcHours for Sunday detection
+  var hrs = calcHours(att.checkinTime, checkoutISO, att.date);
+
+  var sundayNote = hrs.isSundayShift ? ' [SUNDAY - Full OT]' : '';
+
   return FB.update('attendance', att.recId, {
     checkoutTime: checkoutISO, checkoutReqTime: checkoutISO,
     total: hrs.total, regular: hrs.regular,
     compOT: hrs.compOT, extraOT: hrs.extraOT, ot: hrs.ot,
+    isSundayShift: hrs.isSundayShift,
     status: 'completed'
   }).then(function() {
-    return { ok: true, msg: w.name + ' checked out at ' + fmtTime(checkoutISO) + ' | ' + hrs.total + 'h (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)' };
+    return {
+      ok: true,
+      msg: w.name + ' checked out at ' + fmtTime(checkoutISO) +
+           ' | ' + hrs.total + 'h' + sundayNote +
+           ' (Reg: ' + hrs.regular + 'h, OT: ' + hrs.ot + 'h)'
+    };
   }).catch(function(e) { return { ok: false, msg: 'Error: ' + e.message }; });
 }
 
@@ -758,6 +831,7 @@ function getExportData(fromDate, toDate, filter) {
   return result;
 }
 
+// ====== SALARY - Sunday ExtraOT is already at 1.5x ======
 function calculateSalary(wid, year, month, monthlySalaryAED) {
   var w = findWorker(wid);
   if (!w) return null;
@@ -765,7 +839,7 @@ function calculateSalary(wid, year, month, monthlySalaryAED) {
   var monthStr = year + '-' + (month < 10 ? '0' + month : '' + month);
   var totalDays = 0;
   var totalRegular = 0, totalCompOT = 0, totalExtraOT = 0, totalHrs = 0;
-  var dayShift = 0, nightShift = 0;
+  var dayShift = 0, nightShift = 0, sundayCount = 0;
   var records = [];
 
   for (var i = 0; i < allAtt.length; i++) {
@@ -781,10 +855,12 @@ function calculateSalary(wid, year, month, monthlySalaryAED) {
     totalExtraOT += a.extraOT || 0;
     totalHrs += a.total || 0;
     if (a.shift === 'Night') nightShift++; else dayShift++;
+    if (a.isSundayShift) sundayCount++;
   }
   records.sort(function(a, b) { return a.date > b.date ? 1 : -1; });
 
   var perHourRate = monthlySalaryAED / STANDARD_HOURS_PER_MONTH;
+  // Regular + CompOT at 1x rate, ExtraOT (includes Sunday hours) at 1.5x
   var regularSalary = totalRegular * perHourRate;
   var compOTSalary = totalCompOT * perHourRate;
   var extraOTSalary = totalExtraOT * perHourRate * 1.5;
@@ -802,6 +878,7 @@ function calculateSalary(wid, year, month, monthlySalaryAED) {
     totalExtraOT: Math.round(totalExtraOT * 100) / 100,
     totalOT: Math.round((totalCompOT + totalExtraOT) * 100) / 100,
     dayShift: dayShift, nightShift: nightShift,
+    sundayCount: sundayCount,
     regularSalary: Math.round(regularSalary * 100) / 100,
     compOTSalary: Math.round(compOTSalary * 100) / 100,
     extraOTSalary: Math.round(extraOTSalary * 100) / 100,
@@ -930,13 +1007,15 @@ function addPDFFooter(doc) {
 
 function exportCSV(data, filename) {
   var header = ['# ' + COMPANY.full, '# Generated: ' + fmtDT(tNow()), ''];
-  var cols = ['Date', 'Worker ID', 'Name', 'Profession', 'Section', 'Shift', 'Check In', 'Check Out', 'Total Hrs', 'Regular', 'CompOT', 'ExtraOT', 'OT', 'Status'];
+  var cols = ['Date', 'Worker ID', 'Name', 'Profession', 'Section', 'Shift', 'Sunday', 'Check In', 'Check Out', 'Total Hrs', 'Regular', 'CompOT', 'ExtraOT', 'OT', 'Status'];
   var rows = [header.join('\n'), cols.join(',')];
   for (var i = 0; i < data.length; i++) {
     var a = data[i];
     rows.push([
       a.date || '', a.wid || '', '"' + (a.name || '') + '"', '"' + (a.prof || '') + '"',
-      a.sec || '', a.shift || '', fmtTime(a.checkinTime), fmtTime(a.checkoutTime),
+      a.sec || '', a.shift || '',
+      a.isSundayShift ? 'YES' : 'NO',
+      fmtTime(a.checkinTime), fmtTime(a.checkoutTime),
       a.total || 0, a.regular || 0, a.compOT || 0, a.extraOT || 0, a.ot || 0, a.status || ''
     ].join(','));
   }
@@ -1117,7 +1196,6 @@ function getWorkerStats(wid) {
   };
 }
 
-// ====== SHIFT HELPER - Auto set times based on shift ======
 function getShiftDefaults(shift) {
   if (shift === 'Night') {
     return { inTime: '20:00', outTime: '08:00' };
@@ -1246,4 +1324,4 @@ window.addEventListener('load', function() {
   setTimeout(function() { loadLogoForPDF(); }, 1000);
 });
 
-console.log('[ALB] app.js v20 loaded - ' + COMPANY.full);
+console.log('[ALB] app.js v21 loaded - Sunday Full OT - ' + COMPANY.full);
