@@ -1,8 +1,8 @@
 // AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
-// app.js v22 - Sunday OT + Pintu Fix + Zero Data Loss
+// app.js v23 - ZERO DATA LOSS + All Workers Safe + Sunday OT
 
-var APP_VERSION = 'v22';
-var CACHE_KEY = 'alb_v22';
+var APP_VERSION = 'v23';
+var CACHE_KEY = 'alb_v23';
 
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
@@ -85,7 +85,16 @@ function getTurkeyDate(iso) {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
 }
 
-// ====== CHECK IF DATE IS SUNDAY ======
+function formatDateStr(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    var parts = dateStr.split('-');
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return parts[2] + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0];
+  } catch(e) { return dateStr; }
+}
+
+// ====== SUNDAY CHECK ======
 function isSunday(dateStr) {
   if (!dateStr) return false;
   try {
@@ -93,12 +102,11 @@ function isSunday(dateStr) {
     var yyyy = parseInt(parts[0]);
     var mm = parseInt(parts[1]) - 1;
     var dd = parseInt(parts[2]);
-    var day = new Date(yyyy, mm, dd).getDay();
-    return day === 0;
+    return new Date(yyyy, mm, dd).getDay() === 0;
   } catch(e) { return false; }
 }
 
-// ====== BUILD ISO - Turkey timezone to UTC ======
+// ====== BUILD ISO ======
 function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
   var parts = timeStr.split(':');
   var hh = parseInt(parts[0]);
@@ -119,8 +127,6 @@ function buildISO(dateStr, timeStr, isNightCheckout, checkinISO) {
 }
 
 // ====== HOURS CALCULATION ======
-// Sunday = ALL hours ExtraOT (1x pay)
-// Normal = 9 Regular + 3 CompOT + remaining ExtraOT
 function calcHours(checkinISO, checkoutISO, dateStr) {
   if (!checkinISO || !checkoutISO) {
     return { total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0, isSundayShift: false };
@@ -155,6 +161,12 @@ function calcHours(checkinISO, checkoutISO, dateStr) {
     ot: Math.round(ot * 100) / 100,
     isSundayShift: sundayShift
   };
+}
+
+function indexOf(arr, val) {
+  if (!arr) return -1;
+  for (var i = 0; i < arr.length; i++) if (arr[i] === val) return i;
+  return -1;
 }
 
 function getPresentWorkerIds(date, attendanceList, shift) {
@@ -211,12 +223,6 @@ function getPresentWorkers(date, attendanceList, workers, shift, section) {
   return presentWorkers;
 }
 
-function indexOf(arr, val) {
-  if (!arr) return -1;
-  for (var i = 0; i < arr.length; i++) if (arr[i] === val) return i;
-  return -1;
-}
-
 function getSession() {
   try { var s = localStorage.getItem(SESSION_KEY); return s ? JSON.parse(s) : null; }
   catch(e) { return null; }
@@ -242,17 +248,23 @@ function startRealtimeSync() {
   for (var i = 0; i < _listeners.length; i++) { try { _listeners[i](); } catch(e) {} }
   _listeners = [];
   _listeners.push(FB.listen('workers', function(docs) {
-    _workers = docs; _syncStatus.workers = true;
-    updateSyncUI(); onWorkersUpdated();
+    _workers = docs;
+    _syncStatus.workers = true;
+    updateSyncUI();
+    onWorkersUpdated();
   }));
   _listeners.push(FB.listen('attendance', function(docs) {
-    _attendance = docs; _syncStatus.attendance = true;
-    updateSyncUI(); onAttendanceUpdated();
+    _attendance = docs;
+    _syncStatus.attendance = true;
+    updateSyncUI();
+    onAttendanceUpdated();
   }));
   _listeners.push(FB.listenDoc('admin', ADMIN_DOC, function(doc) {
     if (doc) {
-      _adminData = doc; _syncStatus.admin = true;
-      updateSyncUI(); onAdminUpdated();
+      _adminData = doc;
+      _syncStatus.admin = true;
+      updateSyncUI();
+      onAdminUpdated();
     }
   }));
 }
@@ -261,14 +273,17 @@ function onWorkersUpdated() {
   var session = getSession();
   if (!session) return;
   if (session.role === 'admin') {
-    refreshAdminWorkers(); refreshDashboard(); renderWorkerDropdowns();
+    refreshAdminWorkers();
+    refreshDashboard();
+    renderWorkerDropdowns();
   } else if (session.role === 'worker') {
     var w = findWorker(session.wid);
     if (w) {
       setSession({ role: 'worker', wid: w.wid, name: w.name, prof: w.prof, sec: w.sec, shift: w.shift });
       renderWorkerDashboard();
     } else {
-      clearSession(); location.reload();
+      clearSession();
+      location.reload();
     }
   }
 }
@@ -277,8 +292,11 @@ function onAttendanceUpdated() {
   var session = getSession();
   if (!session) return;
   if (session.role === 'admin') {
-    refreshDashboard(); refreshApprovals(); refreshLiveStatus();
-    refreshAttendanceView(); refreshManualEntry();
+    refreshDashboard();
+    refreshApprovals();
+    refreshLiveStatus();
+    refreshAttendanceView();
+    refreshManualEntry();
     if (typeof renderHistoryView === 'function') renderHistoryView();
   } else if (session.role === 'worker') {
     renderWorkerDashboard();
@@ -305,7 +323,8 @@ function findWorkerByName(name) {
 }
 
 function getTodayAtt(wid) {
-  var today = tD(); var att = gA();
+  var today = tD();
+  var att = gA();
   for (var i = 0; i < att.length; i++) {
     if (att[i].wid === wid && att[i].date === today) return att[i];
   }
@@ -313,14 +332,16 @@ function getTodayAtt(wid) {
 }
 
 function getWorkerAtt(wid) {
-  var result = []; var att = gA();
+  var result = [];
+  var att = gA();
   for (var i = 0; i < att.length; i++) if (att[i].wid === wid) result.push(att[i]);
   result.sort(function(a, b) { return (b.date || '') > (a.date || '') ? 1 : -1; });
   return result;
 }
 
 function getDateAtt(date) {
-  var result = []; var att = gA();
+  var result = [];
+  var att = gA();
   for (var i = 0; i < att.length; i++) {
     var attDate = att[i].date || getTurkeyDate(att[i].checkinTime || att[i].checkinReqTime);
     if (attDate === date) result.push(att[i]);
@@ -404,7 +425,8 @@ function workerCheckoutReq(wid) {
 }
 
 function adminApproveCheckin(recId) {
-  var att = null; var allAtt = gA();
+  var att = null;
+  var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false });
   var checkinTime = att.checkinReqTime || att.checkinTime || tNow();
@@ -418,7 +440,8 @@ function adminApproveCheckin(recId) {
 }
 
 function adminApproveCheckout(recId) {
-  var att = null; var allAtt = gA();
+  var att = null;
+  var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
   var checkoutTime = att.checkoutReqTime || tNow();
@@ -449,7 +472,8 @@ function adminApproveCheckout(recId) {
 }
 
 function adminReject(recId, reason) {
-  var att = null; var allAtt = gA();
+  var att = null;
+  var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false });
   if (att.status === 'pending_checkin') {
@@ -469,7 +493,8 @@ function adminReject(recId, reason) {
 }
 
 function adminApproveAll(type) {
-  var allAtt = gA(); var promises = [];
+  var allAtt = gA();
+  var promises = [];
   var statusFilter = type === 'checkin' ? 'pending_checkin' : 'pending_checkout';
   for (var i = 0; i < allAtt.length; i++) {
     var att = allAtt[i];
@@ -485,7 +510,8 @@ function adminApproveAll(type) {
 }
 
 function undoApproval(recId) {
-  var att = null; var allAtt = gA();
+  var att = null;
+  var allAtt = gA();
   for (var i = 0; i < allAtt.length; i++) if (allAtt[i].recId === recId) { att = allAtt[i]; break; }
   if (!att) return Promise.resolve({ ok: false, msg: 'Record not found' });
   if (att.status === 'checked_in' && !att.checkoutTime) {
@@ -542,7 +568,8 @@ function manualCheckout(wid, shift, dateStr, timeStr) {
   var w = findWorker(wid);
   if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
   var date = dateStr || tD();
-  var allAtt = gA(); var att = null;
+  var allAtt = gA();
+  var att = null;
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
@@ -601,7 +628,9 @@ function bulkCheckout(wids, shift, dateStr, timeStr) {
 }
 
 function endDay(timeStr) {
-  var today = tD(); var allAtt = gA(); var activeWids = [];
+  var today = tD();
+  var allAtt = gA();
+  var activeWids = [];
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
@@ -626,7 +655,8 @@ function changeWorkerPassword(wid, oldPw, newPw) {
 }
 
 function updateAdmin(field, value, confirmPw) {
-  var ad = gAd(); var update = {};
+  var ad = gAd();
+  var update = {};
   if (field === 'name') {
     if (!value) return Promise.resolve({ ok: false, msg: 'Name cannot be empty' });
     update.name = value;
@@ -694,26 +724,53 @@ function toggleWorkerShift(wid) {
 }
 
 function resetAllPasswords() {
-  var ws = gW(); var promises = [];
-  for (var i = 0; i < ws.length; i++) promises.push(FB.update('workers', ws[i].wid, { pw: 'Worker@123' }));
+  var ws = gW();
+  var promises = [];
+  for (var i = 0; i < ws.length; i++) {
+    promises.push(FB.update('workers', ws[i].wid, { pw: 'Worker@123' }));
+  }
   return Promise.all(promises).then(function() {
     showToast('All passwords reset to Worker@123', 'success');
     return { ok: true };
   });
 }
 
-// ====== SAFE CLEAR - NEVER DELETES COMPLETED ATTENDANCE ======
+// ====== ACTIVATE ALL WORKERS - EMERGENCY FIX ======
+function activateAllWorkers() {
+  var ws = gW();
+  var promises = [];
+  var count = 0;
+  for (var i = 0; i < ws.length; i++) {
+    if (!ws[i].on) {
+      promises.push(FB.update('workers', ws[i].wid, { on: true }));
+      count++;
+    }
+  }
+  if (promises.length === 0) {
+    showToast('All workers already active!', 'success');
+    return Promise.resolve({ ok: true, count: 0 });
+  }
+  return Promise.all(promises).then(function() {
+    showToast(count + ' workers activated!', 'success');
+    return { ok: true, count: count };
+  });
+}
+
+// ====== SAFE CLEAR - ONLY PENDING - NEVER COMPLETED ======
 function clearAllAttendance() {
   var allAtt = gA();
   var promises = [];
   var skipped = 0;
   for (var i = 0; i < allAtt.length; i++) {
-    // ONLY delete pending/incomplete - NEVER delete completed records
     if (allAtt[i].status === 'pending_checkin') {
       promises.push(FB.delete('attendance', allAtt[i].recId));
     } else {
       skipped++;
     }
+  }
+  if (promises.length === 0) {
+    showToast('No pending records to clear. ' + skipped + ' completed records safe.', 'info');
+    return Promise.resolve({ ok: true });
   }
   return Promise.all(promises).then(function() {
     showToast('Pending cleared. ' + skipped + ' completed records kept safe.', 'info');
@@ -721,7 +778,7 @@ function clearAllAttendance() {
   });
 }
 
-// ====== NUCLEAR CLEAR - ADMIN ONLY WITH DOUBLE CONFIRM ======
+// ====== NUCLEAR CLEAR - ONLY WITH DOUBLE CONFIRM ======
 function clearAllAttendanceForce() {
   var allAtt = gA();
   var promises = [];
@@ -738,20 +795,24 @@ function backupData() {
   var data = {
     exportedAt: new Date().toISOString(),
     company: COMPANY,
-    workers: gW(), attendance: gA(),
+    workers: gW(),
+    attendance: gA(),
     admin: { adminId: gAd().adminId, name: gAd().name }
   };
   var json = JSON.stringify(data, null, 2);
   var blob = new Blob([json], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
-  a.href = url; a.download = 'albowry_backup_' + tD() + '.json'; a.click();
+  a.href = url;
+  a.download = 'albowry_backup_' + tD() + '.json';
+  a.click();
   URL.revokeObjectURL(url);
   showToast('Backup downloaded!', 'success');
 }
 
 function getMonthlyReport(wid, year, month) {
-  var allAtt = gA(); var result = [];
+  var allAtt = gA();
+  var result = [];
   var monthStr = year + '-' + (month < 10 ? '0' + month : '' + month);
   var workers = wid === 'all' ? gW() : [findWorker(wid)];
   for (var i = 0; i < workers.length; i++) {
@@ -784,7 +845,8 @@ function getMonthlyReport(wid, year, month) {
 }
 
 function getExportData(fromDate, toDate, filter) {
-  var allAtt = gA(); var result = [];
+  var allAtt = gA();
+  var result = [];
   for (var i = 0; i < allAtt.length; i++) {
     var a = allAtt[i];
     if (a.status !== 'completed') continue;
@@ -805,7 +867,7 @@ function getExportData(fromDate, toDate, filter) {
   return result;
 }
 
-// ====== SALARY - All hours at 1x rate ======
+// ====== SALARY - ALL HOURS 1x RATE ======
 function calculateSalary(wid, year, month, monthlySalaryAED) {
   var w = findWorker(wid);
   if (!w) return null;
@@ -832,7 +894,6 @@ function calculateSalary(wid, year, month, monthlySalaryAED) {
   }
   records.sort(function(a, b) { return a.date > b.date ? 1 : -1; });
   var perHourRate = monthlySalaryAED / STANDARD_HOURS_PER_MONTH;
-  // ALL hours at 1x rate - no multiplier
   var regularSalary = totalRegular * perHourRate;
   var compOTSalary = totalCompOT * perHourRate;
   var extraOTSalary = totalExtraOT * perHourRate;
@@ -858,7 +919,8 @@ function calculateSalary(wid, year, month, monthlySalaryAED) {
 }
 
 function getAllSalaries(year, month, monthlySalaryAED) {
-  var ws = gW(); var result = [];
+  var ws = gW();
+  var result = [];
   for (var i = 0; i < ws.length; i++) {
     if (!ws[i].on) continue;
     var salary = calculateSalary(ws[i].wid, year, month, monthlySalaryAED);
@@ -867,7 +929,7 @@ function getAllSalaries(year, month, monthlySalaryAED) {
   return result;
 }
 
-// ====== SUNDAY OT MIGRATION - Fix old records ======
+// ====== SUNDAY MIGRATION ======
 function migrateSundayRecords() {
   var allAtt = gA();
   var sundayRecords = [];
@@ -881,27 +943,21 @@ function migrateSundayRecords() {
     }
   }
   if (sundayRecords.length === 0) {
-    showToast('No old Sunday records found to fix!', 'info');
+    showToast('No old Sunday records found!', 'info');
     return Promise.resolve({ ok: true, count: 0 });
   }
   showConfirm(
-    'Found ' + sundayRecords.length + ' old Sunday records. ' +
-    'Update all hours to Extra OT? This cannot be undone.',
+    'Found ' + sundayRecords.length + ' old Sunday records. Update all hours to Extra OT?',
     function() {
       var promises = [];
       for (var j = 0; j < sundayRecords.length; j++) {
         (function(rec) {
           var hrs = calcHours(rec.checkinTime, rec.checkoutTime, rec.date || getTurkeyDate(rec.checkinTime));
-          promises.push(
-            FB.update('attendance', rec.recId, {
-              regular: hrs.regular,
-              compOT: hrs.compOT,
-              extraOT: hrs.extraOT,
-              ot: hrs.ot,
-              total: hrs.total,
-              isSundayShift: true
-            })
-          );
+          promises.push(FB.update('attendance', rec.recId, {
+            regular: hrs.regular, compOT: hrs.compOT,
+            extraOT: hrs.extraOT, ot: hrs.ot,
+            total: hrs.total, isSundayShift: true
+          }));
         })(sundayRecords[j]);
       }
       Promise.all(promises).then(function() {
@@ -1020,7 +1076,9 @@ function exportCSV(data, filename) {
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var link = document.createElement('a');
-  link.href = url; link.download = filename || ('albowry_' + tD() + '.csv'); link.click();
+  link.href = url;
+  link.download = filename || ('albowry_' + tD() + '.csv');
+  link.click();
   URL.revokeObjectURL(url);
   showToast('CSV downloaded!', 'success');
 }
@@ -1040,7 +1098,8 @@ function showToast(msg, type, duration) {
   toast.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px">' + (icons[type] || icons.info) + '</span>' + msg;
   container.appendChild(toast);
   setTimeout(function() {
-    toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
     toast.style.transition = 'all 0.3s ease';
     setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
   }, duration || 3500);
@@ -1074,13 +1133,18 @@ function showModal(html, title) {
   box.style.cssText = 'background:#fff;border-radius:16px;padding:28px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
   if (title) {
     box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;color:#0f172a;font-size:18px">' + title + '</h3><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:22px;color:#94a3b8">&times;</button></div>' + html;
-  } else box.innerHTML = html;
+  } else {
+    box.innerHTML = html;
+  }
   overlay.appendChild(box);
   document.body.appendChild(overlay);
   overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
 }
 
-function closeModal() { var m = document.getElementById('globalModal'); if (m) document.body.removeChild(m); }
+function closeModal() {
+  var m = document.getElementById('globalModal');
+  if (m) document.body.removeChild(m);
+}
 
 function speakWelcome(name) {
   if (!window.speechSynthesis) return;
@@ -1102,14 +1166,18 @@ function startClock(elementId) {
       hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
     }) + ' (Turkey Time)';
   }
-  tick(); return setInterval(tick, 1000);
+  tick();
+  return setInterval(tick, 1000);
 }
 
 function showSection(id) {
   var sections = document.querySelectorAll('.admin-section');
   for (var i = 0; i < sections.length; i++) sections[i].style.display = 'none';
   var target = document.getElementById(id);
-  if (target) { target.style.display = 'block'; target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  if (target) {
+    target.style.display = 'block';
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   var navLinks = document.querySelectorAll('.nav-link');
   for (var j = 0; j < navLinks.length; j++) {
     navLinks[j].classList.remove('active');
@@ -1119,7 +1187,8 @@ function showSection(id) {
 
 function logout() {
   showConfirm('Are you sure you want to logout?', function() {
-    clearSession(); location.reload();
+    clearSession();
+    location.reload();
   });
 }
 
@@ -1154,7 +1223,8 @@ function buildWorkerDropdown(selectEl, includeAll, filter) {
       var opt = document.createElement('option');
       opt.value = w.wid;
       opt.text = w.wid + ' - ' + w.name + ' [' + w.shift + ']';
-      group.appendChild(opt); added++;
+      group.appendChild(opt);
+      added++;
     }
     if (added > 0) selectEl.appendChild(group);
   }
@@ -1171,7 +1241,8 @@ function renderWorkerDropdowns() {
 }
 
 function getWorkerStats(wid) {
-  var att = getWorkerAtt(wid); var completed = [];
+  var att = getWorkerAtt(wid);
+  var completed = [];
   for (var i = 0; i < att.length; i++) if (att[i].status === 'completed') completed.push(att[i]);
   var totalDays = completed.length, totalHrs = 0, totalOT = 0;
   for (var j = 0; j < completed.length; j++) {
@@ -1189,16 +1260,6 @@ function getWorkerStats(wid) {
 function getShiftDefaults(shift) {
   if (shift === 'Night') return { inTime: '20:00', outTime: '08:00' };
   return { inTime: '08:00', outTime: '20:00' };
-}
-
-// ====== FORMAT DATE STRING WITHOUT TIMEZONE BUG ======
-function formatDateStr(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    var parts = dateStr.split('-');
-    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return parts[2] + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0];
-  } catch(e) { return dateStr; }
 }
 
 var ALL_WORKERS = [
@@ -1260,39 +1321,33 @@ var ALL_WORKERS = [
   {wid:'PAK0019',name:'Muhammad Mansoor',prof:'Worker',sec:'Pakistani'}
 ];
 
-// ====== INIT WORKERS - SAFE VERSION (never overwrites custom workers) ======
+// ====== INIT WORKERS - 100% SAFE - NEVER OVERWRITES ANYONE ======
 function initWorkers() {
   var existing = gW();
   var existingIds = [];
   for (var i = 0; i < existing.length; i++) {
     existingIds.push(existing[i].wid);
   }
-
-  // Check which DEFAULT workers are missing
+  // Only add truly missing default workers
+  // Custom workers (Pintu etc) are NEVER touched
   var missingDefaults = [];
   for (var d = 0; d < ALL_WORKERS.length; d++) {
     if (indexOf(existingIds, ALL_WORKERS[d].wid) === -1) {
       missingDefaults.push(ALL_WORKERS[d]);
     }
   }
-
-  // If no defaults missing - do nothing (protects Pintu and all custom workers)
   if (missingDefaults.length === 0) {
-    console.log('[ALB] All workers OK - no init needed');
+    console.log('[ALB] All workers present - initWorkers skipped');
     return Promise.resolve();
   }
-
-  console.log('[ALB] Adding ' + missingDefaults.length + ' missing default workers');
+  console.log('[ALB] Adding ' + missingDefaults.length + ' missing workers');
   var promises = [];
   for (var j = 0; j < missingDefaults.length; j++) {
     var aw = missingDefaults[j];
-    // Double check - NEVER overwrite existing worker
-    if (indexOf(existingIds, aw.wid) === -1) {
-      promises.push(FB.save('workers', aw.wid, {
-        wid: aw.wid, name: aw.name, prof: aw.prof, sec: aw.sec,
-        shift: 'Day', pw: 'Worker@123', on: true
-      }));
-    }
+    promises.push(FB.save('workers', aw.wid, {
+      wid: aw.wid, name: aw.name, prof: aw.prof, sec: aw.sec,
+      shift: 'Day', pw: 'Worker@123', on: true
+    }));
   }
   return Promise.all(promises);
 }
@@ -1306,7 +1361,8 @@ function refreshManualEntry() { if (typeof renderManualEntry === 'function') ren
 function renderWorkerDashboard() { if (typeof renderWorkerUI === 'function') renderWorkerUI(); }
 
 window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault(); _pendingInstall = e;
+  e.preventDefault();
+  _pendingInstall = e;
   var banner = document.getElementById('installBanner');
   if (banner) banner.style.display = 'flex';
 });
@@ -1338,4 +1394,4 @@ window.addEventListener('load', function() {
   setTimeout(function() { loadLogoForPDF(); }, 1000);
 });
 
-console.log('[ALB] app.js v22 loaded - Pintu Safe + Zero Data Loss - ' + COMPANY.full);
+console.log('[ALB] app.js v23 loaded - ZERO DATA LOSS - ' + COMPANY.full);
