@@ -2056,6 +2056,36 @@ function submitLeaveAction(wid, date, type, payHours, note) {
     updatedAt: new Date().toISOString()
   };
 
+  // Safe Database Connection Check
+  var firestore = null;
+  if (typeof db !== 'undefined') {
+    firestore = db;
+  } else if (typeof firebase !== 'undefined' && firebase.firestore) {
+    firestore = firebase.firestore();
+  } else if (window.db) {
+    firestore = window.db;
+  }
+
+  if (!firestore) {
+    alert('Database connection error! Page ko Ctrl+F5 karke refresh karein.');
+    return;
+  }
+
+  firestore.collection('attendance').doc(recId).set(data, { merge: true })
+    .then(function() {
+      if (typeof showToast === 'function') {
+        showToast('Record saved successfully for ' + w.name, 'success');
+      } else {
+        alert('Record saved successfully for ' + w.name);
+      }
+      if (typeof renderDashboard === 'function') renderDashboard();
+      if (typeof renderAttendance === 'function') renderAttendance();
+    })
+    .catch(function(err) {
+      console.error('Error saving record:', err);
+      alert('Error saving record: ' + err.message);
+    });
+}
   // Safe Firebase DB reference check
   var firestore = (typeof db !== 'undefined') ? db : (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
 
