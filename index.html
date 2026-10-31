@@ -1997,7 +1997,7 @@ function renderAttendanceView() {
   }
 }
 
-function quickAttAbsent(wid, date) {
+function quickAttPresent(wid, date) {
   var w = findWorker(wid);
   if (!w) return;
   var shift = w.shift || 'Day';
@@ -2007,10 +2007,80 @@ function quickAttAbsent(wid, date) {
     if (!r1.ok) { showToast(r1.msg, 'error'); return; }
     setTimeout(function() {
       manualCheckout(wid, shift, date, defOut).then(function(r2) {
-        if (r2.ok) showToast(w.name + ' attendance added!', 'success');
+        if (r2.ok) showToast(w.name + ' marked present!', 'success');
         renderAttendanceView();
       });
     }, 300);
+  });
+}
+
+function quickAttMark(wid, date, status) {
+  var w = findWorker(wid);
+  if (!w) return;
+  showConfirm('Mark ' + w.name + ' as ABSENT for ' + date + '? (0 Hours, No Pay)', function() {
+    submitLeaveAction(wid, date, status, 0, '');
+  });
+}
+
+function showLeaveModal(wid, date, type) {
+  var w = findWorker(wid);
+  if (!w) return;
+  var title = type === 'company_off' ? 'Company Off' : 'Medical Leave';
+  var html = '<div class="form-group">' +
+    '<label class="form-label">Salary Payment Option</label>' +
+    '<select id="leavePaySelect" class="form-control" style="font-weight:bold; color:#1e40af;">' +
+      '<option value="9">Full Pay (9 Hours Regular)</option>' +
+      '<option value="4.5">Half Pay (4.5 Hours Regular)</option>' +
+      '<option value="0">No Pay (0 Hours)</option>' +
+    '</select></div>' +
+    '<div class="form-group" style="margin-top:10px;">' +
+    '<label class="form-label">Note / Reason (Optional)</label>' +
+    '<input type="text" id="leaveNote" class="form-control" placeholder="Enter reason e.g. Fever...">' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">' +
+    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-primary" onclick="processLeaveModal(\'' + wid + '\',\'' + date + '\',\'' + type + '\')">Save Record</button>' +
+    '</div>';
+  showModal(html, title + ' - ' + w.name);
+}
+
+function processLeaveModal(wid, date, type) {
+  var payHours = parseFloat(document.getElementById('leavePaySelect').value);
+  var note = document.getElementById('leaveNote').value.trim();
+  submitLeaveAction(wid, date, type, payHours, note);
+  closeModal();
+}
+
+function submitLeaveAction(wid, date, type, payHours, note) {
+  var w = findWorker(wid);
+  if (!w) return;
+  var recId = wid + '_' + date;
+  var session = getSession();
+  var data = {
+    recId: recId,
+    wid: wid,
+    name: w.name,
+    sec: w.sec,
+    shift: w.shift || 'Day',
+    prof: w.prof,
+    date: date,
+    status: type, 
+    regular: payHours,
+    compOT: 0,
+    extraOT: 0,
+    total: payHours,
+    ot: 0,
+    checkinTime: null,
+    checkoutTime: null,
+    markedBy: session ? session.id : 'Admin',
+    markedAt: new Date().toISOString(),
+    note: note
+  };
+  FB.set('attendance', recId, data).then(function() {
+    showToast(w.name + ' marked successfully!', 'success');
+    renderAttendanceView();
+  }).catch(function(err) {
+    showToast('Error saving record', 'error');
   });
 }
 
