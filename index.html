@@ -2055,38 +2055,98 @@ function processLeaveModal(wid, date, type) {
 }
 
 function submitLeaveAction(wid, date, type, payHours, note) {
-  var w = findWorker(wid);
-  if (!w) return;
+  var w = typeof findWorker === 'function' ? findWorker(wid) : null;
+  if (!w) {
+    // Fallback if worker array exists globally
+    if (typeof workers !== 'undefined' && workers.length) {
+      for (var i = 0; i < workers.length; i++) {
+        if (workers[i].id === wid || workers[i].wid === wid) {
+          w = workers[i];
+          break;
+        }
+      }
+    }
+  }
+  
+  if (!w) {
+    alert('Worker not found!');
+    return;
+  }
+
   var recId = wid + '_' + date;
-  var session = getSession();
+  var session = typeof getSession === 'function' ? getSession() : null;
+  var markedByVal = session ? (session.name || session.id || 'Admin') : 'Admin';
+  
+  var numPayHours = parseFloat(payHours) || 0;
+
   var data = {
     recId: recId,
     wid: wid,
-    name: w.name,
-    sec: w.sec,
+    name: w.name || '',
+    sec: w.sec || w.section || 'Indian',
     shift: w.shift || 'Day',
-    prof: w.prof,
+    prof: w.prof || w.profession || 'Worker',
     date: date,
     status: type, 
-    regular: payHours,
+    regular: numPayHours,
     compOT: 0,
     extraOT: 0,
-    total: payHours,
+    total: numPayHours,
     ot: 0,
-    checkinTime: null,
-    checkoutTime: null,
-    markedBy: session ? session.id : 'Admin',
+    checkinTime: type === 'manual_present' ? '08:00 AM' : null,
+    checkoutTime: type === 'manual_present' ? '08:00 PM' : null,
+    markedBy: markedByVal,
     markedAt: new Date().toISOString(),
-    note: note
+    note: note || ''
   };
-  FB.set('attendance', recId, data).then(function() {
-    showToast(w.name + ' marked successfully!', 'success');
-    renderAttendanceView();
-  }).catch(function(err) {
-    showToast('Error saving record', 'error');
-  });
-}
 
+  function onSuccess() {
+    if (typeof showToast === 'function') {
+      showToast(w.name + ' marked as ' + type.replace('_', ' ').toUpperCase() + '!', 'success');
+    } else {
+      alert(w.name + ' saved successfully!');
+    }
+    
+    // Close modal safely
+    var modal = document.getElementById('leaveModal') || document.getElementById('leaveActionModal') || document.getElementById('modalOverlay');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('active');
+    }
+    
+    if (typeof renderAttendanceView === 'function') renderAttendanceView();
+    if (typeof loadAttendanceData === 'function') loadAttendanceData();
+    if (typeof refreshAttendance === 'function') refreshAttendance();
+  }
+
+  function onError(err) {
+    console.error('Save error details:', err);
+    if (typeof showToast === 'function') {
+      showToast('Error saving record', 'error');
+    } else {
+      alert('Error saving record: ' + (err.message || err));
+    }
+  }
+
+  // Universal Safe Firebase Saver (Auto-Detects DB setup)
+  try {
+    if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
+      db.collection('attendance').doc(recId).set(data, { merge: true }).then(onSuccess).catch(onError);
+    } else if (typeof firebase !== 'undefined' && firebase.firestore) {
+      firebase.firestore().collection('attendance').doc(recId).set(data, { merge: true }).then(onSuccess).catch(onError);
+    } else if (typeof FB !== 'undefined' && typeof FB.save === 'function') {
+      FB.save('attendance', recId, data).then(onSuccess).catch(onError);
+    } else if (typeof FB !== 'undefined' && typeof FB.db === 'object' && FB.db.collection) {
+      FB.db.collection('attendance').doc(recId).set(data, { merge: true }).then(onSuccess).catch(onError);
+    } else if (typeof setDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined') {
+      setDoc(doc(db, 'attendance', recId), data, { merge: true }).then(onSuccess).catch(onError);
+    } else {
+      throw new Error('Firebase instance not found');
+    }
+  } catch(e) {
+    onError(e);
+  }
+}
 function editAttRecord(recId) { if (typeof editHistRecord === 'function') editHistRecord(recId); }
 function deleteAttRecord(recId) {
   if (typeof deleteHistRecord === 'function') deleteHistRecord(recId);
