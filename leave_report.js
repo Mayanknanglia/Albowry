@@ -1,13 +1,13 @@
 /* ==========================================================================
-   AL BOWRY CARPENTRY LLC - LEAVE & SPECIAL STATUS MANAGER (FULL CODE)
-   Rules: var only, function(){}, NO arrow functions, Direct Firebase Save.
+   AL BOWRY CARPENTRY LLC - LEAVE & SPECIAL MANAGER (SELF-HEALING CODE)
+   Rules Maintained: var only, function(){}, NO let/const/arrow functions.
    ========================================================================== */
 
-var currentManagerData = {}; // Stores fetched attendance for selected date
-var allAppWorkers = [];      // Stores the master list of 56/60 workers
+var currentManagerData = {}; // Attendance map for selected date
+var allAppWorkers = [];      // Workers list (Auto-fetched)
 
 function initLeaveManager() {
-  // 1. Set Today's Date Default
+  // 1. Auto Set Date to Today if empty
   var dateInput = document.getElementById('leaveManagerDate');
   if (dateInput && !dateInput.value) {
     var d = new Date();
@@ -19,102 +19,162 @@ function initLeaveManager() {
     dateInput.value = yyyy + '-' + mm + '-' + dd;
   }
 
-  // 2. Load Global Workers List
-  if (typeof workers !== 'undefined' && workers.length > 0) {
-    allAppWorkers = workers;
-  } else if (typeof window.workers !== 'undefined' && window.workers.length > 0) {
-    allAppWorkers = window.workers;
+  var tbody = document.getElementById('leaveManagerTableBody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:30px; text-align:center; color:#1b365d; font-weight:bold;">🔄 Loading Workers & Attendance Data...</td></tr>';
   }
 
-  // 3. Fetch Firebase Data
-  loadLeaveManagerData();
+  // 2. Fetch Workers first, then Attendance Data
+  fetchWorkersMaster(function() {
+    loadLeaveManagerData();
+  });
 }
 
-function loadLeaveManagerData() {
-  var dateVal = document.getElementById('leaveManagerDate').value;
-  if (!dateVal) return;
+// 1. Robust Worker Fetcher (Memory + Firestore Fallback)
+function fetchWorkersMaster(callback) {
+  var list = [];
+  
+  if (typeof workers !== 'undefined' && Array.isArray(workers) && workers.length > 0) list = workers;
+  else if (typeof window.workers !== 'undefined' && Array.isArray(window.workers) && window.workers.length > 0) list = window.workers;
+  else if (typeof allWorkers !== 'undefined' && Array.isArray(allWorkers) && allWorkers.length > 0) list = allWorkers;
 
-  var tbody = document.getElementById('leaveManagerTableBody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="padding:30px;text-align:center;color:#64748b;font-weight:bold;">Fetching live data from database...</td></tr>';
+  if (list.length > 0) {
+    allAppWorkers = list;
+    if (callback) callback();
+    return;
+  }
 
-  currentManagerData = {};
-
-  // Direct Firebase Fetch
+  // Firestore Direct Fallback if memory empty
   try {
     var dbRef = null;
     if (typeof db !== 'undefined' && db && db.collection) dbRef = db;
     else if (typeof firebase !== 'undefined' && firebase.firestore) dbRef = firebase.firestore();
 
     if (dbRef) {
-      dbRef.collection('attendance').where('date', '==', dateVal).get()
-      .then(function(snapshot) {
+      dbRef.collection('workers').get().then(function(snapshot) {
+        var fetched = [];
+        snapshot.forEach(function(doc) {
+          var d = doc.data();
+          if (d) {
+            if (!d.id && doc.id) d.id = doc.id;
+            fetched.push(d);
+          }
+        });
+        if (fetched.length > 0) {
+          allAppWorkers = fetched;
+        }
+        if (callback) callback();
+      }).catch(function() {
+        if (callback) callback();
+      });
+    } else {
+      if (callback) callback();
+    }
+  } catch(e) {
+    if (callback) callback();
+  }
+}
+
+// 2. Fetch Attendance Data for selected date
+function loadLeaveManagerData() {
+  var dateEl = document.getElementById('leaveManagerDate');
+  if (!dateEl || !dateEl.value) return;
+  var dateVal = dateEl.value;
+
+  currentManagerData = {};
+
+  // Check local memory first
+  var localSource = [];
+  if (typeof attendanceRecords !== 'undefined' && Array.isArray(attendanceRecords)) localSource = attendanceRecords;
+  else if (typeof window.attendanceRecords !== 'undefined' && Array.isArray(window.attendanceRecords)) localSource = window.attendanceRecords;
+  else if (typeof attendanceData !== 'undefined' && Array.isArray(attendanceData)) localSource = attendanceData;
+
+  for (var m = 0; m < localSource.length; m++) {
+    var recLoc = localSource[m];
+    if (recLoc && recLoc.date === dateVal && recLoc.wid) {
+      currentManagerData[recLoc.wid] = recLoc;
+    }
+  }
+
+  // Sync from Firestore for exact date
+  try {
+    var dbRef = null;
+    if (typeof db !== 'undefined' && db && db.collection) dbRef = db;
+    else if (typeof firebase !== 'undefined' && firebase.firestore) dbRef = firebase.firestore();
+
+    if (dbRef) {
+      dbRef.collection('attendance').where('date', '==', dateVal).get().then(function(snapshot) {
         snapshot.forEach(function(doc) {
           var data = doc.data();
           if (data && data.wid) {
-            currentManagerData[data.wid] = data; // map by worker ID
+            currentManagerData[data.wid] = data;
           }
         });
         renderLeaveManagerTable();
-      })
-      .catch(function(err) {
-        console.error("Firebase fetch error:", err);
-        alert("Error fetching data. Check connection.");
+      }).catch(function(err) {
+        console.error("Firestore sync error:", err);
         renderLeaveManagerTable();
       });
     } else {
-      renderLeaveManagerTable(); // Fallback if no DB
+      renderLeaveManagerTable();
     }
   } catch(e) {
     renderLeaveManagerTable();
   }
 }
 
+// 3. Render Table
 function renderLeaveManagerTable() {
   var tbody = document.getElementById('leaveManagerTableBody');
-  var searchQ = document.getElementById('leaveManagerSearch').value.toLowerCase();
   if (!tbody) return;
+
+  var searchInput = document.getElementById('leaveManagerSearch');
+  var searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  if (!allAppWorkers || allAppWorkers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:30px; text-align:center; color:#e11d48; font-weight:bold;">No workers found in database. Click Sync Live.</td></tr>';
+    return;
+  }
 
   var html = '';
   var cMan = 0, cAbs = 0, cOff = 0, cMed = 0;
 
   for (var i = 0; i < allAppWorkers.length; i++) {
     var w = allAppWorkers[i];
-    var wid = w.id || w.wid;
-    var wname = w.name || '';
+    var wid = w.id || w.wid || ('WORKER_' + i);
+    var wname = w.name || 'Worker ' + wid;
     var wsec = w.sec || w.section || 'Indian';
 
-    // Search Filter
+    // Search filter
     if (searchQ && wname.toLowerCase().indexOf(searchQ) === -1 && wid.toLowerCase().indexOf(searchQ) === -1) {
       continue;
     }
 
-    var rec = currentManagerData[wid]; // Check if attendance exists today
+    var rec = currentManagerData[wid];
     var status = rec ? rec.status : 'none';
     var payHrs = rec ? (rec.regular || 0) : 0;
     var note = rec ? (rec.note || '-') : '-';
 
-    // Stats Counter
+    // Counters
     if (status === 'manual_present') cMan++;
     else if (status === 'absent') cAbs++;
     else if (status === 'company_off') cOff++;
     else if (status === 'medical_leave') cMed++;
 
-    // Row Styling
     var bg = (i % 2 === 0) ? '#ffffff' : '#f8fafc';
     var badge = '<span style="color:#94a3b8;font-size:11px;">No Record</span>';
-    
+
     if (status === 'manual_present') badge = '<span style="background:#dcfce7;color:#15803d;padding:4px 8px;border-radius:4px;font-weight:700;font-size:11px;">Manual Present</span>';
     else if (status === 'absent') badge = '<span style="background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:4px;font-weight:700;font-size:11px;">Absent</span>';
     else if (status === 'company_off') badge = '<span style="background:#dbeafe;color:#1d4ed8;padding:4px 8px;border-radius:4px;font-weight:700;font-size:11px;">Company Off</span>';
     else if (status === 'medical_leave') badge = '<span style="background:#fef3c7;color:#b45309;padding:4px 8px;border-radius:4px;font-weight:700;font-size:11px;">Medical Leave</span>';
     else if (status === 'completed' || status === 'pending_checkout' || status === 'pending_checkin') {
-      badge = '<span style="background:#e2e8f0;color:#334155;padding:4px 8px;border-radius:4px;font-weight:700;font-size:11px;">Regular App Attendance</span>';
+      badge = '<span style="background:#e2e8f0;color:#334155;padding:4px 8px;border-radius:4px;font-weight:700;font-size:11px;">Regular Attendance</span>';
     }
 
-    // Dropdown Action UI
     var actionUI = '';
     if (status === 'completed' || status === 'pending_checkout' || status === 'pending_checkin') {
-      actionUI = '<span style="font-size:11px;color:#94a3b8;">Cannot change here</span>';
+      actionUI = '<span style="font-size:11px;color:#94a3b8;">App Check-in Active</span>';
     } else {
       actionUI = '<select onchange="handleQuickAction(this, \''+wid+'\')" style="padding:6px; border-radius:4px; border:1px solid #cbd5e1; font-size:11px; font-weight:bold; cursor:pointer; width:100%;">';
       actionUI += '<option value="">-- Set Action --</option>';
@@ -123,7 +183,7 @@ function renderLeaveManagerTable() {
       actionUI += '<option value="company_off">🏢 Company Off</option>';
       actionUI += '<option value="medical_leave">🏥 Medical Leave</option>';
       if (status !== 'none') {
-        actionUI += '<option value="delete_record">🗑️ Clear / Delete</option>';
+        actionUI += '<option value="delete_record">🗑️ Clear Record</option>';
       }
       actionUI += '</select>';
     }
@@ -141,17 +201,17 @@ function renderLeaveManagerTable() {
 
   tbody.innerHTML = html;
 
-  // Update Stats
+  // Stats UI update
   if(document.getElementById('lmStatMan')) document.getElementById('lmStatMan').textContent = cMan;
   if(document.getElementById('lmStatAbs')) document.getElementById('lmStatAbs').textContent = cAbs;
   if(document.getElementById('lmStatOff')) document.getElementById('lmStatOff').textContent = cOff;
   if(document.getElementById('lmStatMed')) document.getElementById('lmStatMed').textContent = cMed;
 }
 
-// Handle Dropdown Change & Save to Firebase directly
+// 4. Handle Action Change & Direct Firestore Save
 function handleQuickAction(selectEl, wid) {
   var action = selectEl.value;
-  selectEl.value = ''; // Reset dropdown visually
+  selectEl.value = '';
   if (!action) return;
 
   var dateVal = document.getElementById('leaveManagerDate').value;
@@ -159,22 +219,24 @@ function handleQuickAction(selectEl, wid) {
 
   var w = null;
   for (var i = 0; i < allAppWorkers.length; i++) {
-    if ((allAppWorkers[i].id || allAppWorkers[i].wid) === wid) { w = allAppWorkers[i]; break; }
+    var curId = allAppWorkers[i].id || allAppWorkers[i].wid;
+    if (curId === wid) { w = allAppWorkers[i]; break; }
   }
-  if (!w) return;
+  if (!w) { alert("Worker details not found!"); return; }
 
   var recId = wid + '_' + dateVal;
   var dbRef = null;
   if (typeof db !== 'undefined' && db && db.collection) dbRef = db;
   else if (typeof firebase !== 'undefined' && firebase.firestore) dbRef = firebase.firestore();
 
-  if (!dbRef) { alert("Database connection error!"); return; }
+  if (!dbRef) { alert("Database connection not ready!"); return; }
 
   if (action === 'delete_record') {
-    if(confirm("Are you sure you want to clear this record?")) {
+    if(confirm("Are you sure you want to clear this record for " + w.name + "?")) {
       dbRef.collection('attendance').doc(recId).delete().then(function() {
-        if(typeof showToast === 'function') showToast('Record cleared!', 'success');
-        loadLeaveManagerData(); // Refresh table
+        delete currentManagerData[wid];
+        renderLeaveManagerTable();
+        if(typeof showToast === 'function') showToast('Record cleared successfully', 'success');
       });
     }
     return;
@@ -183,21 +245,19 @@ function handleQuickAction(selectEl, wid) {
   var payHrs = 0;
   var noteStr = '';
 
-  // Get Pay Hours based on action
   if (action === 'manual_present') {
     payHrs = 9;
   } else if (action === 'absent') {
     payHrs = 0;
   } else if (action === 'company_off' || action === 'medical_leave') {
-    var p = prompt("Enter Pay Hours (e.g., 9 for Full, 4.5 for Half, 0 for No Pay):", "9");
-    if (p === null) return; // Cancelled
+    var p = prompt("Enter Pay Hours (e.g., 9 for Full Pay, 4.5 for Half Pay, 0 for No Pay):", "9");
+    if (p === null) return;
     payHrs = parseFloat(p) || 0;
     
     var n = prompt("Enter Reason/Note (Optional):", "");
     if (n !== null) noteStr = n;
   }
 
-  // Save to Firebase
   var session = typeof getSession === 'function' ? getSession() : null;
   var adminName = session ? (session.name || session.id || 'Admin') : 'Admin';
 
@@ -223,19 +283,19 @@ function handleQuickAction(selectEl, wid) {
   };
 
   dbRef.collection('attendance').doc(recId).set(payload, {merge: true}).then(function() {
-    if(typeof showToast === 'function') showToast(w.name + ' marked as ' + action.replace('_',' ').toUpperCase(), 'success');
-    loadLeaveManagerData(); // Instantly refresh table showing new badge!
+    currentManagerData[wid] = payload; // Local state instant update
+    renderLeaveManagerTable();        // Re-render table instantly
+    if(typeof showToast === 'function') showToast(w.name + ' updated successfully!', 'success');
   }).catch(function(err) {
-    alert("Error saving: " + err.message);
+    alert("Save error: " + err.message);
   });
 }
 
-/* ================== FIXED PDF GENERATOR ================== */
+// 5. PDF Generator
 function downloadLeaveReportFromUI() {
   var dateVal = document.getElementById('leaveManagerDate').value;
-  if (!dateVal) { alert("Please select a date first!"); return; }
+  if (!dateVal) { alert("Please select a date!"); return; }
 
-  // Extract records for selected date
   var reportData = [];
   for (var wid in currentManagerData) {
     if (currentManagerData.hasOwnProperty(wid)) {
@@ -248,7 +308,7 @@ function downloadLeaveReportFromUI() {
   }
 
   if (reportData.length === 0) {
-    alert('No Leave or Special records found for this date to print!');
+    alert('No Leave, Absent or Special records marked for ' + dateVal + ' to generate PDF!');
     return;
   }
 
@@ -265,7 +325,7 @@ function downloadLeaveReportFromUI() {
 
   var html = '<div style="font-family:Arial,sans-serif;color:#1e293b;background:#fff;padding:20px;max-width:920px;margin:0 auto;">';
 
-  // HEADER
+  // HEADER (Navy Blue)
   html += '<div style="background:#1b365d;color:#fff;padding:20px;border-radius:6px 6px 0 0;">';
   html += '<table style="width:100%;border-collapse:collapse;"><tr>';
   html += '<td style="width:130px;vertical-align:middle;">';
@@ -287,7 +347,7 @@ function downloadLeaveReportFromUI() {
 
   html += '<div style="height:4px;background:#d97706;margin-top:15px;border-radius:2px;"></div>';
   html += '<div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">';
-  html += '<h3 style="margin:0;font-size:16px;color:#fff;font-weight:600;">Daily Leave & Special Status Report (' + dateVal + ')</h3>';
+  html += '<h3 style="margin:0;font-size:16px;color:#fff;font-weight:600;">Daily Leave & Special Attendance Report (' + dateVal + ')</h3>';
   html += '<span style="font-size:12px;color:#f59e0b;font-weight:bold;">Records: ' + reportData.length + '</span>';
   html += '</div></div>';
 
@@ -331,29 +391,12 @@ function downloadLeaveReportFromUI() {
   html += 'COP31 Attendance System • Confidential Report • AL BOWRY CARPENTRY LLC';
   html += '</div></div>';
 
-  // 100% Fixed Print Logic
   var win = window.open('', '_blank');
-  if (!win) { 
-    alert('Please ALLOW POPUPS in your browser settings to download the PDF!'); 
-    return; 
-  }
+  if (!win) { alert('Allow popups in browser to print PDF'); return; }
   win.document.open();
-  win.document.write('<html><head><title>Daily_Leave_Report_' + dateVal + '</title>');
+  win.document.write('<html><head><title>Leave_Report_' + dateVal + '</title>');
   win.document.write('<style>body{margin:0;padding:12px;background:#f1f5f9;}@media print{body{background:#fff;padding:0;}}</style></head><body>');
   win.document.write(html);
   win.document.write('<script>window.onload = function() { setTimeout(function(){ window.print(); }, 500); };<\/script></body></html>');
   win.document.close();
 }
-
-// Auto Hook to Navigation
-(function() {
-  var originalShow = window.showSection;
-  if (typeof originalShow === 'function') {
-    window.showSection = function(secId) {
-      originalShow(secId);
-      if (secId === 'secLeave') {
-        setTimeout(function() { initLeaveManager(); }, 100);
-      }
-    };
-  }
-})();
