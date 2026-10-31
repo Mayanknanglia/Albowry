@@ -2035,7 +2035,7 @@ function submitLeaveAction(wid, date, type, payHours, note) {
   var w = findWorker(wid);
   if (!w) return;
   var recId = wid + '_' + date;
-  var session = getSession();
+  var session = typeof getSession === 'function' ? getSession() : null;
   var data = {
     recId: recId,
     wid: wid,
@@ -2043,7 +2043,7 @@ function submitLeaveAction(wid, date, type, payHours, note) {
     sec: w.sec,
     shift: w.shift || 'Day',
     date: date,
-    status: type, // 'company_off', 'medical_leave', ya 'absent'
+    status: type,
     checkIn: null,
     checkOut: null,
     regHours: payHours || 0,
@@ -2056,6 +2056,29 @@ function submitLeaveAction(wid, date, type, payHours, note) {
     updatedAt: new Date().toISOString()
   };
 
+  // Safe Firebase DB reference check
+  var firestore = (typeof db !== 'undefined') ? db : (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+
+  if (!firestore) {
+    alert('Firebase Database connect nahi ho paya. Page refresh karke try karo.');
+    return;
+  }
+
+  firestore.collection('attendance').doc(recId).set(data, { merge: true })
+    .then(function() {
+      if (typeof showToast === 'function') {
+        showToast('Record saved successfully for ' + w.name, 'success');
+      } else {
+        alert('Record saved successfully for ' + w.name);
+      }
+      if (typeof renderDashboard === 'function') renderDashboard();
+      if (typeof renderAttendance === 'function') renderAttendance();
+    })
+    .catch(function(err) {
+      console.error('Error saving record:', err);
+      alert('Error saving record: ' + err.message);
+    });
+}
   // Firebase Firestore me save karne ke liye:
   db.collection('attendance').doc(recId).set(data, { merge: true })
     .then(function() {
