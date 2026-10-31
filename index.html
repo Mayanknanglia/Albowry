@@ -1075,11 +1075,15 @@
     </button>
   </div>
 
-  <!-- FILTERS -->
+    <!-- FILTERS (With Month + Date Filter) -->
   <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; align-items:end;">
     <div>
+      <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">EXACT DATE</label>
+      <input type="date" id="leaveFilterDate" onchange="renderLeaveSection()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+    </div>
+    <div>
       <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">MONTH</label>
-      <input type="month" id="leaveFilterMonth" onchange="renderLeaveSection()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+      <input type="month" id="leaveFilterMonth" onchange="document.getElementById('leaveFilterDate').value=''; renderLeaveSection();" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
     </div>
     <div>
       <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">STATUS</label>
@@ -1097,11 +1101,10 @@
         <option value="ALL">All Workers</option>
       </select>
     </div>
-    <button type="button" onclick="renderLeaveSection()" style="padding:8px 16px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px;">
-      🔄 Refresh
+    <button type="button" onclick="initLeaveSection()" style="padding:8px 16px; background:#1b365d; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+      🔄 Sync & Refresh
     </button>
   </div>
-
   <!-- STATS CARDS -->
   <div id="leaveStatsRow" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; text-align:center;">
