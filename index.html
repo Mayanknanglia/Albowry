@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=24">
-  <link rel="stylesheet" href="mobile.css?v=24">
+  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="mobile.css?v=21">
 </head>
 <body>
 
@@ -146,7 +146,7 @@
 
     <div class="login-footer">
       <div>AL BOWRY CARPENTRY LLC &copy; 2026</div>
-      <div>Attendance System v24 | <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
+      <div>Attendance System v21 | <a href="http://www.albowry.com" target="_blank">www.albowry.com</a></div>
     </div>
   </div>
 </div>
@@ -286,6 +286,7 @@
     </div>
   </div>
 </div>
+
 <!-- ADMIN PANEL -->
 <div id="adminPanel" style="display:none">
   <nav class="admin-nav">
@@ -376,7 +377,7 @@
                style="width:28px;height:28px;object-fit:contain;border-radius:6px;opacity:0.6;margin-bottom:8px"
                onerror="this.style.display='none'">
           <div class="sidebar-footer-company">AL BOWRY CARPENTRY LLC</div>
-          <div class="sidebar-footer-ver">Attendance System v24</div>
+          <div class="sidebar-footer-ver">Attendance System v21</div>
           <div class="sidebar-footer-site">COP31 | Antalya, Turkey</div>
         </div>
       </div>
@@ -652,7 +653,8 @@
           </div>
         </div></div>
       </section>
-            <!-- MANUAL ENTRY -->
+
+      <!-- MANUAL ENTRY -->
       <section class="admin-section" id="secManual" style="display:none">
         <div class="section-header"><h2><span class="material-symbols-outlined">edit_calendar</span> Manual Entry</h2></div>
         <div class="card">
@@ -876,78 +878,113 @@
       </section>
 
       <!-- WORK & PANELS -->
-      <section class="admin-section" id="secWork" style="display:none">
-        <div class="section-header">
-          <h2><span class="material-symbols-outlined">construction</span> Work Area & Panels</h2>
-          <div class="section-header-right">
-            <button class="btn btn-danger btn-sm" onclick="exportWorkPDF()"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</button>
-            <button class="btn btn-success btn-sm" onclick="exportWorkCSV()"><span class="material-symbols-outlined">table_view</span> CSV</button>
-          </div>
-        </div>
+     <!-- WORK & PANELS -->
+<!-- WORK & PANELS -->
+<section class="admin-section" id="secWork" style="display:none">
+  <div class="section-header">
+    <h2><span class="material-symbols-outlined">construction</span> Work Area & Panels</h2>
+    <div class="section-header-right">
+      <button class="btn btn-danger btn-sm" onclick="exportWorkPDF()"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</button>
+      <button class="btn btn-success btn-sm" onclick="exportWorkCSV()"><span class="material-symbols-outlined">table_view</span> CSV</button>
+    </div>
+  </div>
 
-        <!-- Panel Items with Date Filter -->
-        <div class="card">
-          <div class="card-header">
-            <span class="material-symbols-outlined">view_in_ar</span>
-            <h3>Items & Materials</h3>
-            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-              <input type="date" id="panelDateFilterInput" class="form-control" style="width:150px;padding:6px 10px;font-size:12px" onchange="filterPanelsByDateInput()">
-              <button class="btn btn-sm btn-secondary" onclick="clearPanelDateFilter()" title="Show All" style="padding:6px 8px">
-                <span class="material-symbols-outlined" style="font-size:16px">clear_all</span>
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="showAddPanelModal()">
-                <span class="material-symbols-outlined">add</span> Add Item
-              </button>
-            </div>
-          </div>
-          <div class="card-body" id="panelCalcContainer">
-            <div class="empty-state"><span class="material-symbols-outlined">view_in_ar</span><p>No items yet.</p></div>
-          </div>
-        </div>
+  <!-- Panel Items with Date Filter -->
+  <div class="card">
+    <div class="card-header">
+      <span class="material-symbols-outlined">view_in_ar</span>
+      <h3>Items & Materials</h3>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input type="date" id="panelDateFilterInput" class="form-control" style="width:150px;padding:6px 10px;font-size:12px" onchange="filterPanelsByDateInput()">
+        <button class="btn btn-sm btn-secondary" onclick="clearPanelDateFilter()" title="Show All" style="padding:6px 8px">
+          <span class="material-symbols-outlined" style="font-size:16px">clear_all</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="showAddPanelModal()">
+          <span class="material-symbols-outlined">add</span> Add Item
+        </button>
+      </div>
+    </div>
+    <div class="card-body" id="panelCalcContainer">
+      <div class="empty-state"><span class="material-symbols-outlined">view_in_ar</span><p>No items yet.</p></div>
+    </div>
+  </div>
 
-        <!-- Date-wise Panel Summary -->
-        <div class="card" style="margin-top:20px">
-          <div class="card-header">
-            <span class="material-symbols-outlined">area_chart</span>
-            <h3>Date-wise Area Coverage</h3>
-          </div>
-          <div class="card-body" id="panelDateSummary">
-            <div class="empty-state"><span class="material-symbols-outlined">area_chart</span><p>Add items with dates to see coverage</p></div>
-          </div>
-        </div>
+  <!-- Date-wise Panel Summary -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-header">
+      <span class="material-symbols-outlined">area_chart</span>
+      <h3>Date-wise Area Coverage</h3>
+    </div>
+    <div class="card-body" id="panelDateSummary">
+      <div class="empty-state"><span class="material-symbols-outlined">area_chart</span><p>Add items with dates to see coverage</p></div>
+    </div>
+  </div>
 
-        <!-- Tables -->
+  <!-- Tables -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-header">
+      <span class="material-symbols-outlined">table_restaurant</span>
+      <h3>Table Assignments & Workers</h3>
+    </div>
+    <div class="card-body" id="tableAssignContainer">
+      <div class="text-muted text-center">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-header">
+      <span class="material-symbols-outlined">trending_up</span>
+      <h3>Daily Work Progress</h3>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input type="date" id="progressDateFilter" class="form-control" style="width:150px;padding:6px 10px;font-size:12px" onchange="filterProgressByDate()">
+        <button class="btn btn-sm btn-secondary" onclick="clearProgressFilter()" style="padding:6px 8px">
+          <span class="material-symbols-outlined" style="font-size:16px">clear_all</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="showAddProgressModal()">
+          <span class="material-symbols-outlined">add</span> Add
+        </button>
+      </div>
+    </div>
+    <div class="card-body" id="workProgressContainer">
+      <div class="empty-state"><span class="material-symbols-outlined">trending_up</span><p>No progress yet.</p></div>
+    </div>
+  </div>
+</section>
+        <!-- Table Assignments -->
         <div class="card" style="margin-top:20px">
           <div class="card-header">
             <span class="material-symbols-outlined">table_restaurant</span>
-            <h3>Table Assignments & Workers</h3>
+            <h3>Table Assignments (Workers & Work Distribution)</h3>
           </div>
           <div class="card-body" id="tableAssignContainer">
-            <div class="text-muted text-center">Loading...</div>
+            <div class="text-muted text-center">Loading tables...</div>
           </div>
         </div>
 
-        <!-- Progress -->
-        <div class="card" style="margin-top:20px">
-          <div class="card-header">
-            <span class="material-symbols-outlined">trending_up</span>
-            <h3>Daily Work Progress</h3>
-            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-              <input type="date" id="workProgressDateFilter" class="form-control" style="width:160px;padding:6px 10px;font-size:12px" onchange="filterWorkProgressByDate()">
-              <button class="btn btn-sm btn-secondary" onclick="clearWorkProgressFilter()" title="Show All" style="padding:6px 8px">
-                <span class="material-symbols-outlined" style="font-size:16px">clear</span>
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="showAddProgressModal()">
-                <span class="material-symbols-outlined">add</span> Add
-              </button>
-            </div>
-          </div>
-          <div class="card-body" id="workProgressContainer">
-            <div class="empty-state"><span class="material-symbols-outlined">trending_up</span><p>No progress entries yet.</p></div>
-          </div>
-        </div>
+        <!-- Work Progress -->
+       <!-- Work Progress -->
+<div class="card" style="margin-top:20px">
+  <div class="card-header">
+    <span class="material-symbols-outlined">trending_up</span>
+    <h3>Daily Work Progress</h3>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <input type="date" id="workProgressDateFilter" class="form-control" style="width:160px;padding:6px 10px;font-size:12px" onchange="filterWorkProgressByDate()">
+      <button class="btn btn-sm btn-secondary" onclick="clearWorkProgressFilter()" title="Show All">
+        <span class="material-symbols-outlined" style="font-size:16px">clear</span>
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="showAddProgressModal()">
+        <span class="material-symbols-outlined">add</span> Add
+      </button>
+    </div>
+  </div>
+  <div class="card-body" id="workProgressContainer">
+    <div class="empty-state"><span class="material-symbols-outlined">trending_up</span><p>No progress entries yet.</p></div>
+  </div>
+</div>
       </section>
-            <!-- SALARY SECTION -->
+
+      <!-- SALARY SECTION -->
       <section class="admin-section" id="secSalary" style="display:none">
         <div class="section-header">
           <h2><span class="material-symbols-outlined">payments</span> Salary Calculator</h2>
@@ -1153,22 +1190,24 @@
             </div>
           </div>
         </div>
-
         <!-- Sunday OT Fix Button -->
-        <div class="settings-card" style="border-left: 4px solid #f59e0b;">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-            <span class="material-symbols-outlined" style="color:#f59e0b; font-size:28px;">calendar_today</span>
-            <div>
-              <div style="font-weight:700; font-size:15px; color:#0f172a;">Fix Sunday OT Records</div>
-              <div style="font-size:12px; color:#64748b;">Update old Sunday records - moves all hours to Extra OT</div>
-            </div>
-          </div>
-          <button 
-            onclick="migrateSundayRecords()" 
-            style="background:#f59e0b; color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px; width:100%;">
-            Fix Sunday Records (One Time)
-          </button>
-        </div>
+<div class="settings-card" style="border-left: 4px solid #f59e0b;">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+    <span class="material-symbols-outlined" style="color:#f59e0b; font-size:28px;">calendar_today</span>
+    <div>
+      <div style="font-weight:700; font-size:15px; color:#0f172a;">Fix Sunday OT Records</div>
+      <div style="font-size:12px; color:#64748b;">Update old Sunday records - moves all hours to Extra OT (1.5x pay)</div>
+    </div>
+  </div>
+  <button 
+    onclick="migrateSundayRecords()" 
+    style="background:#f59e0b; color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px; width:100%;">
+    Fix Sunday Records (One Time)
+  </button>
+</div>
+
+
+        
 
         <div class="settings-grid">
           <div class="card">
@@ -1227,7 +1266,7 @@
           <div class="card-header"><span class="material-symbols-outlined">info</span><h3>System Information</h3></div>
           <div class="card-body">
             <div class="sys-info-grid">
-              <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v24</span></div>
+              <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v21</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Total Workers</span><span class="sys-info-val" id="sysWorkerCount">56</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Total Attendance Records</span><span class="sys-info-val" id="sysAttCount">0</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Firebase Project</span><span class="sys-info-val">albowry-attendance</span></div>
@@ -1241,17 +1280,7 @@
     </main>
   </div>
 </div>
-Bhai, ye raha final aur aakhiri **Part 5**! 🎉
 
-Tumne bataya ki tumne baaki (`style.css` aur `app.js`) ka code kar liya hai. Toh ab bas is **Part 5** ko **Part 4** ke theek niche paste kar do aur tumhari `index.html` poori complete ho jayegi.
-
-Isme Firebase setup, script tags (sabme `v=24` kar diya hai), aur tumhara naya **Absent / Leave / Company Off / Pay Dropdown** ka saara logic included hai!
-
----
-
-### 📄 PART 5 of 5 — index.html (v24)
-
-```html
 <!-- FIREBASE MODULE -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -1305,10 +1334,10 @@ Isme Firebase setup, script tags (sabme `v=24` kar diya hai), aur tumhara naya *
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
 <!-- App Scripts -->
-<script src="app.js?v=24"></script>
-<script src="manual.js?v=24"></script>
+<script src="app.js?v=23"></script>
+<script src="manual.js?v=21"></script>
 <script src="history.js?v=24"></script>
-<script src="work.js?v=24"></script>
+<script src="work.js?v=25"></script>
 
 <script>
 var _workerTab = 'Indian';
@@ -1865,9 +1894,6 @@ function adminCheckoutLive(recId) {
   });
 }
 
-// =======================================================
-// v24 - NEW ATTENDANCE VIEW WITH 4 ABSENT BUTTONS
-// =======================================================
 function renderAttendanceView() {
   var date = document.getElementById('attDate') ? document.getElementById('attDate').value : tD();
   if (!date) date = tD();
@@ -1883,7 +1909,7 @@ function renderAttendanceView() {
     var a = allAtt[i];
     var aDate = a.date || getTurkeyDate(a.checkinTime || a.checkinReqTime);
     if (aDate !== date) continue;
-    if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed' && a.status !== 'absent' && a.status !== 'company_off' && a.status !== 'medical_leave') continue;
+    if (a.status !== 'checked_in' && a.status !== 'pending_checkout' && a.status !== 'completed') continue;
     if (shift !== 'All' && a.shift !== shift) continue;
     if (section !== 'All' && a.sec !== section) continue;
     if (indexOf(processedWids, a.wid) !== -1) continue;
@@ -1920,16 +1946,16 @@ function renderAttendanceView() {
         var pHtml = '';
         for (var p = 0; p < presentRecs.length; p++) {
           var pr = presentRecs[p];
-          var statusBadge = (window.getStatusBadge ? window.getStatusBadge(pr.att.status) : getStatusBadge(pr.att.status));
+          var statusBadge = getStatusBadge(pr.att.status);
           var isManual = pr.att.backdated ? '<span class="tag-manual">M</span>' : '';
           pHtml += '<tr>' +
             '<td>' + (p + 1) + '</td>' +
             '<td><strong>' + pr.worker.name + '</strong> ' + isManual + '<br><small class="text-muted">' + pr.worker.wid + '</small></td>' +
             '<td>' + pr.worker.sec + '</td>' +
             '<td><span class="shift-badge shift-' + (pr.att.shift || 'day').toLowerCase() + '">' + (pr.att.shift || 'Day') + '</span></td>' +
-            '<td>' + (pr.att.checkinTime || pr.att.checkinReqTime ? fmtTime(pr.att.checkinTime || pr.att.checkinReqTime) : '-') + '</td>' +
+            '<td>' + fmtTime(pr.att.checkinTime || pr.att.checkinReqTime) + '</td>' +
             '<td>' + (pr.att.checkoutTime ? fmtTime(pr.att.checkoutTime) : '-') + '</td>' +
-            '<td>' + (pr.att.total !== undefined ? '<strong>' + pr.att.total + 'h</strong>' : '-') + '</td>' +
+            '<td>' + (pr.att.total ? '<strong>' + pr.att.total + 'h</strong>' : '-') + '</td>' +
             '<td>' + (pr.att.regular || 0) + 'h</td>' +
             '<td>' + (pr.att.ot ? '<span class="ot-val">' + pr.att.ot + 'h</span>' : '-') + '</td>' +
             '<td>' + statusBadge + '</td>' +
@@ -1961,12 +1987,9 @@ function renderAttendanceView() {
               '<div class="absent-meta">' + abW.wid + ' | ' + abW.prof + '</div>' +
               '<div class="absent-meta">' + abW.sec + ' | ' + abW.shift + ' Shift</div>' +
             '</div>' +
-            '<div class="absent-action-group">' +
-              '<button class="btn-absent-act act-present" title="Mark Present (Manual In)" onclick="quickAttPresent(\'' + abW.wid + '\',\'' + date + '\')"><span class="material-symbols-outlined">how_to_reg</span></button>' +
-              '<button class="btn-absent-act act-absent" title="Mark Absent (No Pay)" onclick="quickAttMark(\'' + abW.wid + '\',\'' + date + '\',\'absent\')"><span class="material-symbols-outlined">person_off</span></button>' +
-              '<button class="btn-absent-act act-off" title="Company Off (Paid Leave)" onclick="showLeaveModal(\'' + abW.wid + '\',\'' + date + '\',\'company_off\')"><span class="material-symbols-outlined">domain</span></button>' +
-              '<button class="btn-absent-act act-medical" title="Medical Leave" onclick="showLeaveModal(\'' + abW.wid + '\',\'' + date + '\',\'medical_leave\')"><span class="material-symbols-outlined">medical_services</span></button>' +
-            '</div></div>';
+            '<button class="btn-absent-in" onclick="quickAttAbsent(\'' + abW.wid + '\',\'' + date + '\')">' +
+              '<span class="material-symbols-outlined">add_circle</span> Add' +
+            '</button></div>';
         }
         absentGrid.innerHTML = aHtml;
       }
@@ -1974,10 +1997,7 @@ function renderAttendanceView() {
   }
 }
 
-// =======================================================
-// v24 - NEW LEAVE & ABSENT FUNCTIONS
-// =======================================================
-function quickAttPresent(wid, date) {
+function quickAttAbsent(wid, date) {
   var w = findWorker(wid);
   if (!w) return;
   var shift = w.shift || 'Day';
@@ -1987,139 +2007,11 @@ function quickAttPresent(wid, date) {
     if (!r1.ok) { showToast(r1.msg, 'error'); return; }
     setTimeout(function() {
       manualCheckout(wid, shift, date, defOut).then(function(r2) {
-        if (r2.ok) showToast(w.name + ' marked present!', 'success');
+        if (r2.ok) showToast(w.name + ' attendance added!', 'success');
         renderAttendanceView();
       });
     }, 300);
   });
-}
-
-function quickAttMark(wid, date, status) {
-  var w = findWorker(wid);
-  if (!w) return;
-  showConfirm('Mark ' + w.name + ' as ABSENT for ' + date + '? (0 Hours, No Pay)', function() {
-    submitLeaveAction(wid, date, status, 0, '');
-  });
-}
-
-function showLeaveModal(wid, date, type) {
-  var w = findWorker(wid);
-  if (!w) return;
-  var title = type === 'company_off' ? 'Company Off' : 'Medical Leave';
-  var html = '<div class="form-group">' +
-    '<label class="form-label">Salary Payment Option</label>' +
-    '<select id="leavePaySelect" class="form-control" style="font-weight:bold; color:#1e40af;">' +
-      '<option value="9">Full Pay (9 Hours Regular)</option>' +
-      '<option value="4.5">Half Pay (4.5 Hours Regular)</option>' +
-      '<option value="0">No Pay (0 Hours)</option>' +
-    '</select></div>' +
-    '<div class="form-group" style="margin-top:10px;">' +
-    '<label class="form-label">Note / Reason (Optional)</label>' +
-    '<input type="text" id="leaveNote" class="form-control" placeholder="Enter reason e.g. Fever...">' +
-    '</div>' +
-    '<div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">' +
-    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-    '<button class="btn btn-primary" onclick="processLeaveModal(\'' + wid + '\',\'' + date + '\',\'' + type + '\')">Save Record</button>' +
-    '</div>';
-  showModal(html, title + ' - ' + w.name);
-}
-
-function processLeaveModal(wid, date, type) {
-  var payHours = parseFloat(document.getElementById('leavePaySelect').value);
-  var note = document.getElementById('leaveNote').value.trim();
-  submitLeaveAction(wid, date, type, payHours, note);
-  closeModal();
-}
-
-function submitLeaveAction(wid, date, type, payHours, note) {
-  var w = findWorker(wid);
-  if (!w) return;
-  var recId = wid + '_' + date;
-  var session = typeof getSession === 'function' ? getSession() : null;
-  var data = {
-    recId: recId,
-    wid: wid,
-    name: w.name,
-    sec: w.sec,
-    shift: w.shift || 'Day',
-    date: date,
-    status: type,
-    checkIn: null,
-    checkOut: null,
-    regHours: payHours || 0,
-    otHours: 0,
-    extraOtHours: 0,
-    compOtHours: 0,
-    totalHours: payHours || 0,
-    note: note || '',
-    updatedBy: session ? session.name : 'Admin',
-    updatedAt: new Date().toISOString()
-  };
-
-  // Safe Database Connection Check
-  var firestore = null;
-  if (typeof db !== 'undefined') {
-    firestore = db;
-  } else if (typeof firebase !== 'undefined' && firebase.firestore) {
-    firestore = firebase.firestore();
-  } else if (window.db) {
-    firestore = window.db;
-  }
-
-  if (!firestore) {
-    alert('Database connection error! Page ko Ctrl+F5 karke refresh karein.');
-    return;
-  }
-
-  firestore.collection('attendance').doc(recId).set(data, { merge: true })
-    .then(function() {
-      if (typeof showToast === 'function') {
-        showToast('Record saved successfully for ' + w.name, 'success');
-      } else {
-        alert('Record saved successfully for ' + w.name);
-      }
-      if (typeof renderDashboard === 'function') renderDashboard();
-      if (typeof renderAttendance === 'function') renderAttendance();
-    })
-    .catch(function(err) {
-      console.error('Error saving record:', err);
-      alert('Error saving record: ' + err.message);
-    });
-}
-  // Safe Firebase DB reference check
-  var firestore = (typeof db !== 'undefined') ? db : (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
-
-  if (!firestore) {
-    alert('Firebase Database connect nahi ho paya. Page refresh karke try karo.');
-    return;
-  }
-
-  firestore.collection('attendance').doc(recId).set(data, { merge: true })
-    .then(function() {
-      if (typeof showToast === 'function') {
-        showToast('Record saved successfully for ' + w.name, 'success');
-      } else {
-        alert('Record saved successfully for ' + w.name);
-      }
-      if (typeof renderDashboard === 'function') renderDashboard();
-      if (typeof renderAttendance === 'function') renderAttendance();
-    })
-    .catch(function(err) {
-      console.error('Error saving record:', err);
-      alert('Error saving record: ' + err.message);
-    });
-}
-  // Firebase Firestore me save karne ke liye:
-  db.collection('attendance').doc(recId).set(data, { merge: true })
-    .then(function() {
-      showToast('Record saved successfully for ' + w.name, 'success');
-      if (typeof renderDashboard === 'function') renderDashboard();
-      if (typeof renderAttendance === 'function') renderAttendance();
-    })
-    .catch(function(err) {
-      console.error('Error saving record:', err);
-      showToast('Error saving record: ' + err.message, 'danger');
-    });
 }
 
 function editAttRecord(recId) { if (typeof editHistRecord === 'function') editHistRecord(recId); }
@@ -2145,6 +2037,7 @@ function renderAdminWorkers() {
   var statusFilter = document.getElementById('workerStatusFilter') ? document.getElementById('workerStatusFilter').value : 'All';
   var ws = gW();
   var filtered = [];
+
   var indCount = 0, pakCount = 0;
   for (var x = 0; x < ws.length; x++) {
     if (ws[x].on && ws[x].sec === 'Indian') indCount++;
@@ -2379,7 +2272,7 @@ function generateSalaryReport() {
         var rec = r.records[j];
         html += '<tr><td>' + fmtDate(rec.date + 'T00:00:00') + '</td>' +
           '<td><span class="shift-badge shift-' + (rec.shift || 'day').toLowerCase() + '">' + (rec.shift || 'Day') + '</span></td>' +
-          '<td>' + (rec.checkinTime ? fmtTime(rec.checkinTime) : '-') + '</td><td>' + (rec.checkoutTime ? fmtTime(rec.checkoutTime) : '-') + '</td>' +
+          '<td>' + fmtTime(rec.checkinTime) + '</td><td>' + fmtTime(rec.checkoutTime) + '</td>' +
           '<td><strong>' + (rec.total || 0) + 'h</strong></td><td>' + (rec.regular || 0) + 'h</td>' +
           '<td>' + (rec.compOT || 0) + 'h</td><td>' + (rec.extraOT || 0) + 'h</td></tr>';
       }
@@ -2448,7 +2341,7 @@ function exportSalaryPDF() {
         var recRows = [];
         for (var k = 0; k < r2.records.length; k++) {
           var rec = r2.records[k];
-          recRows.push([fmtDate(rec.date + 'T00:00:00'), rec.shift || 'Day', (rec.checkinTime ? fmtTime(rec.checkinTime) : '-'), (rec.checkoutTime ? fmtTime(rec.checkoutTime) : '-'), (rec.total || 0) + 'h', (rec.regular || 0) + 'h', (rec.compOT || 0) + 'h', (rec.extraOT || 0) + 'h']);
+          recRows.push([fmtDate(rec.date + 'T00:00:00'), rec.shift || 'Day', fmtTime(rec.checkinTime), fmtTime(rec.checkoutTime), (rec.total || 0) + 'h', (rec.regular || 0) + 'h', (rec.compOT || 0) + 'h', (rec.extraOT || 0) + 'h']);
         }
         doc.autoTable({
           startY: y + 68,
@@ -2523,7 +2416,7 @@ function generateMonthlyReport() {
         var rec = r.records[j];
         html += '<tr><td>' + fmtDate(rec.date + 'T00:00:00') + '</td>' +
           '<td><span class="shift-badge shift-' + (rec.shift || 'day').toLowerCase() + '">' + (rec.shift || 'Day') + '</span></td>' +
-          '<td>' + (rec.checkinTime ? fmtTime(rec.checkinTime) : '-') + '</td><td>' + (rec.checkoutTime ? fmtTime(rec.checkoutTime) : '-') + '</td>' +
+          '<td>' + fmtTime(rec.checkinTime) + '</td><td>' + fmtTime(rec.checkoutTime) + '</td>' +
           '<td>' + (rec.total || 0) + 'h</td><td>' + (rec.ot || 0) + 'h</td></tr>';
       }
       html += '</tbody></table></div>';
@@ -2555,7 +2448,7 @@ function exportMonthlyPDF() {
         var rows = [];
         for (var j = 0; j < r.records.length; j++) {
           var rec = r.records[j];
-          rows.push([fmtDate(rec.date + 'T00:00:00'), rec.shift || 'Day', (rec.checkinTime ? fmtTime(rec.checkinTime) : '-'), (rec.checkoutTime ? fmtTime(rec.checkoutTime) : '-'), (rec.total || 0) + 'h', (rec.regular || 0) + 'h', (rec.compOT || 0) + 'h', (rec.extraOT || 0) + 'h', (rec.ot || 0) + 'h']);
+          rows.push([fmtDate(rec.date + 'T00:00:00'), rec.shift || 'Day', fmtTime(rec.checkinTime), fmtTime(rec.checkoutTime), (rec.total || 0) + 'h', (rec.regular || 0) + 'h', (rec.compOT || 0) + 'h', (rec.extraOT || 0) + 'h', (rec.ot || 0) + 'h']);
         }
         doc.autoTable({
           startY: startY + 22,
@@ -2586,7 +2479,7 @@ function exportMonthlyCSV() {
     var r = reports[i];
     for (var j = 0; j < r.records.length; j++) {
       var rec = r.records[j];
-      csv += '"' + r.worker.name + '",' + r.worker.wid + ',' + r.worker.sec + ',"' + r.worker.prof + '",' + rec.date + ',' + (rec.shift || 'Day') + ',' + (rec.checkinTime ? fmtTime(rec.checkinTime) : '-') + ',' + (rec.checkoutTime ? fmtTime(rec.checkoutTime) : '-') + ',' + (rec.total || 0) + ',' + (rec.regular || 0) + ',' + (rec.compOT || 0) + ',' + (rec.extraOT || 0) + ',' + (rec.ot || 0) + '\n';
+      csv += '"' + r.worker.name + '",' + r.worker.wid + ',' + r.worker.sec + ',"' + r.worker.prof + '",' + rec.date + ',' + (rec.shift || 'Day') + ',' + fmtTime(rec.checkinTime) + ',' + fmtTime(rec.checkoutTime) + ',' + (rec.total || 0) + ',' + (rec.regular || 0) + ',' + (rec.compOT || 0) + ',' + (rec.extraOT || 0) + ',' + (rec.ot || 0) + '\n';
     }
   }
   var blob = new Blob([csv], { type: 'text/csv' });
@@ -2610,7 +2503,7 @@ function exportRangePDF() {
     var rows = [];
     for (var i = 0; i < data.length; i++) {
       var a = data[i];
-      rows.push([a.date || '', a.name || '', a.wid || '', a.sec || '', a.shift || 'Day', (a.checkinTime ? fmtTime(a.checkinTime) : '-'), (a.checkoutTime ? fmtTime(a.checkoutTime) : '-'), (a.total || 0) + 'h', (a.regular || 0) + 'h', (a.compOT || 0) + 'h', (a.extraOT || 0) + 'h', (a.ot || 0) + 'h']);
+      rows.push([a.date || '', a.name || '', a.wid || '', a.sec || '', a.shift || 'Day', fmtTime(a.checkinTime), fmtTime(a.checkoutTime), (a.total || 0) + 'h', (a.regular || 0) + 'h', (a.compOT || 0) + 'h', (a.extraOT || 0) + 'h', (a.ot || 0) + 'h']);
     }
     doc.autoTable({
       startY: startY,
@@ -2730,4 +2623,3 @@ window.addEventListener('DOMContentLoaded', function() { bootstrap(); });
 </script>
 </body>
 </html>
-```
