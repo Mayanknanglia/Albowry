@@ -2042,26 +2042,31 @@ function submitLeaveAction(wid, date, type, payHours, note) {
     name: w.name,
     sec: w.sec,
     shift: w.shift || 'Day',
-    prof: w.prof,
     date: date,
-    status: type, 
-    regular: payHours,
-    compOT: 0,
-    extraOT: 0,
-    total: payHours,
-    ot: 0,
-    checkinTime: null,
-    checkoutTime: null,
-    markedBy: session ? session.id : 'Admin',
-    markedAt: new Date().toISOString(),
-    note: note
+    status: type, // 'company_off', 'medical_leave', ya 'absent'
+    checkIn: null,
+    checkOut: null,
+    regHours: payHours || 0,
+    otHours: 0,
+    extraOtHours: 0,
+    compOtHours: 0,
+    totalHours: payHours || 0,
+    note: note || '',
+    updatedBy: session ? session.name : 'Admin',
+    updatedAt: new Date().toISOString()
   };
-  FB.set('attendance', recId, data).then(function() {
-    showToast(w.name + ' marked successfully!', 'success');
-    renderAttendanceView();
-  }).catch(function(err) {
-    showToast('Error saving record', 'error');
-  });
+
+  // Firebase Firestore me save karne ke liye:
+  db.collection('attendance').doc(recId).set(data, { merge: true })
+    .then(function() {
+      showToast('Record saved successfully for ' + w.name, 'success');
+      if (typeof renderDashboard === 'function') renderDashboard();
+      if (typeof renderAttendance === 'function') renderAttendance();
+    })
+    .catch(function(err) {
+      console.error('Error saving record:', err);
+      showToast('Error saving record: ' + err.message, 'danger');
+    });
 }
 
 function editAttRecord(recId) { if (typeof editHistRecord === 'function') editHistRecord(recId); }
