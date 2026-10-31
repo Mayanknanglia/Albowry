@@ -1395,3 +1395,16 @@ window.addEventListener('load', function() {
 });
 
 console.log('[ALB] app.js v23 loaded - ZERO DATA LOSS - ' + COMPANY.full);
+// =========================================
+// v24 - GLOBAL STATUS OVERRIDE 
+// =========================================
+window.getStatusBadge = function(status) {
+  if (status === 'absent') return '<span class="status-badge-absent">Absent</span>';
+  if (status === 'company_off') return '<span class="status-badge-off">Company Off</span>';
+  if (status === 'medical_leave') return '<span class="status-badge-medical">Medical Leave</span>';
+  if (status === 'completed') return '<span class="badge badge-success">Completed</span>';
+  if (status === 'pending_checkin') return '<span class="badge badge-warn">Pending In</span>';
+  if (status === 'pending_checkout') return '<span class="badge badge-warn">Pending Out</span>';
+  if (status === 'checked_in') return '<span class="badge badge-info">Working</span>';
+  return '<span class="badge badge-secondary">' + status + '</span>';
+};
