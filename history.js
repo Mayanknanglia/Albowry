@@ -184,19 +184,27 @@ function renderHistoryView() {
       var a4 = item.att;
       var statusBadge = getStatusBadge(a4.status);
       var isManual = a4.backdated ? '<span class="tag-manual">Manual</span>' : '';
+      
+      // Check for Leave
+      var displayIn = a4.leaveType ? '-' : fmtTime(a4.checkinTime || a4.checkinReqTime);
+      var displayOut = a4.leaveType ? '-' : fmtTime(a4.checkoutTime);
+      var displayTotal = a4.leaveType ? '-' : (a4.total ? a4.total + 'h' : '-');
+      var displayOT = a4.leaveType ? '-' : (a4.ot ? a4.ot + 'h' : '-');
+      var displayStatus = a4.leaveType ? '<span class="badge badge-info" style="background:#f59e0b">' + a4.leaveType + '</span>' : statusBadge;
+
       html += '<tr>' +
         '<td>' + (p + 1) + '</td>' +
         '<td><strong>' + w4.name + '</strong><br><small style="color:#94a3b8">' + w4.wid + '</small>' + isManual + '</td>' +
         '<td>' + w4.sec + '</td>' +
         '<td><span class="shift-badge shift-' + (a4.shift || 'Day').toLowerCase() + '">' + (a4.shift || 'Day') + '</span></td>' +
-        '<td>' + fmtTime(a4.checkinTime || a4.checkinReqTime) + '</td>' +
-        '<td>' + fmtTime(a4.checkoutTime) + '</td>' +
-        '<td>' + (a4.total ? a4.total + 'h' : '-') + '</td>' +
-        '<td>' + (a4.ot ? a4.ot + 'h' : '-') + '</td>' +
-        '<td>' + statusBadge + '</td>' +
+        '<td>' + displayIn + '</td>' +
+        '<td>' + displayOut + '</td>' +
+        '<td>' + displayTotal + '</td>' +
+        '<td>' + displayOT + '</td>' +
+        '<td>' + displayStatus + '</td>' +
         '<td class="hist-actions">' +
           '<button class="btn-icon btn-edit" onclick="editHistRecord(\'' + a4.recId + '\')" title="Edit"><span class="material-symbols-outlined">edit</span></button>' +
-          (a4.status === 'checked_in' ? '<button class="btn-icon btn-success" onclick="forceCheckout(\'' + a4.recId + '\')" title="Force Checkout"><span class="material-symbols-outlined">logout</span></button>' : '') +
+          (a4.status === 'checked_in' && !a4.leaveType ? '<button class="btn-icon btn-success" onclick="forceCheckout(\'' + a4.recId + '\')" title="Force Checkout"><span class="material-symbols-outlined">logout</span></button>' : '') +
           '<button class="btn-icon btn-delete" onclick="deleteHistRecord(\'' + a4.recId + '\')" title="Delete"><span class="material-symbols-outlined">delete</span></button>' +
         '</td></tr>';
     }
@@ -327,10 +335,18 @@ function renderDayWiseView() {
     for (var k = 0; k < dateAtt.length; k++) {
       var a2 = dateAtt[k];
       if (a2.status !== 'checked_in' && a2.status !== 'pending_checkout' && a2.status !== 'completed') continue;
-      html += '<tr><td>' + (num++) + '</td><td>' + a2.name + (a2.backdated ? ' <span class="tag-manual">M</span>' : '') + '</td>' +
+      
+      var dwIn = a2.leaveType ? '-' : fmtTime(a2.checkinTime || a2.checkinReqTime);
+      var dwOut = a2.leaveType ? '-' : fmtTime(a2.checkoutTime);
+      var dwTotal = a2.leaveType ? '-' : (a2.total ? a2.total + 'h' : '-');
+      var dwOT = a2.leaveType ? '-' : (a2.ot ? a2.ot + 'h' : '-');
+      var displayName = a2.name + (a2.backdated ? ' <span class="tag-manual">M</span>' : '');
+      if(a2.leaveType) displayName += ' <span class="badge badge-info" style="font-size:10px;padding:2px 4px;margin-left:4px;">' + a2.leaveType + '</span>';
+
+      html += '<tr><td>' + (num++) + '</td><td>' + displayName + '</td>' +
         '<td>' + a2.wid + '</td><td>' + a2.sec + '</td><td>' + (a2.shift || 'Day') + '</td>' +
-        '<td>' + fmtTime(a2.checkinTime || a2.checkinReqTime) + '</td><td>' + fmtTime(a2.checkoutTime) + '</td>' +
-        '<td>' + (a2.total ? a2.total + 'h' : '-') + '</td><td>' + (a2.ot ? a2.ot + 'h' : '-') + '</td></tr>';
+        '<td>' + dwIn + '</td><td>' + dwOut + '</td>' +
+        '<td>' + dwTotal + '</td><td>' + dwOT + '</td></tr>';
     }
     html += '</tbody></table>';
   }
@@ -357,6 +373,12 @@ function editHistRecord(recId) {
   var cinDate = rec.date || getTurkeyDate(rec.checkinTime);
   var cinTime = rec.checkinTime ? new Date(rec.checkinTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }) : '08:00';
   var coutTime = rec.checkoutTime ? new Date(rec.checkoutTime).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+  
+  if (rec.leaveType) {
+    showToast('Leave records cannot be edited, delete and re-add if needed.', 'info');
+    return;
+  }
+
   var html = '<div class="form-grid">' +
     '<div class="form-group"><label>Worker</label><input type="text" value="' + rec.name + '" readonly class="form-control"></div>' +
     '<div class="form-group"><label>Date</label><input type="date" id="editDate" value="' + cinDate + '" class="form-control"></div>' +
@@ -593,11 +615,15 @@ function exportHistoryPDF() {
       var pRows = [];
       for (var p = 0; p < presentRecs.length; p++) {
         var r = presentRecs[p];
-        pRows.push([p+1, r.name, r.wid, r.sec, r.shift||'Day',
-          fmtTime(r.checkinTime||r.checkinReqTime), fmtTime(r.checkoutTime)||'-',
-          (r.total||0)+'h', (r.regular||0)+'h', (r.compOT||0)+'h',
-          (r.extraOT||0) > 0 ? (r.extraOT)+'h' : '-',
-          r.status==='completed'?'Done':'Active']);
+        var pIn = r.leaveType ? '-' : fmtTime(r.checkinTime||r.checkinReqTime);
+        var pOut = r.leaveType ? '-' : (fmtTime(r.checkoutTime)||'-');
+        var pTotal = r.leaveType ? '-' : (r.total||0)+'h';
+        var pReg = r.leaveType ? '-' : (r.regular||0)+'h';
+        var pComp = r.leaveType ? '-' : (r.compOT||0)+'h';
+        var pExtra = r.leaveType ? '-' : ((r.extraOT||0) > 0 ? (r.extraOT)+'h' : '-');
+        var pStat = r.leaveType ? r.leaveType : (r.status==='completed'?'Done':'Active');
+        
+        pRows.push([p+1, r.name, r.wid, r.sec, r.shift||'Day', pIn, pOut, pTotal, pReg, pComp, pExtra, pStat]);
       }
       doc.autoTable({
         startY: startY + 28,
@@ -704,9 +730,16 @@ function exportHistoryExcel() {
   csv += '#,Name,ID,Section,Shift,In,Out,Total,Regular,CompOT,ExtraOT,Status\n';
   for (var p = 0; p < presentRecs.length; p++) {
     var r = presentRecs[p];
-    csv += (p+1)+',"'+r.name+'",'+r.wid+','+r.sec+','+(r.shift||'Day')+','+
-      fmtTime(r.checkinTime||r.checkinReqTime)+','+(fmtTime(r.checkoutTime)||'-')+','+
-      (r.total||0)+','+(r.regular||0)+','+(r.compOT||0)+','+(r.extraOT||0)+','+r.status+'\n';
+    var cIn = r.leaveType ? '-' : fmtTime(r.checkinTime||r.checkinReqTime);
+    var cOut = r.leaveType ? '-' : (fmtTime(r.checkoutTime)||'-');
+    var cTotal = r.leaveType ? '-' : (r.total||0);
+    var cReg = r.leaveType ? '-' : (r.regular||0);
+    var cComp = r.leaveType ? '-' : (r.compOT||0);
+    var cExt = r.leaveType ? '-' : (r.extraOT||0);
+    var cStat = r.leaveType ? r.leaveType : r.status;
+    
+    csv += (p+1)+',"' + r.name + '",' + r.wid + ',' + r.sec + ',' + (r.shift||'Day') + ',' +
+      cIn + ',' + cOut + ',' + cTotal + ',' + cReg + ',' + cComp + ',' + cExt + ',' + cStat + '\n';
   }
 
   if (extraWorkers.length > 0) {
@@ -714,16 +747,16 @@ function exportHistoryExcel() {
     csv += '#,Name,ID,Shift,In,Out,Total,Standard,Extra,Rate\n';
     for (var e = 0; e < extraWorkers.length; e++) {
       var er = extraWorkers[e];
-      csv += (e+1)+',"'+er.name+'",'+er.wid+','+(er.shift||'Day')+','+
-        fmtTime(er.checkinTime)+','+fmtTime(er.checkoutTime)+','+
-        (er.total||0)+'h,12h,'+(er.extraOT||0)+'h,1.5x\n';
+      csv += (e+1)+',"' + er.name + '",' + er.wid + ',' + (er.shift||'Day') + ',' +
+        fmtTime(er.checkinTime) + ',' + fmtTime(er.checkoutTime) + ',' +
+        (er.total||0) + 'h,12h,' + (er.extraOT||0) + 'h,1.5x\n';
     }
   }
 
   csv += '\nABSENT WORKERS\n#,Name,ID,Section,Profession,Shift\n';
   for (var ab = 0; ab < absentList.length; ab++) {
     var abW = absentList[ab];
-    csv += (ab+1)+',"'+abW.name+'",'+abW.wid+','+abW.sec+',"'+abW.prof+'",'+abW.shift+'\n';
+    csv += (ab+1)+',"' + abW.name + '",' + abW.wid + ',' + abW.sec + ',"' + abW.prof + '",' + abW.shift + '\n';
   }
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
