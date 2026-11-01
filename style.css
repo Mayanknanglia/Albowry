@@ -2159,16 +2159,3 @@ select.form-control { cursor: pointer; }
 ::-webkit-scrollbar-track { background: var(--border-light); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-/* =========================================
-   v24 - ABSENCE & LEAVE FEATURES
-   ========================================= */
-.absent-action-group { display: flex; gap: 6px; margin-top: 12px; justify-content: space-between; }
-.btn-absent-act { flex: 1; border: none; border-radius: 6px; padding: 10px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.act-present { background: #10b981; } .act-present:hover { background: #059669; transform: translateY(-2px); }
-.act-absent { background: #ef4444; } .act-absent:hover { background: #dc2626; transform: translateY(-2px); }
-.act-off { background: #3b82f6; } .act-off:hover { background: #2563eb; transform: translateY(-2px); }
-.act-medical { background: #f59e0b; } .act-medical:hover { background: #d97706; transform: translateY(-2px); }
-
-.status-badge-absent { background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #fca5a5; }
-.status-badge-off { background: #dbeafe; color: #2563eb; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #93c5fd; }
-.status-badge-medical { background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #fcd34d; }
