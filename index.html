@@ -377,7 +377,7 @@
                style="width:28px;height:28px;object-fit:contain;border-radius:6px;opacity:0.6;margin-bottom:8px"
                onerror="this.style.display='none'">
           <div class="sidebar-footer-company">AL BOWRY CARPENTRY LLC</div>
-          <div class="sidebar-footer-ver">Attendance System v21</div>
+          <div class="sidebar-footer-ver">Attendance System v24</div>
           <div class="sidebar-footer-site">COP31 | Antalya, Turkey</div>
         </div>
       </div>
@@ -878,7 +878,6 @@
       </section>
 
       <!-- WORK & PANELS -->
-     <!-- WORK & PANELS -->
 <!-- WORK & PANELS -->
 <section class="admin-section" id="secWork" style="display:none">
   <div class="section-header">
@@ -963,7 +962,6 @@
         </div>
 
         <!-- Work Progress -->
-       <!-- Work Progress -->
 <div class="card" style="margin-top:20px">
   <div class="card-header">
     <span class="material-symbols-outlined">trending_up</span>
@@ -1206,9 +1204,6 @@
   </button>
 </div>
 
-
-        
-
         <div class="settings-grid">
           <div class="card">
             <div class="card-header"><span class="material-symbols-outlined">person</span><h3>Change Admin Name</h3></div>
@@ -1266,7 +1261,7 @@
           <div class="card-header"><span class="material-symbols-outlined">info</span><h3>System Information</h3></div>
           <div class="card-body">
             <div class="sys-info-grid">
-              <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v21</span></div>
+              <div class="sys-info-item"><span class="sys-info-label">Version</span><span class="sys-info-val">v24</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Total Workers</span><span class="sys-info-val" id="sysWorkerCount">56</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Total Attendance Records</span><span class="sys-info-val" id="sysAttCount">0</span></div>
               <div class="sys-info-item"><span class="sys-info-label">Firebase Project</span><span class="sys-info-val">albowry-attendance</span></div>
@@ -1490,8 +1485,8 @@ function doAdminLogin() {
 
 function showWorkerDashboard(session) {
   document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('workerDashboard').style.display = 'block';
-  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('workerDashboard').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
   renderWorkerUI();
   if (_clockInterval) clearInterval(_clockInterval);
   _clockInterval = startClock('workerClock');
@@ -1783,8 +1778,8 @@ function renderApprovals() {
           '</div>' +
           '<div class="approval-type"><span class="badge ' + (isIn ? 'badge-success' : 'badge-warn') + '">' + (isIn ? 'CHECK IN' : 'CHECK OUT') + '</span></div>' +
           '<div class="approval-actions">' +
-            '<button class="btn btn-success btn-sm" onclick="approveRecord(\\'' + p.recId + '\\',' + isIn + ')"><span class="material-symbols-outlined">check</span> Approve</button>' +
-            '<button class="btn btn-danger btn-sm" onclick="rejectRecord(\\'' + p.recId + '\\')"><span class="material-symbols-outlined">close</span> Reject</button>' +
+            '<button class="btn btn-success btn-sm" onclick="approveRecord(\'' + p.recId + '\',' + isIn + ')"><span class="material-symbols-outlined">check</span> Approve</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="rejectRecord(\'' + p.recId + '\')"><span class="material-symbols-outlined">close</span> Reject</button>' +
           '</div></div>';
       }
       html += '</div>';
@@ -1804,7 +1799,7 @@ function renderApprovals() {
             '<strong>' + ua.name + '</strong> | ' + ua.wid +
             '<div class="undo-detail">' + (ua.status === 'checked_in' ? 'Checked in at ' + fmtTime(ua.checkinTime) : 'Completed | Out: ' + fmtTime(ua.checkoutTime)) + '</div>' +
           '</div>' +
-          '<button class="btn btn-warning btn-sm" onclick="doUndoApproval(\\'' + ua.recId + '\\')"><span class="material-symbols-outlined">undo</span> Undo</button>' +
+          '<button class="btn btn-warning btn-sm" onclick="doUndoApproval(\'' + ua.recId + '\')"><span class="material-symbols-outlined">undo</span> Undo</button>' +
           '</div>';
       }
       uHtml += '</div>';
@@ -1858,7 +1853,7 @@ function renderLiveStatus() {
             '<div class="live-worker-time">In: ' + fmtTime(w.checkinTime) + ' | ' + elapsed + 'h elapsed</div>' +
           '</div>' +
           '<div class="live-worker-actions">' +
-            '<button class="btn btn-sm btn-danger" onclick="adminCheckoutLive(\\'' + w.recId + '\\')"><span class="material-symbols-outlined">logout</span></button>' +
+            '<button class="btn btn-sm btn-danger" onclick="adminCheckoutLive(\'' + w.recId + '\')"><span class="material-symbols-outlined">logout</span></button>' +
           '</div></div>';
       }
       html += '</div>';
@@ -1948,20 +1943,28 @@ function renderAttendanceView() {
           var pr = presentRecs[p];
           var statusBadge = getStatusBadge(pr.att.status);
           var isManual = pr.att.backdated ? '<span class="tag-manual">M</span>' : '';
+          
+          var displayIn = pr.att.leaveType ? '-' : fmtTime(pr.att.checkinTime || pr.att.checkinReqTime);
+          var displayOut = pr.att.leaveType ? '-' : (pr.att.checkoutTime ? fmtTime(pr.att.checkoutTime) : '-');
+          var displayTotal = pr.att.leaveType ? '-' : (pr.att.total ? '<strong>' + pr.att.total + 'h</strong>' : '-');
+          var displayReg = pr.att.leaveType ? '-' : (pr.att.regular || 0) + 'h';
+          var displayOT = pr.att.leaveType ? '-' : (pr.att.ot ? '<span class="ot-val">' + pr.att.ot + 'h</span>' : '-');
+          var displayStatus = pr.att.leaveType ? '<span class="badge badge-info" style="background:#f59e0b">' + pr.att.leaveType + '</span>' : statusBadge;
+
           pHtml += '<tr>' +
             '<td>' + (p + 1) + '</td>' +
             '<td><strong>' + pr.worker.name + '</strong> ' + isManual + '<br><small class="text-muted">' + pr.worker.wid + '</small></td>' +
             '<td>' + pr.worker.sec + '</td>' +
             '<td><span class="shift-badge shift-' + (pr.att.shift || 'day').toLowerCase() + '">' + (pr.att.shift || 'Day') + '</span></td>' +
-            '<td>' + fmtTime(pr.att.checkinTime || pr.att.checkinReqTime) + '</td>' +
-            '<td>' + (pr.att.checkoutTime ? fmtTime(pr.att.checkoutTime) : '-') + '</td>' +
-            '<td>' + (pr.att.total ? '<strong>' + pr.att.total + 'h</strong>' : '-') + '</td>' +
-            '<td>' + (pr.att.regular || 0) + 'h</td>' +
-            '<td>' + (pr.att.ot ? '<span class="ot-val">' + pr.att.ot + 'h</span>' : '-') + '</td>' +
-            '<td>' + statusBadge + '</td>' +
+            '<td>' + displayIn + '</td>' +
+            '<td>' + displayOut + '</td>' +
+            '<td>' + displayTotal + '</td>' +
+            '<td>' + displayReg + '</td>' +
+            '<td>' + displayOT + '</td>' +
+            '<td>' + displayStatus + '</td>' +
             '<td>' +
-              '<button class="btn-icon btn-edit" onclick="editAttRecord(\\'' + pr.att.recId + '\\')"><span class="material-symbols-outlined">edit</span></button>' +
-              '<button class="btn-icon btn-delete" onclick="deleteAttRecord(\\'' + pr.att.recId + '\\')"><span class="material-symbols-outlined">delete</span></button>' +
+              '<button class="btn-icon btn-edit" onclick="editAttRecord(\'' + pr.att.recId + '\')"><span class="material-symbols-outlined">edit</span></button>' +
+              '<button class="btn-icon btn-delete" onclick="deleteAttRecord(\'' + pr.att.recId + '\')"><span class="material-symbols-outlined">delete</span></button>' +
             '</td></tr>';
         }
         presentBody.innerHTML = pHtml;
@@ -1988,9 +1991,9 @@ function renderAttendanceView() {
               '<div class="absent-meta">' + abW.sec + ' | ' + abW.shift + ' Shift</div>' +
             '</div>' +
             '<div style="display:flex; gap:6px; flex:1; justify-content: flex-end;">' +
-              '<button class="btn-absent-in" style="padding:6px 12px;" onclick="quickAttAbsent(\\'' + abW.wid + '\\',\\'' + date + '\\')"><span class="material-symbols-outlined" style="font-size:16px;margin-right:4px;vertical-align:middle;">add_circle</span>Add</button>' +
-              '<button class="btn-absent-in" style="padding:6px 10px; background:#f59e0b; color:white; border:none;" onclick="markLeave(\\'' + abW.wid + '\\', \\'Company Off\\')">CO</button>' +
-              '<button class="btn-absent-in" style="padding:6px 10px; background:#ef4444; color:white; border:none;" onclick="markLeave(\\'' + abW.wid + '\\', \\'Medical Leave\\')">ML</button>' +
+              '<button class="btn-absent-in" style="padding:6px 12px;" onclick="quickAttAbsent(\'' + abW.wid + '\',\'' + date + '\')"><span class="material-symbols-outlined" style="font-size:16px;margin-right:4px;vertical-align:middle;">add_circle</span>Add</button>' +
+              '<button class="btn-absent-in" style="padding:6px 10px; background:#f59e0b; color:white; border:none;" onclick="markLeave(\'' + abW.wid + '\', \'Company Off\')">CO</button>' +
+              '<button class="btn-absent-in" style="padding:6px 10px; background:#ef4444; color:white; border:none;" onclick="markLeave(\'' + abW.wid + '\', \'Medical Leave\')">ML</button>' +
             '</div></div>';
         }
         absentGrid.innerHTML = aHtml;
@@ -2079,13 +2082,13 @@ function renderAdminWorkers() {
       '<td><strong>' + fw.name + '</strong></td>' +
       '<td>' + fw.prof + '</td>' +
       '<td>' + fw.sec + '</td>' +
-      '<td><span class="shift-badge shift-' + (fw.shift || 'day').toLowerCase() + ' shift-clickable" onclick="doToggleShift(\\'' + fw.wid + '\\')">' + (fw.shift || 'Day') + '</span></td>' +
+      '<td><span class="shift-badge shift-' + (fw.shift || 'day').toLowerCase() + ' shift-clickable" onclick="doToggleShift(\'' + fw.wid + '\')">' + (fw.shift || 'Day') + '</span></td>' +
       '<td><span class="status-dot ' + (fw.on ? 'status-active' : 'status-inactive') + '"></span>' + (fw.on ? 'Active' : 'Inactive') + '</td>' +
       '<td class="action-cell">' +
-        '<button class="btn-icon btn-edit" onclick="showEditWorker(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">edit</span></button>' +
-        '<button class="btn-icon ' + (fw.on ? 'btn-warn' : 'btn-success') + '" onclick="doToggleActive(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">' + (fw.on ? 'person_off' : 'person') + '</span></button>' +
-        '<button class="btn-icon btn-info" onclick="doResetWorkerPw(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">lock_reset</span></button>' +
-        '<button class="btn-icon btn-delete" onclick="doDeleteWorker(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">delete</span></button>' +
+        '<button class="btn-icon btn-edit" onclick="showEditWorker(\'' + fw.wid + '\')"><span class="material-symbols-outlined">edit</span></button>' +
+        '<button class="btn-icon ' + (fw.on ? 'btn-warn' : 'btn-success') + '" onclick="doToggleActive(\'' + fw.wid + '\')"><span class="material-symbols-outlined">' + (fw.on ? 'person_off' : 'person') + '</span></button>' +
+        '<button class="btn-icon btn-info" onclick="doResetWorkerPw(\'' + fw.wid + '\')"><span class="material-symbols-outlined">lock_reset</span></button>' +
+        '<button class="btn-icon btn-delete" onclick="doDeleteWorker(\'' + fw.wid + '\')"><span class="material-symbols-outlined">delete</span></button>' +
       '</td></tr>';
   }
   tbody.innerHTML = html;
@@ -2130,7 +2133,7 @@ function showEditWorker(wid) {
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
     '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-    '<button class="btn btn-primary" onclick="doEditWorker(\\'' + wid + '\\')">Save Changes</button></div>';
+    '<button class="btn btn-primary" onclick="doEditWorker(\'' + wid + '\')">Save Changes</button></div>';
   showModal(html, 'Edit Worker - ' + w.name);
 }
 
