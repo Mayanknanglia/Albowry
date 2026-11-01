@@ -1334,8 +1334,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
 <!-- App Scripts -->
-<script src="app.js?v=23"></script>
-<script src="manual.js?v=21"></script>
+<script src="app.js?v=24"></script>
+<script src="manual.js?v=24"></script>
 <script src="history.js?v=24"></script>
 <script src="work.js?v=25"></script>
 
@@ -1783,8 +1783,8 @@ function renderApprovals() {
           '</div>' +
           '<div class="approval-type"><span class="badge ' + (isIn ? 'badge-success' : 'badge-warn') + '">' + (isIn ? 'CHECK IN' : 'CHECK OUT') + '</span></div>' +
           '<div class="approval-actions">' +
-            '<button class="btn btn-success btn-sm" onclick="approveRecord(\'' + p.recId + '\',' + isIn + ')"><span class="material-symbols-outlined">check</span> Approve</button>' +
-            '<button class="btn btn-danger btn-sm" onclick="rejectRecord(\'' + p.recId + '\')"><span class="material-symbols-outlined">close</span> Reject</button>' +
+            '<button class="btn btn-success btn-sm" onclick="approveRecord(\\'' + p.recId + '\\',' + isIn + ')"><span class="material-symbols-outlined">check</span> Approve</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="rejectRecord(\\'' + p.recId + '\\')"><span class="material-symbols-outlined">close</span> Reject</button>' +
           '</div></div>';
       }
       html += '</div>';
@@ -1804,7 +1804,7 @@ function renderApprovals() {
             '<strong>' + ua.name + '</strong> | ' + ua.wid +
             '<div class="undo-detail">' + (ua.status === 'checked_in' ? 'Checked in at ' + fmtTime(ua.checkinTime) : 'Completed | Out: ' + fmtTime(ua.checkoutTime)) + '</div>' +
           '</div>' +
-          '<button class="btn btn-warning btn-sm" onclick="doUndoApproval(\'' + ua.recId + '\')"><span class="material-symbols-outlined">undo</span> Undo</button>' +
+          '<button class="btn btn-warning btn-sm" onclick="doUndoApproval(\\'' + ua.recId + '\\')"><span class="material-symbols-outlined">undo</span> Undo</button>' +
           '</div>';
       }
       uHtml += '</div>';
@@ -1858,7 +1858,7 @@ function renderLiveStatus() {
             '<div class="live-worker-time">In: ' + fmtTime(w.checkinTime) + ' | ' + elapsed + 'h elapsed</div>' +
           '</div>' +
           '<div class="live-worker-actions">' +
-            '<button class="btn btn-sm btn-danger" onclick="adminCheckoutLive(\'' + w.recId + '\')"><span class="material-symbols-outlined">logout</span></button>' +
+            '<button class="btn btn-sm btn-danger" onclick="adminCheckoutLive(\\'' + w.recId + '\\')"><span class="material-symbols-outlined">logout</span></button>' +
           '</div></div>';
       }
       html += '</div>';
@@ -1960,8 +1960,8 @@ function renderAttendanceView() {
             '<td>' + (pr.att.ot ? '<span class="ot-val">' + pr.att.ot + 'h</span>' : '-') + '</td>' +
             '<td>' + statusBadge + '</td>' +
             '<td>' +
-              '<button class="btn-icon btn-edit" onclick="editAttRecord(\'' + pr.att.recId + '\')"><span class="material-symbols-outlined">edit</span></button>' +
-              '<button class="btn-icon btn-delete" onclick="deleteAttRecord(\'' + pr.att.recId + '\')"><span class="material-symbols-outlined">delete</span></button>' +
+              '<button class="btn-icon btn-edit" onclick="editAttRecord(\\'' + pr.att.recId + '\\')"><span class="material-symbols-outlined">edit</span></button>' +
+              '<button class="btn-icon btn-delete" onclick="deleteAttRecord(\\'' + pr.att.recId + '\\')"><span class="material-symbols-outlined">delete</span></button>' +
             '</td></tr>';
         }
         presentBody.innerHTML = pHtml;
@@ -1980,16 +1980,18 @@ function renderAttendanceView() {
         var aHtml = '';
         for (var ab = 0; ab < absentWorkers.length; ab++) {
           var abW = absentWorkers[ab];
-          aHtml += '<div class="absent-card">' +
+          aHtml += '<div class="absent-card" style="flex-wrap: wrap;">' +
             '<div class="absent-initials">' + getInitials(abW.name) + '</div>' +
-            '<div class="absent-info">' +
+            '<div class="absent-info" style="min-width:120px;">' +
               '<div class="absent-name">' + abW.name + '</div>' +
               '<div class="absent-meta">' + abW.wid + ' | ' + abW.prof + '</div>' +
               '<div class="absent-meta">' + abW.sec + ' | ' + abW.shift + ' Shift</div>' +
             '</div>' +
-            '<button class="btn-absent-in" onclick="quickAttAbsent(\'' + abW.wid + '\',\'' + date + '\')">' +
-              '<span class="material-symbols-outlined">add_circle</span> Add' +
-            '</button></div>';
+            '<div style="display:flex; gap:6px; flex:1; justify-content: flex-end;">' +
+              '<button class="btn-absent-in" style="padding:6px 12px;" onclick="quickAttAbsent(\\'' + abW.wid + '\\',\\'' + date + '\\')"><span class="material-symbols-outlined" style="font-size:16px;margin-right:4px;vertical-align:middle;">add_circle</span>Add</button>' +
+              '<button class="btn-absent-in" style="padding:6px 10px; background:#f59e0b; color:white; border:none;" onclick="markLeave(\\'' + abW.wid + '\\', \\'Company Off\\')">CO</button>' +
+              '<button class="btn-absent-in" style="padding:6px 10px; background:#ef4444; color:white; border:none;" onclick="markLeave(\\'' + abW.wid + '\\', \\'Medical Leave\\')">ML</button>' +
+            '</div></div>';
         }
         absentGrid.innerHTML = aHtml;
       }
@@ -2077,13 +2079,13 @@ function renderAdminWorkers() {
       '<td><strong>' + fw.name + '</strong></td>' +
       '<td>' + fw.prof + '</td>' +
       '<td>' + fw.sec + '</td>' +
-      '<td><span class="shift-badge shift-' + (fw.shift || 'day').toLowerCase() + ' shift-clickable" onclick="doToggleShift(\'' + fw.wid + '\')">' + (fw.shift || 'Day') + '</span></td>' +
+      '<td><span class="shift-badge shift-' + (fw.shift || 'day').toLowerCase() + ' shift-clickable" onclick="doToggleShift(\\'' + fw.wid + '\\')">' + (fw.shift || 'Day') + '</span></td>' +
       '<td><span class="status-dot ' + (fw.on ? 'status-active' : 'status-inactive') + '"></span>' + (fw.on ? 'Active' : 'Inactive') + '</td>' +
       '<td class="action-cell">' +
-        '<button class="btn-icon btn-edit" onclick="showEditWorker(\'' + fw.wid + '\')"><span class="material-symbols-outlined">edit</span></button>' +
-        '<button class="btn-icon ' + (fw.on ? 'btn-warn' : 'btn-success') + '" onclick="doToggleActive(\'' + fw.wid + '\')"><span class="material-symbols-outlined">' + (fw.on ? 'person_off' : 'person') + '</span></button>' +
-        '<button class="btn-icon btn-info" onclick="doResetWorkerPw(\'' + fw.wid + '\')"><span class="material-symbols-outlined">lock_reset</span></button>' +
-        '<button class="btn-icon btn-delete" onclick="doDeleteWorker(\'' + fw.wid + '\')"><span class="material-symbols-outlined">delete</span></button>' +
+        '<button class="btn-icon btn-edit" onclick="showEditWorker(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">edit</span></button>' +
+        '<button class="btn-icon ' + (fw.on ? 'btn-warn' : 'btn-success') + '" onclick="doToggleActive(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">' + (fw.on ? 'person_off' : 'person') + '</span></button>' +
+        '<button class="btn-icon btn-info" onclick="doResetWorkerPw(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">lock_reset</span></button>' +
+        '<button class="btn-icon btn-delete" onclick="doDeleteWorker(\\'' + fw.wid + '\\')"><span class="material-symbols-outlined">delete</span></button>' +
       '</td></tr>';
   }
   tbody.innerHTML = html;
@@ -2128,7 +2130,7 @@ function showEditWorker(wid) {
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
     '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-    '<button class="btn btn-primary" onclick="doEditWorker(\'' + wid + '\')">Save Changes</button></div>';
+    '<button class="btn btn-primary" onclick="doEditWorker(\\'' + wid + '\\')">Save Changes</button></div>';
   showModal(html, 'Edit Worker - ' + w.name);
 }
 
