@@ -46,11 +46,14 @@ function renderManualOverview() {
     html += '<div class="ov-section"><div class="ov-section-title ov-notin-title">Not Checked In (' + notIn.length + ')</div><div class="ov-worker-list">';
     for (var n = 0; n < notIn.length; n++) {
       var nw = notIn[n];
-      html += '<div class="ov-worker-item">' +
-        '<div class="ov-worker-name">' + nw.name + '<small>' + nw.wid + '</small></div>' +
-        '<div class="ov-worker-meta">' + nw.sec + ' | ' + nw.shift + '</div>' +
+      html += '<div class="ov-worker-item" style="flex-wrap: wrap; gap: 5px;">' +
+        '<div class="ov-worker-name" style="flex:1; min-width: 120px;">' + nw.name + '<small>' + nw.wid + '</small></div>' +
+        '<div class="ov-worker-meta" style="flex:1; min-width: 80px;">' + nw.sec + ' | ' + nw.shift + '</div>' +
+        '<div style="display: flex; gap: 4px;">' +
         '<button class="btn-ov-in" onclick="quickManualCheckin(\'' + nw.wid + '\')">Check In</button>' +
-        '</div>';
+        '<button class="btn-ov-in" style="background:#f59e0b; border:none; padding:4px 8px; color:white; border-radius:4px;" onclick="markLeave(\'' + nw.wid + '\', \'Company Off\')">CO</button>' +
+        '<button class="btn-ov-in" style="background:#ef4444; border:none; padding:4px 8px; color:white; border-radius:4px;" onclick="markLeave(\'' + nw.wid + '\', \'Medical Leave\')">ML</button>' +
+        '</div></div>';
     }
     html += '</div></div>';
   }
@@ -244,4 +247,4 @@ function submitBulkAction(type) {
   });
 }
 
-console.log('[ALB] manual.js v17 loaded');
+console.log('[ALB] manual.js v24 loaded');
