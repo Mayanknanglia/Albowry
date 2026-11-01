@@ -343,9 +343,6 @@
           <a class="nav-link" data-section="secHistory" onclick="showSection('secHistory')">
             <span class="material-symbols-outlined">history</span> History & Backdated
           </a>
-          <a class="nav-link" data-section="secLeave" onclick="showSection('secLeave'); if(typeof initLeaveManager==='function') initLeaveManager();">
-  <span class="material-symbols-outlined">medical_services</span> Leave & Special
-</a>
 
           <div class="sidebar-section-label">WORK</div>
           <a class="nav-link" data-section="secWork" onclick="showSection('secWork')">
@@ -1062,208 +1059,6 @@
         </div>
       </section>
 
-  <!-- ==================== LEAVE & SPECIAL STATUS MANAGER ==================== -->
-<div id="secLeave" class="content-section" style="display:none;">
-  <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
-    <div>
-      <h2 style="margin:0; font-size:22px; color:#0f172a;">Leave & Special Manager</h2>
-      <p style="margin:4px 0 0 0; color:#64748b; font-size:13px;">Manage Absent, Company Off, Medical Leave & Manual Present directly here.</p>
-    </div>
-    <button type="button" onclick="downloadLeaveReportFromUI()" style="background:#1b365d; color:#fff; border:2px solid #d97706; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:8px;">
-      <span class="material-symbols-outlined" style="font-size:18px;">picture_as_pdf</span>
-      Export PDF Report
-    </button>
-  </div>
-
-  <!-- FILTERS BAR -->
-  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; align-items:end; background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
-    <div>
-      <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">SELECT DATE</label>
-      <input type="date" id="leaveManagerDate" onchange="loadLeaveManagerData()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; font-weight:700; color:#0f172a; background:#fff;">
-    </div>
-    <div style="flex-grow:1; max-width:300px;">
-      <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">SEARCH WORKER</label>
-      <input type="text" id="leaveManagerSearch" onkeyup="renderLeaveManagerTable()" placeholder="Search name or code..." style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; width:100%; background:#fff;">
-    </div>
-    <button type="button" onclick="initLeaveManager()" style="padding:8px 16px; background:#1b365d; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
-      🔄 Sync Live
-    </button>
-  </div>
-
-  <!-- STATS CARDS -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#15803d; margin-bottom:4px;">MANUAL PRESENT</div>
-      <div id="lmStatMan" style="font-size:28px; font-weight:800; color:#16a34a;">0</div>
-    </div>
-    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b91c1c; margin-bottom:4px;">ABSENT</div>
-      <div id="lmStatAbs" style="font-size:28px; font-weight:800; color:#dc2626;">0</div>
-    </div>
-    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#1d4ed8; margin-bottom:4px;">COMPANY OFF</div>
-      <div id="lmStatOff" style="font-size:28px; font-weight:800; color:#2563eb;">0</div>
-    </div>
-    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b45309; margin-bottom:4px;">MEDICAL LEAVE</div>
-      <div id="lmStatMed" style="font-size:28px; font-weight:800; color:#d97706;">0</div>
-    </div>
-  </div>
-
-  <!-- TABLE CONTAINER -->
-  <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
-    <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <thead>
-          <tr style="background:#1b365d; color:#fff; text-align:left;">
-            <th style="padding:10px 12px; width:40px;">#</th>
-            <th style="padding:10px 12px;">Worker Detail</th>
-            <th style="padding:10px 12px;">Section</th>
-            <th style="padding:10px 12px;">Current Status</th>
-            <th style="padding:10px 12px; text-align:center;">Pay Hrs</th>
-            <th style="padding:10px 12px;">Note</th>
-            <th style="padding:10px 12px; width:170px; text-align:center;">Quick Action</th>
-          </tr>
-        </thead>
-        <tbody id="leaveManagerTableBody">
-          <tr><td colspan="7" style="padding:40px; text-align:center; color:#94a3b8;">Loading workers...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-  <!-- STATS CARDS -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#15803d; margin-bottom:4px;">MANUAL PRESENT</div>
-      <div id="lmStatMan" style="font-size:28px; font-weight:800; color:#16a34a;">0</div>
-    </div>
-    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b91c1c; margin-bottom:4px;">ABSENT</div>
-      <div id="lmStatAbs" style="font-size:28px; font-weight:800; color:#dc2626;">0</div>
-    </div>
-    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#1d4ed8; margin-bottom:4px;">COMPANY OFF</div>
-      <div id="lmStatOff" style="font-size:28px; font-weight:800; color:#2563eb;">0</div>
-    </div>
-    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b45309; margin-bottom:4px;">MEDICAL LEAVE</div>
-      <div id="lmStatMed" style="font-size:28px; font-weight:800; color:#d97706;">0</div>
-    </div>
-  </div>
-
-  <!-- TABLE CONTAINER -->
-  <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
-    <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <thead>
-          <tr style="background:#1b365d; color:#fff; text-align:left;">
-            <th style="padding:10px 12px; width:40px;">#</th>
-            <th style="padding:10px 12px;">Worker Detail</th>
-            <th style="padding:10px 12px;">Section</th>
-            <th style="padding:10px 12px;">Current Status</th>
-            <th style="padding:10px 12px; text-align:center;">Pay Hrs</th>
-            <th style="padding:10px 12px;">Note</th>
-            <th style="padding:10px 12px; width:170px; text-align:center;">Quick Action</th>
-          </tr>
-        </thead>
-        <tbody id="leaveManagerTableBody">
-          <tr><td colspan="7" style="padding:40px; text-align:center; color:#94a3b8;">Loading workers...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-  <!-- STATS CARDS -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#15803d; margin-bottom:4px;">MANUAL PRESENT</div>
-      <div id="lmStatMan" style="font-size:28px; font-weight:800; color:#16a34a;">0</div>
-    </div>
-    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b91c1c; margin-bottom:4px;">ABSENT</div>
-      <div id="lmStatAbs" style="font-size:28px; font-weight:800; color:#dc2626;">0</div>
-    </div>
-    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#1d4ed8; margin-bottom:4px;">COMPANY OFF</div>
-      <div id="lmStatOff" style="font-size:28px; font-weight:800; color:#2563eb;">0</div>
-    </div>
-    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b45309; margin-bottom:4px;">MEDICAL LEAVE</div>
-      <div id="lmStatMed" style="font-size:28px; font-weight:800; color:#d97706;">0</div>
-    </div>
-  </div>
-
-  <!-- DATA TABLE WITH ACTIONS -->
-  <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
-    <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <thead>
-          <tr style="background:#1b365d; color:#fff; text-align:left;">
-            <th style="padding:10px 12px; width:40px;">#</th>
-            <th style="padding:10px 12px;">Worker Detail</th>
-            <th style="padding:10px 12px;">Section</th>
-            <th style="padding:10px 12px;">Current Status</th>
-            <th style="padding:10px 12px; text-align:center;">Pay Hrs</th>
-            <th style="padding:10px 12px;">Note</th>
-            <th style="padding:10px 12px; width:160px; text-align:center;">Quick Action</th>
-          </tr>
-        </thead>
-        <tbody id="leaveManagerTableBody">
-          <tr><td colspan="7" style="padding:40px; text-align:center; color:#94a3b8;">Loading workers...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-  <!-- STATS CARDS -->
-  <div id="leaveStatsRow" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#15803d; margin-bottom:4px;">MANUAL PRESENT</div>
-      <div id="statManualPresent" style="font-size:28px; font-weight:800; color:#16a34a;">0</div>
-    </div>
-    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b91c1c; margin-bottom:4px;">ABSENT</div>
-      <div id="statAbsent" style="font-size:28px; font-weight:800; color:#dc2626;">0</div>
-    </div>
-    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#1d4ed8; margin-bottom:4px;">COMPANY OFF</div>
-      <div id="statCompanyOff" style="font-size:28px; font-weight:800; color:#2563eb;">0</div>
-    </div>
-    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:#b45309; margin-bottom:4px;">MEDICAL LEAVE</div>
-      <div id="statMedicalLeave" style="font-size:28px; font-weight:800; color:#d97706;">0</div>
-    </div>
-  </div>
-
-  <!-- DATA TABLE -->
-  <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
-    <div style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <thead>
-          <tr style="background:#1b365d; color:#fff; text-align:left;">
-            <th style="padding:10px 12px;">#</th>
-            <th style="padding:10px 12px;">Date</th>
-            <th style="padding:10px 12px;">Worker</th>
-            <th style="padding:10px 12px;">Section</th>
-            <th style="padding:10px 12px;">Status</th>
-            <th style="padding:10px 12px; text-align:center;">Pay Hrs</th>
-            <th style="padding:10px 12px;">Note / Reason</th>
-            <th style="padding:10px 12px;">Marked By</th>
-          </tr>
-        </thead>
-        <tbody id="leaveTableBody">
-          <tr>
-            <td colspan="8" style="padding:40px; text-align:center; color:#94a3b8;">No records found</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-      
       <!-- MONTHLY REPORT -->
       <section class="admin-section" id="secMonthly" style="display:none">
         <div class="section-header"><h2><span class="material-symbols-outlined">calendar_month</span> Monthly Report</h2></div>
@@ -1543,7 +1338,6 @@
 <script src="manual.js?v=21"></script>
 <script src="history.js?v=24"></script>
 <script src="work.js?v=25"></script>
-<script src="leave_report.js"></script>
 
 <script>
 var _workerTab = 'Indian';
@@ -2186,19 +1980,16 @@ function renderAttendanceView() {
         var aHtml = '';
         for (var ab = 0; ab < absentWorkers.length; ab++) {
           var abW = absentWorkers[ab];
-                  aHtml += '<div class="absent-card">' +
+          aHtml += '<div class="absent-card">' +
             '<div class="absent-initials">' + getInitials(abW.name) + '</div>' +
             '<div class="absent-info">' +
               '<div class="absent-name">' + abW.name + '</div>' +
               '<div class="absent-meta">' + abW.wid + ' | ' + abW.prof + '</div>' +
               '<div class="absent-meta">' + abW.sec + ' | ' + abW.shift + ' Shift</div>' +
             '</div>' +
-            '<div class="absent-action-group">' +
-              '<button class="btn-absent-act act-present" title="Mark Present (Manual In)" onclick="quickAttPresent(\'' + abW.wid + '\',\'' + date + '\')"><span class="material-symbols-outlined">how_to_reg</span></button>' +
-              '<button class="btn-absent-act act-absent" title="Mark Absent (No Pay)" onclick="quickAttMark(\'' + abW.wid + '\',\'' + date + '\',\'absent\')"><span class="material-symbols-outlined">person_off</span></button>' +
-              '<button class="btn-absent-act act-off" title="Company Off (Paid Leave)" onclick="showLeaveModal(\'' + abW.wid + '\',\'' + date + '\',\'company_off\')"><span class="material-symbols-outlined">domain</span></button>' +
-              '<button class="btn-absent-act act-medical" title="Medical Leave" onclick="showLeaveModal(\'' + abW.wid + '\',\'' + date + '\',\'medical_leave\')"><span class="material-symbols-outlined">medical_services</span></button>' +
-            '</div></div>';
+            '<button class="btn-absent-in" onclick="quickAttAbsent(\'' + abW.wid + '\',\'' + date + '\')">' +
+              '<span class="material-symbols-outlined">add_circle</span> Add' +
+            '</button></div>';
         }
         absentGrid.innerHTML = aHtml;
       }
@@ -2206,7 +1997,7 @@ function renderAttendanceView() {
   }
 }
 
-function quickAttPresent(wid, date) {
+function quickAttAbsent(wid, date) {
   var w = findWorker(wid);
   if (!w) return;
   var shift = w.shift || 'Day';
@@ -2216,143 +2007,13 @@ function quickAttPresent(wid, date) {
     if (!r1.ok) { showToast(r1.msg, 'error'); return; }
     setTimeout(function() {
       manualCheckout(wid, shift, date, defOut).then(function(r2) {
-        if (r2.ok) showToast(w.name + ' marked present!', 'success');
+        if (r2.ok) showToast(w.name + ' attendance added!', 'success');
         renderAttendanceView();
       });
     }, 300);
   });
 }
 
-function quickAttMark(wid, date, status) {
-  var w = findWorker(wid);
-  if (!w) return;
-  showConfirm('Mark ' + w.name + ' as ABSENT for ' + date + '? (0 Hours, No Pay)', function() {
-    submitLeaveAction(wid, date, status, 0, '');
-  });
-}
-
-function showLeaveModal(wid, date, type) {
-  var w = findWorker(wid);
-  if (!w) return;
-  var title = type === 'company_off' ? 'Company Off' : 'Medical Leave';
-  var html = '<div class="form-group">' +
-    '<label class="form-label">Salary Payment Option</label>' +
-    '<select id="leavePaySelect" class="form-control" style="font-weight:bold; color:#1e40af;">' +
-      '<option value="9">Full Pay (9 Hours Regular)</option>' +
-      '<option value="4.5">Half Pay (4.5 Hours Regular)</option>' +
-      '<option value="0">No Pay (0 Hours)</option>' +
-    '</select></div>' +
-    '<div class="form-group" style="margin-top:10px;">' +
-    '<label class="form-label">Note / Reason (Optional)</label>' +
-    '<input type="text" id="leaveNote" class="form-control" placeholder="Enter reason e.g. Fever...">' +
-    '</div>' +
-    '<div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">' +
-    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
-    '<button class="btn btn-primary" onclick="processLeaveModal(\'' + wid + '\',\'' + date + '\',\'' + type + '\')">Save Record</button>' +
-    '</div>';
-  showModal(html, title + ' - ' + w.name);
-}
-
-function processLeaveModal(wid, date, type) {
-  var payHours = parseFloat(document.getElementById('leavePaySelect').value);
-  var note = document.getElementById('leaveNote').value.trim();
-  submitLeaveAction(wid, date, type, payHours, note);
-  closeModal();
-}
-
-function submitLeaveAction(wid, date, type, payHours, note) {
-  var w = typeof findWorker === 'function' ? findWorker(wid) : null;
-  if (!w) {
-    // Fallback if worker array exists globally
-    if (typeof workers !== 'undefined' && workers.length) {
-      for (var i = 0; i < workers.length; i++) {
-        if (workers[i].id === wid || workers[i].wid === wid) {
-          w = workers[i];
-          break;
-        }
-      }
-    }
-  }
-  
-  if (!w) {
-    alert('Worker not found!');
-    return;
-  }
-
-  var recId = wid + '_' + date;
-  var session = typeof getSession === 'function' ? getSession() : null;
-  var markedByVal = session ? (session.name || session.id || 'Admin') : 'Admin';
-  
-  var numPayHours = parseFloat(payHours) || 0;
-
-  var data = {
-    recId: recId,
-    wid: wid,
-    name: w.name || '',
-    sec: w.sec || w.section || 'Indian',
-    shift: w.shift || 'Day',
-    prof: w.prof || w.profession || 'Worker',
-    date: date,
-    status: type, 
-    regular: numPayHours,
-    compOT: 0,
-    extraOT: 0,
-    total: numPayHours,
-    ot: 0,
-    checkinTime: type === 'manual_present' ? '08:00 AM' : null,
-    checkoutTime: type === 'manual_present' ? '08:00 PM' : null,
-    markedBy: markedByVal,
-    markedAt: new Date().toISOString(),
-    note: note || ''
-  };
-
-  function onSuccess() {
-    if (typeof showToast === 'function') {
-      showToast(w.name + ' marked as ' + type.replace('_', ' ').toUpperCase() + '!', 'success');
-    } else {
-      alert(w.name + ' saved successfully!');
-    }
-    
-    // Close modal safely
-    var modal = document.getElementById('leaveModal') || document.getElementById('leaveActionModal') || document.getElementById('modalOverlay');
-    if (modal) {
-      modal.style.display = 'none';
-      modal.classList.remove('active');
-    }
-    
-    if (typeof renderAttendanceView === 'function') renderAttendanceView();
-    if (typeof loadAttendanceData === 'function') loadAttendanceData();
-    if (typeof refreshAttendance === 'function') refreshAttendance();
-  }
-
-  function onError(err) {
-    console.error('Save error details:', err);
-    if (typeof showToast === 'function') {
-      showToast('Error saving record', 'error');
-    } else {
-      alert('Error saving record: ' + (err.message || err));
-    }
-  }
-
-  // Universal Safe Firebase Saver (Auto-Detects DB setup)
-  try {
-    if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
-      db.collection('attendance').doc(recId).set(data, { merge: true }).then(onSuccess).catch(onError);
-    } else if (typeof firebase !== 'undefined' && firebase.firestore) {
-      firebase.firestore().collection('attendance').doc(recId).set(data, { merge: true }).then(onSuccess).catch(onError);
-    } else if (typeof FB !== 'undefined' && typeof FB.save === 'function') {
-      FB.save('attendance', recId, data).then(onSuccess).catch(onError);
-    } else if (typeof FB !== 'undefined' && typeof FB.db === 'object' && FB.db.collection) {
-      FB.db.collection('attendance').doc(recId).set(data, { merge: true }).then(onSuccess).catch(onError);
-    } else if (typeof setDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined') {
-      setDoc(doc(db, 'attendance', recId), data, { merge: true }).then(onSuccess).catch(onError);
-    } else {
-      throw new Error('Firebase instance not found');
-    }
-  } catch(e) {
-    onError(e);
-  }
-}
 function editAttRecord(recId) { if (typeof editHistRecord === 'function') editHistRecord(recId); }
 function deleteAttRecord(recId) {
   if (typeof deleteHistRecord === 'function') deleteHistRecord(recId);
