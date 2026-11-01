@@ -1,4 +1,4 @@
-/ AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
+
 // app.js v23 - ZERO DATA LOSS + All Workers Safe + Sunday OT
 
 var APP_VERSION = 'v24';
