@@ -1,8 +1,8 @@
-// AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
+/ AL BOWRY CARPENTRY LLC - ATTENDANCE MANAGEMENT SYSTEM
 // app.js v23 - ZERO DATA LOSS + All Workers Safe + Sunday OT
 
-var APP_VERSION = 'v23';
-var CACHE_KEY = 'alb_v23';
+var APP_VERSION = 'v24';
+var CACHE_KEY = 'alb_v24';
 
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
@@ -1059,17 +1059,22 @@ function addPDFFooter(doc) {
 
 function exportCSV(data, filename) {
   var header = ['# ' + COMPANY.full, '# Generated: ' + fmtDT(tNow()), ''];
-  var cols = ['Date', 'Worker ID', 'Name', 'Profession', 'Section', 'Shift', 'Sunday', 'Check In', 'Check Out', 'Total Hrs', 'Regular', 'CompOT', 'ExtraOT', 'OT', 'Status'];
+  var cols = ['Date', 'Worker ID', 'Name', 'Profession', 'Section', 'Shift', 'Sunday', 'Leave', 'Check In', 'Check Out', 'Total Hrs', 'Regular', 'CompOT', 'ExtraOT', 'OT', 'Status'];
   var rows = [header.join('\n'), cols.join(',')];
   for (var i = 0; i < data.length; i++) {
     var a = data[i];
+    var cIn = a.leaveType ? '-' : fmtTime(a.checkinTime);
+    var cOut = a.leaveType ? '-' : fmtTime(a.checkoutTime);
+    var statusDisplay = a.leaveType ? a.leaveType : (a.status || '');
+    
     rows.push([
       a.date || '', a.wid || '', '"' + (a.name || '') + '"',
       '"' + (a.prof || '') + '"', a.sec || '', a.shift || '',
       a.isSundayShift ? 'YES' : 'NO',
-      fmtTime(a.checkinTime), fmtTime(a.checkoutTime),
+      a.leaveType || '-',
+      cIn, cOut,
       a.total || 0, a.regular || 0, a.compOT || 0,
-      a.extraOT || 0, a.ot || 0, a.status || ''
+      a.extraOT || 0, a.ot || 0, statusDisplay
     ].join(','));
   }
   var csv = rows.join('\n');
@@ -1352,13 +1357,13 @@ function initWorkers() {
   return Promise.all(promises);
 }
 
-function refreshDashboard() { if (typeof renderDashboard === 'function') renderDashboard(); }
-function refreshApprovals() { if (typeof renderApprovals === 'function') renderApprovals(); }
-function refreshLiveStatus() { if (typeof renderLiveStatus === 'function') renderLiveStatus(); }
-function refreshAttendanceView() { if (typeof renderAttendanceView === 'function') renderAttendanceView(); }
-function refreshAdminWorkers() { if (typeof renderAdminWorkers === 'function') renderAdminWorkers(); }
-function refreshManualEntry() { if (typeof renderManualEntry === 'function') renderManualEntry(); }
-function renderWorkerDashboard() { if (typeof renderWorkerUI === 'function') renderWorkerUI(); }
+refreshDashboard = function() { if (typeof renderDashboard === 'function') renderDashboard(); };
+refreshApprovals = function() { if (typeof renderApprovals === 'function') renderApprovals(); };
+refreshLiveStatus = function() { if (typeof renderLiveStatus === 'function') renderLiveStatus(); };
+refreshAttendanceView = function() { if (typeof renderAttendanceView === 'function') renderAttendanceView(); };
+refreshAdminWorkers = function() { if (typeof renderAdminWorkers === 'function') renderAdminWorkers(); };
+refreshManualEntry = function() { if (typeof renderManualEntry === 'function') renderManualEntry(); };
+renderWorkerDashboard = function() { if (typeof renderWorkerUI === 'function') renderWorkerUI(); };
 
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
@@ -1394,5 +1399,38 @@ window.addEventListener('load', function() {
   setTimeout(function() { loadLogoForPDF(); }, 1000);
 });
 
-console.log('[ALB] app.js v23 loaded - ZERO DATA LOSS - ' + COMPANY.full);
+// ====== LEAVE TRACKING (CO & ML) ======
+function markLeave(wid, leaveType) {
+  var w = findWorker(wid);
+  if (!w) return Promise.resolve({ ok: false, msg: 'Worker not found' });
+  var confirmMsg = "Are you sure you want to mark " + leaveType + " for " + w.name + "?";
+  if (!confirm(confirmMsg)) return Promise.resolve({ ok: false, msg: 'Cancelled' });
 
+  // Get selected date from UI if exists, else today
+  var dateInput = document.getElementById('attDate');
+  var dateStr = (dateInput && dateInput.value) ? dateInput.value : tD();
+  
+  var recId = genRecId(wid, true) + "_leave";
+  var nowISO = tNow();
+  
+  var rec = {
+    recId: recId, wid: wid, name: w.name, prof: w.prof, sec: w.sec,
+    shift: w.shift || 'Day', date: dateStr,
+    checkinReqTime: nowISO, checkinTime: nowISO,
+    checkoutReqTime: nowISO, checkoutTime: nowISO,
+    total: 0, regular: 0, compOT: 0, extraOT: 0, ot: 0,
+    status: 'completed', backdated: true,
+    isSundayShift: false,
+    leaveType: leaveType
+  };
+
+  return FB.save('attendance', recId, rec).then(function() {
+    showToast(w.name + " marked as " + leaveType, 'success');
+    if (typeof refreshAttendanceView === 'function') refreshAttendanceView();
+    return { ok: true, msg: leaveType + ' marked' };
+  }).catch(function(e) {
+    showToast('Error: ' + e.message, 'error');
+    return { ok: false, msg: e.message };
+  });
+}
+console.log('[ALB] app.js v24 loaded - ZERO DATA LOSS + Leave Tracking - ' + COMPANY.full);
