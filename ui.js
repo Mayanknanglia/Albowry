@@ -224,7 +224,7 @@ function renderWorkerHistory(records) {
   var html = '';
   for (var j=0; j<completed.length && j<15; j++) {
     var a = completed[j];
-    html += '<tr><td>' + (j+1) + '</td><td>' + fmtDate(a.date+'T00:00:00') + '</td>' +
+    html += '<tr><td>' + (j+1) + '</td><td>' + fmtDate(a.date+'T12:00:00Z') + '</td>' +
       '<td><span class="shift-badge shift-' + (a.shift||'day').toLowerCase() + '">' + (a.shift||'Day') + '</span></td>' +
       '<td>' + fmtTime(a.checkinTime) + '</td><td>' + fmtTime(a.checkoutTime) + '</td>' +
       '<td><strong>' + (a.total||0) + 'h</strong></td><td>' + (a.ot||0) + 'h</td>' +
