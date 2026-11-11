@@ -791,7 +791,7 @@ function generateMonthlyReport() {
       html += '<div class="table-responsive"><table class="data-table"><thead><tr><th>Date</th><th>Shift</th><th>In</th><th>Out</th><th>Hours</th><th>OT</th></tr></thead><tbody>';
       for (var j=0; j<r.records.length; j++) {
         var rec = r.records[j];
-        html += '<tr><td>' + fmtDate(rec.date+'T12:00:00Z') + '</td>';
+        html += '<tr><td>' + formatDateStr(rec.date) + '</td>';
         html += '<td><span class="shift-badge shift-' + (rec.shift||'day').toLowerCase() + '">' + (rec.shift||'Day') + '</span></td>';
         html += '<td>' + fmtTime(rec.checkinTime) + '</td><td>' + fmtTime(rec.checkoutTime) + '</td>';
         html += '<td>' + (rec.total||0) + 'h</td><td>' + (rec.ot||0) + 'h</td></tr>';
@@ -824,7 +824,7 @@ function exportMonthlyPDF() {
         var rows = [];
         for (var j=0; j<r.records.length; j++) {
           var rec = r.records[j];
-          rows.push([fmtDate(rec.date+'T12:00:00Z'), rec.shift||'Day', fmtTime(rec.checkinTime), fmtTime(rec.checkoutTime), (rec.total||0)+'h', (rec.ot||0)+'h']);
+          rows.push([formatDateStr(rec.date), rec.shift||'Day', fmtTime(rec.checkinTime), fmtTime(rec.checkoutTime), (rec.total||0)+'h', (rec.ot||0)+'h']);
         }
         doc.autoTable({
           startY: startY + 22,
