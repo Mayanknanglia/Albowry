@@ -1,8 +1,8 @@
 
 // app.js v23 - ZERO DATA LOSS + All Workers Safe + Sunday OT
 
-var APP_VERSION = 'v24';
-var CACHE_KEY = 'alb_v24';
+var APP_VERSION = 'v25';
+var CACHE_KEY = 'alb_v25';
 
 var COMPANY = {
   name: 'AL BOWRY CARPENTRY LLC',
